@@ -1,0 +1,42 @@
+name: template
+
+# Guards the contract between index.html and data.json. The masthead, availability
+# badges and colophon are hydrated from the data at runtime, so a template change
+# that drops those anchors would leave the live site quietly advertising stale
+# figures. This catches that before it ships — which matters most when the design
+# pass rewrites the markup.
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'build.py', 'data.json', 'test/**', '.github/workflows/test.yml']
+  pull_request:
+    paths: ['index.html', 'build.py', 'data.json', 'test/**']
+  workflow_dispatch:
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: index.html must match what build.py produces
+        run: |
+          cp index.html /tmp/committed.html
+          python3 build.py
+          if ! diff -q /tmp/committed.html index.html >/dev/null; then
+            echo "::error::index.html is out of sync with build.py — run 'python3 build.py' and commit the result."
+            diff /tmp/committed.html index.html | head -40
+            exit 1
+          fi
+          echo "index.html matches build.py output."
+
+      - name: Template renders and hydrates correctly
+        run: npm test

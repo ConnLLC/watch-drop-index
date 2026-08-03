@@ -89,6 +89,7 @@ select{padding:7px 9px;border:1px solid var(--rule);background:#fff;border-radiu
   gap:14px;align-items:center;background:none;border:0;padding:11px 4px 11px 2px;
   text-align:left;font:inherit;color:inherit;cursor:pointer}
 .bar:hover{background:#f5f2ec}
+.bar:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .item.open .bar:hover{background:transparent}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--mute);justify-self:center}
 .dot.d0{background:var(--live)}.dot.d1{background:#2f5d8a}.dot.d2{background:#2f5d8a}
@@ -203,14 +204,14 @@ function row(d){
     ? `<div class="pr">${esc(fmt(d.priceNum))}</div>`
     : `<div class="pr na">on request</div>`;
   return `<div class="item${open?" open":""}" data-id="${d.id}">
-    <button class="bar" aria-expanded="${open}">
+    <button class="bar" aria-expanded="${open}" aria-controls="p-${d.id}">
       <span class="dot d${d.rank}" title="${esc(d.tier)}"></span>
       <span class="who"><span class="b">${esc(d.brand)}</span><span class="m">${esc(d.model)}</span></span>
       <span class="ed" title="${esc(d.edition)}">${esc(shortEd(d.edition))}</span>
       ${priceCell}
       <span class="chev">&#9654;</span>
     </button>
-    <div class="panel">${open?detail(d):""}</div>
+    <div class="panel" id="p-${d.id}">${open?detail(d):""}</div>
   </div>`;
 }
 
@@ -273,6 +274,47 @@ function render(){
     : '<div class="empty">Nothing matches those filters.</div>';
 }
 
+// The masthead tally, availability counts and colophon are baked in at build time.
+// A weekly refresh only rewrites data.json, so unless they are re-read from the
+// payload the page keeps advertising last month's figures and a stale "updated"
+// date — which is exactly the freshness claim the site rests on. Derive every
+// count from the data itself; take only `updated` and `revision` from meta.
+function hydrate(payload){
+  const meta = payload.meta || {}, n = DATA.length;
+  const byTier = {};
+  DATA.forEach(d => byTier[d.tier] = (byTier[d.tier]||0) + 1);
+  const put = (sel,v) => { const node = el(sel); if(node) node.textContent = v; };
+
+  put("#t-buy",     byTier["Buy online now"] || 0);
+  put("#t-total",   n);
+  put("#t-gone",    byTier["Gone"] || 0);
+  put("#t-brands",  new Set(DATA.map(d => d.brand)).size);
+  put("#t-updated", meta.updated || "");
+  put("#c-rev",     meta.revision ?? "");
+  put("#c-imgs",    DATA.filter(d => d.image).length);
+  put("#c-total",   n);
+
+  document.querySelectorAll("[data-tier]").forEach(b => {
+    const badge = b.querySelector(".n"); if(!badge) return;
+    badge.textContent = b.dataset.tier === "All" ? n : (byTier[b.dataset.tier] || 0);
+  });
+}
+
+// Deep link: /#<id> opens that entry on load. One page, one anchor — deliberately
+// not per-watch pages.
+function openById(id, focus){
+  if(!DATA.some(x => x.id === id)) return false;
+  state.open.add(id);
+  render();
+  const item = [...document.querySelectorAll(".item")].find(x => x.dataset.id === id);
+  if(item){
+    item.scrollIntoView({block:"center"});
+    if(focus) item.querySelector(".bar").focus();
+  }
+  return true;
+}
+const dropHash = () => history.replaceState(null, "", location.pathname + location.search);
+
 function bind(sel,key){
   document.querySelectorAll(sel).forEach(b=>b.addEventListener("click",()=>{
     state[key]=b.dataset[key];
@@ -286,15 +328,24 @@ document.addEventListener("click",e=>{
   const item=bar.closest(".item"), id=item.dataset.id, d=DATA.find(x=>x.id===id);
   if(state.open.has(id)){ state.open.delete(id); item.classList.remove("open");
     bar.setAttribute("aria-expanded","false"); item.querySelector(".panel").innerHTML="";
+    if(location.hash === "#"+id) dropHash();
   } else { state.open.add(id); item.classList.add("open");
-    bar.setAttribute("aria-expanded","true"); item.querySelector(".panel").innerHTML=detail(d); }
+    bar.setAttribute("aria-expanded","true"); item.querySelector(".panel").innerHTML=detail(d);
+    history.replaceState(null, "", "#"+id); }
+});
+
+window.addEventListener("hashchange", () => {
+  const id = location.hash.slice(1);
+  if(id && !state.open.has(id)) openById(id, true);
 });
 
 async function boot(){
+  let payload;
   try{
     const r=await fetch("data.json",{cache:"no-store"});
     if(!r.ok) throw new Error(r.status);
-    DATA=(await r.json()).watches;
+    payload=await r.json();
+    DATA=payload.watches;
   }catch(err){
     el("#list").innerHTML='<div class="empty">Could not load <code>data.json</code>.<br><br>'
       +'If you are opening this file directly from disk, browsers block the request. '
@@ -310,8 +361,12 @@ async function boot(){
     document.querySelectorAll("[data-tier],[data-cat],[data-band]").forEach(x=>
       x.classList.toggle("on",x.dataset.tier==="All"||x.dataset.cat==="All"||x.dataset.band==="All"));
     render();
+    dropHash();
   });
+  hydrate(payload);
   render();
+  const deep = location.hash.slice(1);
+  if(deep) openById(deep, false);
 }
 document.addEventListener("DOMContentLoaded",boot);
 """
@@ -370,11 +425,11 @@ HTML = f"""<!DOCTYPE html>
   <div class="descriptor">The limited-edition register</div>
   <p class="standfirst">{html.escape(meta['tagline'])}</p>
   <p class="tally">
-    <b class="live">{buy_now}</b> buyable online today<span class="sep">·</span>
-    <b>{len(items)}</b> limited runs tracked<span class="sep">·</span>
-    <b>{counts.get('Gone', 0)}</b> confirmed gone<span class="sep">·</span>
-    <b>{meta['brands']}</b> brands<span class="sep">·</span>
-    updated {html.escape(meta['updated'])}, refreshed weekly
+    <b class="live" id="t-buy">{buy_now}</b> buyable online today<span class="sep">·</span>
+    <b id="t-total">{len(items)}</b> limited runs tracked<span class="sep">·</span>
+    <b id="t-gone">{counts.get('Gone', 0)}</b> confirmed gone<span class="sep">·</span>
+    <b id="t-brands">{meta['brands']}</b> brands<span class="sep">·</span>
+    updated <span id="t-updated">{html.escape(meta['updated'])}</span>, refreshed weekly
   </p>
 </div></header>
 
@@ -434,8 +489,8 @@ HTML = f"""<!DOCTYPE html>
       <li>Rolex issued no numbered limited editions in 2026.</li>
       <li>Open price conflicts: Patek 5810/1G-001, AP × AMBUSH, Doxa × Hodinkee edition size.</li>
     </ul>
-    <p class="colophon">Watch Drop Index · {html.escape(dom)} · revision {meta['revision']} ·
-      {meta.get('imagesResolved', 0)} of {len(items)} photographs resolved ·
+    <p class="colophon">Watch Drop Index · {html.escape(dom)} · revision <span id="c-rev">{meta['revision']}</span> ·
+      <span id="c-imgs">{meta.get('imagesResolved', 0)}</span> of <span id="c-total">{len(items)}</span> photographs resolved ·
       every entry links to the source it came from.</p>
   </footer>
 </div>
