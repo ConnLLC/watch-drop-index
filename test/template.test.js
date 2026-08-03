@@ -2,10 +2,12 @@
 // weekly refresh that only rewrites data.json. index.html is never rebuilt between
 // the two — that is the whole point of the check.
 const fs = require("fs");
+const path = require("path");
 const { JSDOM } = require("jsdom");
 
-const HTML = fs.readFileSync("/Users/conn/watchdrop/index.html", "utf8");
-const BASE = JSON.parse(fs.readFileSync("/Users/conn/watchdrop/data.json", "utf8"));
+const ROOT = path.join(__dirname, "..");
+const HTML = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+const BASE = JSON.parse(fs.readFileSync(path.join(ROOT, "data.json"), "utf8"));
 
 let pass = 0, fail = 0;
 const check = (label, got, want) => {
