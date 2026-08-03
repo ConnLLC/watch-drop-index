@@ -1,0 +1,159 @@
+name: weekly refresh
+
+# The masthead says "refreshed weekly". This is what makes that true.
+#
+# Because Pages deploys from the main branch, the commit this job makes IS the
+# deploy — there is no separate publish step. Note that a push authenticated with
+# GITHUB_TOKEN deliberately does not trigger other workflows, so the `template`
+# workflow will not run on this job's commit; the data validation step below
+# covers that gap in-job. If Pages is ever switched to an Actions-based deploy,
+# this token will stop triggering it and the site will silently stop updating —
+# use a deploy key or a PAT at that point.
+
+on:
+  schedule:
+    - cron: '0 9 * * MON'   # 09:00 UTC Monday. Named day on purpose — a numeric
+                            # weekday is off-by-one on some cron implementations.
+                            # Drifts an hour with BST; harmless for a refresh.
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: 'Stages to run (2=availability, 3=photos, 4=new releases)'
+        default: '2,3,4'
+        required: false
+      dry_run:
+        description: 'Run everything but write nothing'
+        type: boolean
+        default: false
+      photo_batch:
+        description: 'How many photograph sources to probe'
+        default: '36'
+        required: false
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --quiet anthropic requests
+
+      - name: Decision-logic tests
+        # These gate the run rather than merely reporting on it: if the rules
+        # that decide when an entry may move are broken, we must not touch
+        # data.json at all.
+        run: python3 test/refresh_test.py
+
+      - name: Run the refresh
+        id: refresh
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python3 scripts/refresh.py \
+            --stages "${{ inputs.stages || '2,3,4' }}" \
+            --photo-batch "${{ inputs.photo_batch || '36' }}" \
+            ${{ inputs.dry_run == true && '--dry-run' || '' }}
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate the result before it can reach the site
+        if: steps.refresh.outputs.code == '0'
+        run: |
+          python3 - <<'PY'
+          import json, sys, collections
+          d = json.load(open('data.json'))
+          w = d['watches']
+          TIERS = ["Buy online now","Drop upcoming","Retailer enquiry","Waitlist or ballot",
+                   "AD or boutique","In person only","Gone"]
+          errs = []
+          if d['meta']['count'] != len(w):
+              errs.append(f"meta.count {d['meta']['count']} != {len(w)} entries")
+          if d['meta']['brands'] != len({x['brand'] for x in w}):
+              errs.append("meta.brands is stale")
+          if d['meta']['imagesResolved'] != sum(1 for x in w if x.get('image')):
+              errs.append("meta.imagesResolved is stale")
+          ids = [x['id'] for x in w]
+          if len(ids) != len(set(ids)):
+              errs.append("duplicate ids")
+          for x in w:
+              if TIERS[x['rank']] != x['tier']:
+                  errs.append(f"{x['id']}: rank {x['rank']} does not match tier {x['tier']!r}")
+              if x['status'] == 'Sold out' and not x.get('soldOutOn'):
+                  errs.append(f"{x['id']}: Sold out with no soldOutOn")
+              for f in ('id','brand','model','buy','source','conf','addedOn'):
+                  if not x.get(f):
+                      errs.append(f"{x['id']}: missing {f}")
+          if errs:
+              print("data.json failed validation:")
+              for e in errs[:40]: print("  -", e)
+              sys.exit(1)
+          print(f"data.json valid — {len(w)} entries, {d['meta']['brands']} brands, "
+                f"revision {d['meta']['revision']}, {d['meta']['imagesResolved']} photographs")
+          PY
+
+      - name: Commit and deploy
+        if: steps.refresh.outputs.code == '0' && inputs.dry_run != true
+        run: |
+          if git diff --quiet -- data.json; then
+            echo "data.json unchanged; nothing to commit."
+            exit 0
+          fi
+          # Routine updates must never touch the template — that property is what
+          # keeps this job cheap and its diffs reviewable.
+          if ! git diff --quiet -- ':!data.json'; then
+            echo "::error::the refresh modified something other than data.json"
+            git diff --stat
+            exit 1
+          fi
+          git config user.name  "watch-drop-index bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -F - <<EOF
+          $(cat refresh-subject.txt)
+
+          $(head -c 4000 refresh-report.md)
+          EOF
+          git push
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f refresh-report.md ]; then cat refresh-report.md >> "$GITHUB_STEP_SUMMARY"; fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_exit code ${{ steps.refresh.outputs.code }}_" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open an issue instead of committing a mass sell-out
+        if: steps.refresh.outputs.code == '20'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Refresh $(date -u +%Y-%m-%d) blocked: too many entries flipped to Gone" \
+            --label "refresh" \
+            --body-file refresh-report.md || true
+
+      - name: Fail the run if the fetch layer went silent
+        if: steps.refresh.outputs.code == '21'
+        run: |
+          echo "::error::Zero pages were readable across the availability checks."
+          echo "That is a broken fetch layer, not a quiet week. data.json was not changed."
+          exit 1
+
+      - name: Fail on an unexpected exit
+        if: steps.refresh.outputs.code != '0' && steps.refresh.outputs.code != '10' && steps.refresh.outputs.code != '20' && steps.refresh.outputs.code != '21'
+        run: exit 1

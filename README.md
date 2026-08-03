@@ -12,11 +12,14 @@ where to buy it. Limited editions only — no regular production, no restocks.
 ## How it works
 
 ```
-index.html    The site. Template only (~31 KB). Reads data.json in the browser.
-data.json     The source of truth. Every watch, plus the calendar sections.
-build.py      Regenerates index.html. Only needed when the TEMPLATE changes.
-.nojekyll     Stops GitHub Pages running Jekyll over the files.
-netlify.toml  Config if you host on Netlify instead. Harmless on Pages.
+index.html            The site. Template only. Reads data.json in the browser.
+data.json             The source of truth. Every watch, plus the calendar sections.
+build.py              Regenerates index.html. Only needed when the TEMPLATE changes.
+scripts/refresh.py    The weekly refresh job.
+test/refresh_test.py  Decision-logic tests for the refresh. No API key needed.
+test/template.test.js Renders index.html in a DOM and checks it against data.json.
+.nojekyll             Stops GitHub Pages running Jekyll over the files.
+netlify.toml          Config if you host on Netlify instead. Inert on Pages.
 robots.txt
 sitemap.xml
 404.html
@@ -25,6 +28,13 @@ sitemap.xml
 The important property: **routine updates never touch `index.html`.** The page fetches
 `data.json` at load, so adding a watch or flipping something to sold-out is a one-file
 change. Commit `data.json`, Pages redeploys, done. `build.py` is only for layout changes.
+
+For that to hold, the figures in the masthead, the availability filter counts and the
+colophon are all re-read from `data.json` at load rather than trusted as built. The
+build-time values stay in the markup as the pre-JavaScript default. **If you rewrite the
+template, keep the `#t-*` and `#c-*` anchors** — without them the page keeps advertising
+whatever the numbers were the day it was built, which quietly breaks the freshness claim
+the whole site rests on. `test/template.test.js` fails loudly if they go missing.
 
 ### Running it locally
 
@@ -38,14 +48,20 @@ python3 -m http.server 8000
 
 ---
 
-## Deploying to GitHub Pages
+## Deploying
 
-1. Create a repo — `watch-drop-index` — and push these files to the root of `main`.
-2. **Settings → Pages → Source:** "Deploy from a branch", `main`, `/ (root)`. Save.
-3. Live in ~2 minutes at `https://<you>.github.io/watch-drop-index/`.
-4. **Custom domain:** Settings → Pages → Custom domain → `www.watchdropindex.com`.
-   GitHub will tell you the DNS records; at your registrar add a `CNAME` for `www`
-   pointing at `<you>.github.io`, and enable "Enforce HTTPS" once it validates.
+Pages serves `main` from `/ (root)` — live at
+[connllc.github.io/watch-drop-index](https://connllc.github.io/watch-drop-index/).
+
+**Custom domain.** Settings → Pages → Custom domain → `www.watchdropindex.com`, then at
+the registrar add a `CNAME` for `www` pointing at `connllc.github.io` and remove any
+conflicting `A` records on the apex. Enable "Enforce HTTPS" once it validates.
+
+**On caching.** Pages serves `data.json` with a fixed `Cache-Control: max-age=600` and
+gives you no way to change it. That's fine here: the page requests it with
+`fetch("data.json", {cache: "no-store"})`, so a reader always gets the current file
+rather than a ten-minute-old copy. If that fetch option is ever dropped, the freshness
+claim silently starts drifting.
 
 Every update becomes a commit, so the repo history doubles as an audit trail of when
 each watch sold out — which for a site about availability is content, not just hygiene.
@@ -54,44 +70,70 @@ each watch sold out — which for a site about availability is content, not just
 
 ## The weekly refresh
 
-The refresh is a **scheduled Claude task**, not a cron job, because it has to read live
-retail pages and judge what they say. Each Monday it:
+`.github/workflows/refresh.yml` runs `scripts/refresh.py` at 09:00 UTC each Monday, and
+on demand via **Actions → weekly refresh → Run workflow**. It runs in CI rather than as
+a scheduled chat session so the API key lives in Actions secrets, the job runs whether or
+not anyone is logged in anywhere, failures surface as red runs instead of silence, and
+every change is an attributable, revertible commit.
 
-1. Fetches `data.json` from the live site.
-2. Opens the purchase page for every entry currently marked **Buy online now**,
-   **Drop upcoming** or **Retailer enquiry** — about 90 pages — and reads stock status.
-3. Flips anything that's gone to `Gone`, stamps `soldOutOn`, and writes a `verified`
-   note recording the date and what the page actually said.
-4. Resolves missing photographs by reading the `og:image` of each entry's source
-   article, in batches, until coverage is complete.
-5. Searches the week's watch press for limited editions announced since the last run
-   and appends them with `addedOn` set.
-6. Commits `data.json` to the repo. Pages redeploys automatically.
+Because Pages deploys from `main`, **the commit is the deploy**.
 
-### What it needs from you
+Each run:
 
-A **fine-grained personal access token**, scoped as narrowly as possible:
+1. **Loads** `data.json` and validates it. If it doesn't parse, the run aborts having
+   changed nothing.
+2. **Re-checks availability** for every entry at rank 0–2 — about 90 purchase pages.
+   Each page is fetched, reduced to text, and judged by the model against the entry's
+   current tier. Positive evidence of a sell-out flips the entry to `Gone`, stamps
+   `soldOutOn`, and writes a `verified` note quoting the page. Entries move **up** too:
+   a pre-order opening or stock appearing online promotes them.
+3. **Backfills photographs** by reading `og:image` from each entry's source article,
+   36 per run. Sources with no `og:image` and dead URLs are recorded so they aren't
+   probed again every week.
+4. **Searches the watch press** for limited editions announced since `meta.updated`,
+   restricted to a fixed list of credible outlets, then converts the findings into
+   entries — refusing any candidate without a source URL, a buy URL, or limited-edition
+   status.
+5. **Commits** with a summarising message and a full report in the body.
 
-- GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens
-- **Repository access:** Only select repositories → `watch-drop-index`
-- **Permissions:** Repository permissions → Contents → **Read and write**. Nothing else.
-- **Expiry:** 90 days. Set a reminder to rotate it.
+### What it needs
 
-That token lives in the scheduled task's configuration. Be clear-eyed about the
-trade-off: it's a credential stored in a task prompt. Scoped this way the worst case if
-it leaks is that someone can edit one hobby repo — no access to your account, your other
-repos, or anything else. Rotate on expiry and it stays contained.
+One repository secret: **`ANTHROPIC_API_KEY`** (Settings → Secrets and variables →
+Actions). Nothing else — the job pushes with the built-in `GITHUB_TOKEN`.
 
-### Failure modes to expect
+### The rules that matter more than coverage
 
-- **Bot protection.** Hodinkee, Farer and Junghans already block automated reads.
-  Expect 60–75% of checks to return a usable answer. The rule is that an unreadable page
-  leaves the entry **unchanged** — never flip something to sold out because a bot filter
-  said no.
-- **Photograph coverage** will plateau below 100%. Some sources have no `og:image`, and
-  a few hotlinks will rot over time; the `onerror` handler degrades to a caption.
-- **Silence is a failure.** If a run reports zero changes across 90 checks, something
-  broke — that's not a quiet week, that's a bug.
+These are enforced in code and covered by `test/refresh_test.py`, which gates the job:
+
+- **An unreadable page changes nothing.** A 403, a timeout, a bot wall, a JavaScript-only
+  page and a page with too little text are all *silence*, not evidence. Hodinkee, Farer
+  and Junghans block automated reads; expect 60–75% of checks to return a usable answer.
+  That is fine. False confidence is not.
+- **Gone requires proof.** An entry only flips to `Gone` on a high-confidence verdict
+  backed by a verbatim quote from the page. "Contact us", "find a boutique" and an
+  unrecognisable page never demote anything — those describe distribution, not demand.
+- **The blast radius is capped.** If a run wants to flip more than 15% of the register to
+  `Gone`, it refuses to commit and opens an issue instead. That pattern means the fetch
+  layer broke, not that the market cleared.
+- **Silence is a failure.** If not one page in the availability pass was readable, the
+  run fails red rather than reporting a quiet week.
+- **Entries are never deleted and ids are never rewritten.** Sold-out watches are the
+  historical record; the premise of the site is knowing what's gone.
+
+### Running it by hand
+
+```bash
+pip install anthropic requests
+export ANTHROPIC_API_KEY=...
+
+python3 test/refresh_test.py                      # decision-logic tests, no key needed
+python3 scripts/refresh.py --dry-run              # full run, writes nothing
+python3 scripts/refresh.py --stages 3 --no-api    # photograph backfill only, no key needed
+python3 scripts/refresh.py                        # the real thing
+```
+
+Exit codes: `0` committed · `10` nothing changed · `20` blast radius exceeded ·
+`21` fetch layer silent · `1` hard error.
 
 ---
 
