@@ -18,8 +18,8 @@ on:
   workflow_dispatch:
     inputs:
       stages:
-        description: 'Stages to run (2=availability, 3=photos, 4=new releases, 6=calendar)'
-        default: '2,3,4,6'
+        description: 'Stages to run (2=availability, 3=photos, 4=new releases, 6=calendar, 7=image rot)'
+        default: '2,3,4,6,7'
         required: false
       dry_run:
         description: 'Run everything but write nothing'
@@ -76,7 +76,7 @@ jobs:
         run: |
           set +e
           python3 scripts/refresh.py \
-            --stages "${{ inputs.stages || '2,3,4,6' }}" \
+            --stages "${{ inputs.stages || '2,3,4,6,7' }}" \
             --photo-batch "${{ inputs.photo_batch || '0' }}" \
             ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}

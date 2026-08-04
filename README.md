@@ -178,7 +178,20 @@ Each run:
    second, a `displayModel` when the model runs past 38 characters. It will not guess:
    an uncertain maker or a short title that introduces a word absent from the full name
    leaves the field unset and goes into the report for design to rule on.
-6. **Expires the calendar.** A "Dated opportunities" list still advertising last week's
+6. **Re-checks resolved photographs for rot.** The photograph stage only looks at entries
+   with *no* image, so a URL that dies after we resolved it is invisible to it forever and
+   the row renders a broken picture. This checks a **rotating subset** (40 per run, oldest
+   first, so everything cycles in ~6 weeks) with a HEAD — falling back to a one-byte
+   ranged GET for hosts that refuse HEAD. Only positive evidence clears a photograph: a
+   404/410, or a 200 handing back something that isn't an image (a soft 404). **A 403 or a
+   timeout is silence and the photograph is kept** — a hotlink-blocking CDN must never be
+   able to delete a good picture.
+
+   A cleared URL is remembered in `deadImages`, because otherwise the two stages would
+   loop: clear the image, re-read the article, find the same dead `og:image`, write it
+   straight back, every week forever. A *different* image on the same article is still
+   adopted normally, so an outlet repairing its page is picked up.
+7. **Expires the calendar.** A "Dated opportunities" list still advertising last week's
    drop is the small, visible rot that tells a reader nobody is home — and catching it
    needs arithmetic, not research, so this stage is deterministic and free. Anything whose
    date has passed moves out of `calendar.drops` / `calendar.events` into
@@ -193,10 +206,10 @@ Each run:
    them** — replacing a stale claim with an unreviewed generation trades one problem for
    a worse one. Anything unconfirmed for 30 days is listed in the report; confirm or
    correct it, then stamp `checkedOn` on the item.
-7. **Commits** with a summarising message and a full report in the body.
+8. **Commits** with a summarising message and a full report in the body.
 
-Stages run **2 → 4 → 3**, which is the budget's priority order (below): the paid stages
-go first, most valuable first, and the free one goes last. A side benefit is that a watch
+Stages run **2 → 4 → 7 → 3 → 6**, which is the budget's priority order (below): the paid
+stages go first, most valuable first, and the free ones go last. A side benefit is that a watch
 found this week gets its photograph this week rather than next.
 
 ### What it needs

@@ -364,6 +364,73 @@ def fetch(url: str) -> tuple[str | None, str]:
     return r.text, "ok"
 
 
+class HostLimiter:
+    """Politeness is per-OUTLET, not global: eight parallel requests spread
+    over eight sites is fine, eight at one site is not. Requests to the same
+    host are serialised and spaced; different hosts still run concurrently.
+    Shared by every stage that fetches in bulk, so adding a stage cannot
+    accidentally double the load one outlet sees."""
+
+    def __init__(self, delay: float):
+        self.delay = delay
+        self._locks: dict[str, threading.Lock] = {}
+        self._last: dict[str, float] = {}
+        self._registry = threading.Lock()
+
+    def run(self, url: str, work):
+        host = domain_of(url) or "?"
+        with self._registry:
+            lock = self._locks.setdefault(host, threading.Lock())
+        with lock:
+            wait = self.delay - (time.monotonic() - self._last.get(host, 0.0))
+            if wait > 0:
+                time.sleep(wait)
+            try:
+                return work()
+            finally:
+                self._last[host] = time.monotonic()
+
+
+def check_image(url: str) -> tuple[str, str]:
+    """Is this image URL still serving an image? Returns one of:
+
+      "ok"      — it serves an image; the entry is fine
+      "rotted"  — POSITIVE evidence it does not: a 404/410, or a 200 that
+                  hands back something that is not an image (a soft-404 HTML
+                  error page renders as a broken picture just the same)
+      "unclear" — a 403, a rate limit, a 5xx, a timeout. Silence, not evidence.
+
+    The three-way split is the same rule the rest of this job runs on: only
+    positive evidence moves an entry. A hotlink-blocking CDN answering 403 must
+    never be allowed to delete a perfectly good photograph.
+    """
+    if not url or not url.startswith("http"):
+        return "rotted", "no url"
+    headers = {"User-Agent": UA, "Accept": "image/*,*/*;q=0.8"}
+    try:
+        r = requests.head(url, timeout=FETCH_TIMEOUT, allow_redirects=True, headers=headers)
+        # Plenty of image hosts simply refuse HEAD. Fall back to a one-byte
+        # ranged GET rather than pulling the whole file down.
+        if r.status_code in (403, 405, 501) or not r.headers.get("content-type"):
+            r = requests.get(url, timeout=FETCH_TIMEOUT, allow_redirects=True, stream=True,
+                             headers={**headers, "Range": "bytes=0-0"})
+            r.close()
+    except requests.RequestException as e:
+        return "unclear", f"fetch failed: {type(e).__name__}"
+
+    ctype = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
+    if r.status_code in (404, 410):
+        return "rotted", f"HTTP {r.status_code}"
+    if r.status_code >= 400:
+        return "unclear", f"HTTP {r.status_code}"
+    if ctype.startswith("image/"):
+        return "ok", ctype
+    if ctype:
+        # 200, but it is not a picture — a soft 404. Positive evidence of rot.
+        return "rotted", f"HTTP {r.status_code} serving {ctype}"
+    return "unclear", f"HTTP {r.status_code} with no content-type"
+
+
 # ----------------------------------------------------------------- the model
 
 
@@ -755,25 +822,20 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
     log(f"\n[3] PHOTOGRAPHS — probing {len(targets)} sources "
         f"({sum(1 for w in watches if w.get('image'))}/{len(watches)} resolved)"
         + (f" [capped at {batch}]" if batch else ""))
-    summary = {"resolved": [], "none": [], "blocked": [], "dead": []}
+    summary = {"resolved": [], "none": [], "blocked": [], "dead": [], "stale_source": []}
 
-    host_locks: dict[str, threading.Lock] = {}
-    host_last: dict[str, float] = {}
-    registry = threading.Lock()
+    limiter = HostLimiter(PHOTO_HOST_DELAY)
 
     def probe(w: dict) -> tuple[dict, str | None, str]:
-        host = domain_of(w.get("source", "")) or "?"
-        with registry:
-            lock = host_locks.setdefault(host, threading.Lock())
-        with lock:
-            wait = PHOTO_HOST_DELAY - (time.monotonic() - host_last.get(host, 0.0))
-            if wait > 0:
-                time.sleep(wait)
-            raw, note = fetch(w.get("source", ""))
-            host_last[host] = time.monotonic()
+        src = w.get("source", "")
+        raw, note = limiter.run(src, lambda: fetch(src))
         if raw is None:
             return w, None, note
         img = og_image(raw, w["source"])
+        # Refuse to re-adopt a URL stage 7 already proved dead, or the two
+        # stages would hand the same broken picture back and forth every week.
+        if img and img in (w.get("deadImages") or []):
+            return w, None, "og:image is a URL already proven dead"
         return w, img, "ok" if img else "no og:image"
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
@@ -786,13 +848,91 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
             elif note == "no og:image":
                 w["imageProbe"] = {"date": today(), "result": "none"}
                 summary["none"].append(w)
+            elif note.startswith("og:image is a URL already proven dead"):
+                # The article is fine; its picture is not. Worth another look
+                # in 28 days — outlets do sometimes repair their own images —
+                # but reported as its own thing rather than as "unreachable",
+                # which would be a lie about the source.
+                w["imageProbe"] = {"date": today(), "result": "blocked", "note": note}
+                summary["stale_source"].append(w)
             else:
                 result = probe_result_for(note)
                 w["imageProbe"] = {"date": today(), "result": result, "note": note}
                 summary["dead" if result == "dead" else "blocked"].append(w)
 
     log(f"    resolved {len(summary['resolved'])} · no og:image {len(summary['none'])} · "
-        f"dead source {len(summary['dead'])} · unreachable {len(summary['blocked'])}")
+        f"dead source {len(summary['dead'])} · unreachable {len(summary['blocked'])}"
+        + (f" · source still offering a dead image {len(summary['stale_source'])}"
+           if summary["stale_source"] else ""))
+    return summary
+
+
+# ------------------------------------------------- stage 7: rotted image URLs
+"""
+The photograph stage only ever looks at entries with NO image, so an image URL
+that dies after we resolved it is invisible to it forever — the row just renders
+a broken picture. A 25-entry sample of the live data on 2026-08-04 found one
+already dead (Spinnaker, 404), which puts the real number somewhere around 9 of
+224. Not theoretical.
+
+Rotating subset, not the whole register: link rot is slow, and re-checking 224
+images every week would spend requests on other people's servers to learn
+nothing. Oldest-checked first, IMAGE_CHECK_BATCH per run, so everything cycles
+through in about six weeks and rot is caught within one cycle of appearing.
+
+The loop this has to avoid: clearing a dead image would send the entry back to
+the photograph stage, which would re-read the same source article, find the same
+dead og:image, and write it straight back. So a URL proven dead is remembered in
+`deadImages` and the photograph stage will not re-adopt it. An entry with no
+photograph is honest; an entry with a broken one is not.
+"""
+
+IMAGE_CHECK_BATCH = 40     # per run; ~224 images cycle through in about 6 weeks
+MAX_DEAD_REMEMBERED = 4    # enough to break the loop without growing forever
+
+
+def image_check_candidates(watches: list[dict], batch: int) -> list[dict]:
+    have = [w for w in watches if w.get("image")]
+    # Never-checked first (days_since returns a huge number for a missing
+    # stamp), then oldest. That makes the rotation self-levelling: a newly
+    # resolved photograph joins the back of the queue on its own.
+    have.sort(key=lambda w: -days_since((w.get("imageCheck") or {}).get("date")))
+    return have[:batch] if batch else have
+
+
+def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict:
+    targets = image_check_candidates(watches, batch)
+    total = sum(1 for w in watches if w.get("image"))
+    log(f"\n[7] IMAGE ROT — re-checking {len(targets)} of {total} resolved photographs")
+    summary = {"rotted": [], "ok": 0, "unclear": []}
+    limiter = HostLimiter(PHOTO_HOST_DELAY)
+
+    def probe(w: dict) -> tuple[dict, str, str]:
+        url = w["image"]
+        result, detail = limiter.run(url, lambda: check_image(url))
+        return w, result, detail
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        for w, result, detail in pool.map(probe, targets):
+            w["imageCheck"] = {"date": today(), "result": result, "note": detail}
+            if result == "ok":
+                summary["ok"] += 1
+            elif result == "unclear":
+                # Silence. The photograph stays; we simply learned nothing.
+                summary["unclear"].append((w, detail))
+            else:
+                dead = w["image"]
+                remembered = [u for u in (w.get("deadImages") or []) if u != dead]
+                w["deadImages"] = ([dead] + remembered)[:MAX_DEAD_REMEMBERED]
+                w["image"] = None
+                w["imageCredit"] = None
+                # Clear the source probe too, so the photograph stage takes a
+                # fresh look at the article this run rather than in 28 days.
+                w.pop("imageProbe", None)
+                summary["rotted"].append((w, detail))
+
+    log(f"    still good {summary['ok']} · rotted and cleared {len(summary['rotted'])} "
+        f"· no answer {len(summary['unclear'])}")
     return summary
 
 
@@ -1254,8 +1394,13 @@ def stage_calendar(cal: dict, watches: list[dict]) -> dict:
 # ------------------------------------------------------------------- report
 
 
+def summary_n(rot: dict) -> int:
+    return rot["ok"] + len(rot["rotted"]) + len(rot["unclear"])
+
+
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
-                 model: "Model | None" = None, cal: dict | None = None) -> str:
+                 model: "Model | None" = None, cal: dict | None = None,
+                 rot: dict | None = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
 
     # Spend goes near the top and is reported on EVERY run, generous ceiling or
@@ -1293,6 +1438,16 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
             L += [f"- **{w['brand']} {w['model']}** — {was} → {w['tier']}"
                   for w, was, _ in avail["promoted"]] + [""]
 
+    if rot:
+        L += ["## Rotted photographs", "",
+              f"- Re-checked: **{summary_n(rot)}** of the resolved photographs (rotating subset)",
+              f"- Still serving an image: **{rot['ok']}**",
+              f"- **Rotted and cleared: {len(rot['rotted'])}** — these were rendering a "
+              "broken picture to readers",
+              f"- No answer (403 / timeout — photograph kept): **{len(rot['unclear'])}**", ""]
+        if rot["rotted"]:
+            L += [f"- **{w['brand']} {w['model']}** — {why}" for w, why in rot["rotted"]] + [""]
+
     if photos:
         L += ["## Photographs", "",
               f"- Resolved: **{len(photos['resolved'])}**",
@@ -1300,6 +1455,9 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
               f"- Source URL dead / 404 (will not retry): **{len(photos.get('dead', []))}**",
               f"- Source unreachable (retry in {PHOTO_RETRY_DAYS}d): **{len(photos['blocked'])}**",
               f"- Coverage now: **{meta.get('imagesResolved', 0)}/{meta.get('count', 0)}**", ""]
+        if photos.get("stale_source"):
+            L += [f"- Source still offering a URL already proven dead: "
+                  f"**{len(photos['stale_source'])}**", ""]
         # The residue is a documented list, not a mystery. Grouping the failures
         # by outlet is the point: a hundred scattered misses is the shape of the
         # web, but a hundred at one domain is one fixable cause.
@@ -1370,12 +1528,14 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Weekly refresh for the Watch Drop Index.")
-    ap.add_argument("--stages", default="2,3,4,6", help="comma-separated stage numbers")
+    ap.add_argument("--stages", default="2,3,4,6,7", help="comma-separated stage numbers")
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
     ap.add_argument("--photo-batch", type=int, default=0,
                     help="cap the photograph pass (0 = every entry that still has none)")
+    ap.add_argument("--image-batch", type=int, default=IMAGE_CHECK_BATCH,
+                    help="how many resolved photographs to re-check for rot (0 = all)")
     ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
                     help="weekly ceiling in CAD for model spend (0 = no ceiling)")
     ap.add_argument("--corrections", type=Path, default=None,
@@ -1423,11 +1583,15 @@ def main() -> int:
     # they are never the thing a budget stop takes away. Running them after the
     # new-releases search also means this week's additions get their pictures
     # this week instead of next.
-    avail = photos = news = cal = {}
+    avail = photos = news = cal = rot = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
     if 4 in stages:
         news = stage_new_releases(watches, model, meta.get("updated", "2026-01-01"))
+    # Rot check BEFORE the photograph pass, so an image cleared this run is
+    # re-resolved this run rather than next week. Both stages are free.
+    if 7 in stages:
+        rot = stage_image_rot(watches, args.image_batch)
     if 3 in stages:
         photos = stage_photos(watches, args.photo_batch)
     # Free and deterministic, so it runs whatever the budget did — the calendar
@@ -1447,7 +1611,7 @@ def main() -> int:
             f"({gone_now / start_count:.0%} of the register, cap is {GONE_BLAST_RADIUS:.0%}).")
         log("That pattern means the fetch layer broke, not that the market cleared.")
         write_report(meta, avail, photos, news, f"BLOCKED — {gone_now} Gone flips exceeds the "
-                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal)
+                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal, rot)
         return 20
 
     # Silence is a failure — but only silence we actually went looking for.
@@ -1459,7 +1623,7 @@ def main() -> int:
         log(f"\nFAILING: {attempted} availability checks and not one page was readable.")
         log("Silence on this scale is a broken fetch layer, not a quiet week.")
         write_report(meta, avail, photos, news, "FAILED — zero pages readable across "
-                                                f"{attempted} checks. Not committed.", model, cal)
+                                                f"{attempted} checks. Not committed.", model, cal, rot)
         return 21
 
     meta["updated"] = today()
@@ -1471,7 +1635,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.", model, cal)
+        write_report(meta, avail, photos, news, "No changes.", model, cal, rot)
         return 10
 
     parts = []
@@ -1487,6 +1651,8 @@ def main() -> int:
         parts.append(f"{len(avail['confirmed'])} stock checks")
     if cal.get("expired"):
         parts.append(f"{len(cal['expired'])} calendar entries expired")
+    if rot.get("rotted"):
+        parts.append(f"{len(rot['rotted'])} rotted photos cleared")
     subject = f"refresh {today()} — " + (", ".join(parts) if parts else "no material change")
 
     if args.dry_run:
@@ -1495,7 +1661,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject, model, cal)
+    write_report(meta, avail, photos, news, subject, model, cal, rot)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")

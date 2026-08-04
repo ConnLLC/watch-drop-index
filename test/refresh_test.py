@@ -609,6 +609,139 @@ check("an undated drop with no link is reported, not silently kept forever",
       len(run_calendar({"drops": [{"date": "Live now", "what": "orphan"}], "events": [],
                         "expected": [], "notHappening": []}, [], "2026-08-17")["undated"]), 1)
 
+section("Rotted image URLs — only positive evidence clears a photograph")
+# The photograph stage only looks at entries with NO image, so a URL that dies
+# after we resolved it is invisible to it forever and the row renders a broken
+# picture. A 25-entry sample of live data on 2026-08-04 found one already dead,
+# which puts the real number near 9 of 224. The danger in fixing it is the
+# opposite error: a hotlink-blocking CDN answering 403 must never be allowed to
+# delete a perfectly good photograph.
+
+
+class Resp:
+    def __init__(self, status, ctype="image/jpeg"):
+        self.status_code = status
+        self.headers = {"content-type": ctype} if ctype else {}
+
+    def close(self):
+        pass
+
+
+def with_http(head=None, get=None, err=None):
+    """Swap requests.head/get for canned answers."""
+    import requests as rq
+
+    def fake(*a, **k):
+        if err:
+            raise rq.RequestException(err)
+        return head if fake.first else get
+    return fake
+
+
+def run_check(url, head=None, get=None, raises=False):
+    import requests as rq
+    oh, og = rq.head, rq.get
+    calls = {"head": 0, "get": 0}
+
+    def h(*a, **k):
+        calls["head"] += 1
+        if raises:
+            raise rq.Timeout("slow")
+        return head
+
+    def g(*a, **k):
+        calls["get"] += 1
+        if raises:
+            raise rq.Timeout("slow")
+        return get if get is not None else head
+    rq.head, rq.get = h, g
+    try:
+        return R.check_image(url), calls
+    finally:
+        rq.head, rq.get = oh, og
+
+
+U = "https://img.example/a.jpg"
+check("a served image is fine", run_check(U, head=Resp(200, "image/jpeg"))[0], ("ok", "image/jpeg"))
+check("a 404 is rot", run_check(U, head=Resp(404, "text/html"))[0][0], "rotted")
+check("a 410 is rot", run_check(U, head=Resp(410, "text/html"))[0][0], "rotted")
+check("a 200 serving HTML is a soft 404, also rot",
+      run_check(U, head=Resp(200, "text/html"))[0][0], "rotted")
+check("a 403 is silence, NOT rot",
+      run_check(U, head=Resp(403, None), get=Resp(403, None))[0][0], "unclear")
+check("a 500 is silence", run_check(U, head=Resp(500, "text/html"))[0][0], "unclear")
+check("a timeout is silence", run_check(U, raises=True)[0][0], "unclear")
+check("a rejected HEAD falls back to a ranged GET, not a full download",
+      run_check(U, head=Resp(405, None), get=Resp(200, "image/png"))[0], ("ok", "image/png"))
+
+# The whole point: what the stage does to the entry.
+def rot_stage(watches, results, batch=0):
+    orig = R.check_image
+    R.check_image = lambda url: results[url]
+    try:
+        return R.stage_image_rot(watches, batch)
+    finally:
+        R.check_image = orig
+
+
+good = entry(id="0000000001", image="https://img.example/good.jpg", imageCredit="Monochrome")
+dead = entry(id="0000000002", image="https://img.example/dead.jpg", imageCredit="SJX")
+blocked = entry(id="0000000003", image="https://img.example/403.jpg", imageCredit="Fratello")
+ws = [good, dead, blocked]
+s = rot_stage(ws, {good["image"]: ("ok", "image/jpeg"),
+                   dead["image"]: ("rotted", "HTTP 404"),
+                   blocked["image"]: ("unclear", "HTTP 403")})
+check("a good photograph is kept", good["image"], "https://img.example/good.jpg")
+check("...and stamped so the rotation moves on", good["imageCheck"]["result"], "ok")
+check("a rotted one is cleared", dead["image"], None)
+check("...and its credit goes with it", dead["imageCredit"], None)
+check("...and the dead URL is remembered", dead["deadImages"], ["https://img.example/dead.jpg"])
+check("a 403 keeps its photograph", blocked["image"], "https://img.example/403.jpg")
+check("...and is reported as no answer, not as rot", len(s["unclear"]), 1)
+check("the stage costs nothing", "model" in R.stage_image_rot.__code__.co_varnames, False)
+
+# THE LOOP THIS HAS TO AVOID: clearing a dead image sends the entry back to the
+# photograph stage, which re-reads the same article, finds the same dead
+# og:image, and writes it straight back — for ever, every week.
+orig_fetch = R.fetch
+R.fetch = lambda url: ('<html><head><meta property="og:image" '
+                       'content="https://img.example/dead.jpg"></head><body>'
+                       + "x" * 400 + "</body></html>", "ok")
+try:
+    ps = R.stage_photos([dead])
+finally:
+    R.fetch = orig_fetch
+check("the photograph stage will not re-adopt a URL proven dead", dead["image"], None)
+check("...and says so rather than blaming the source",
+      len(ps["stale_source"]), 1)
+check("...but leaves the door open for the outlet to fix it",
+      dead["imageProbe"]["result"], "blocked")
+
+# A DIFFERENT image on the same article is still welcome.
+fixed = entry(id="0000000004", image=None,
+              deadImages=["https://img.example/dead.jpg"])
+R.fetch = lambda url: ('<html><head><meta property="og:image" '
+                       'content="https://img.example/fresh.jpg"></head><body>'
+                       + "x" * 400 + "</body></html>", "ok")
+try:
+    R.stage_photos([fixed])
+finally:
+    R.fetch = orig_fetch
+check("a repaired article still resolves normally", fixed["image"], "https://img.example/fresh.jpg")
+
+section("The rot check rotates instead of re-checking everything weekly")
+pool = [entry(id=f"{i:010d}", image=f"https://img.example/{i}.jpg") for i in range(10)]
+pool[0]["imageCheck"] = {"date": "2026-01-01", "result": "ok"}       # oldest
+pool[1]["imageCheck"] = {"date": R.today(), "result": "ok"}          # checked today
+picked = [w["id"] for w in R.image_check_candidates(pool, 3)]
+check("never-checked entries come first", len(picked), 3)
+check("...and the freshly-checked one is not among them", pool[1]["id"] in picked, False)
+check("the oldest check outranks a recent one",
+      R.image_check_candidates([pool[0], pool[1]], 1)[0]["id"], pool[0]["id"])
+check("batch 0 means everything", len(R.image_check_candidates(pool, 0)), 10)
+check("entries with no photograph are not candidates",
+      len(R.image_check_candidates([entry(image=None)], 0)), 0)
+
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())
 (tmp / "data.json").write_text("{ this is not json")
