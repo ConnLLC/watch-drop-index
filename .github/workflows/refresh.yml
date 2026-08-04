@@ -123,11 +123,11 @@ jobs:
           git config user.name  "watch-drop-index bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.json
-          git commit -F - <<EOF
-          $(cat refresh-subject.txt)
-
-          $(head -c 4000 refresh-report.md)
-          EOF
+          # Built as a file rather than a heredoc: a heredoc nested inside a YAML
+          # block scalar depends on indentation stripping to terminate, and
+          # `head -c` can slice a multi-byte character in half.
+          { cat refresh-subject.txt; echo; head -n 120 refresh-report.md; } > "$RUNNER_TEMP/commit-msg.txt"
+          git commit -F "$RUNNER_TEMP/commit-msg.txt"
           git push
 
       - name: Job summary
