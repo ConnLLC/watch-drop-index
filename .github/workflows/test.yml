@@ -41,7 +41,7 @@ jobs:
           def normalise(s):
               s = re.sub(r'(id="t-(?:buy|total|gone|brands|updated)"[^>]*>)[^<]*', r'\1#', s)
               s = re.sub(r'(id="c-(?:rev|imgs|total)"[^>]*>)[^<]*', r'\1#', s)
-              s = re.sub(r'(<span class="n">)[^<]*', r'\1#', s)
+              s = re.sub(r'(<span class="n"[^>]*>)[^<]*', r'\1#', s)
               return s
 
           a = normalise(open('/tmp/committed.html').read())

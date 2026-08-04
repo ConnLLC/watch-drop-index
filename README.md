@@ -29,12 +29,35 @@ The important property: **routine updates never touch `index.html`.** The page f
 `data.json` at load, so adding a watch or flipping something to sold-out is a one-file
 change. Commit `data.json`, Pages redeploys, done. `build.py` is only for layout changes.
 
-For that to hold, the figures in the masthead, the availability filter counts and the
-colophon are all re-read from `data.json` at load rather than trusted as built. The
-build-time values stay in the markup as the pre-JavaScript default. **If you rewrite the
-template, keep the `#t-*` and `#c-*` anchors** — without them the page keeps advertising
-whatever the numbers were the day it was built, which quietly breaks the freshness claim
-the whole site rests on. `test/template.test.js` fails loudly if they go missing.
+For that to hold, every figure on the page — the masthead tally, the availability filter
+counts, the colophon — is re-read from `data.json` at load rather than trusted as built.
+The build-time values stay in the markup as the pre-JavaScript default. **If you rewrite
+the template, keep the `#t-*` and `#c-*` anchors and the `.n` badge inside each
+`[data-tier]` button** — without them the page keeps advertising whatever the numbers were
+the day it was built, which quietly breaks the freshness claim the whole site rests on.
+`test/template.test.js` fails loudly if they go missing.
+
+## Design
+
+The look is **"The Catalogue"** — an auction-catalogue register: warm paper, ink, bronze,
+Newsreader for the serif voice and Archivo for the interface, ruled columns, no cards or
+pills. Design owns it; this repo implements it. **Code makes no design decisions here** —
+if something visual is ambiguous or missing, it gets asked, not invented.
+
+Two pieces are less ordinary than they look:
+
+- **The wordmark is a working clock.** WATCH / DROP / INDEX are justified to a single
+  measure, and the bronze dot that serves as DROP's fifth character is the pivot for real
+  hour, minute and second hands. They are pure CSS rotations; local time enters only as a
+  negative `animation-delay`. The outer letters hang on their *ink* edge rather than their
+  advance width, using glyph bearings measured from the font via canvas and re-measured
+  once the webfont lands. If canvas metrics are unavailable the lettering falls back to
+  default spacing rather than taking the page down.
+- **The corner badge** mounts past 430px of scroll and unmounts below it, rather than
+  being shown and hidden, so its entrance replays and its clock re-syncs each time.
+
+Known gap: **there are no responsive rules yet.** The layout is fixed-width by design
+decision (desktop first), and mobile is a scheduled follow-up.
 
 ### Running it locally
 
