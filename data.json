@@ -6,9 +6,9 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 3,
+    "revision": 4,
     "domain": "watchdropindex.com",
-    "imagesResolved": 40
+    "imagesResolved": 224
   },
   "watches": [
     {
@@ -1302,8 +1302,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405eacc4ad0b7e6b7f8eda/1782854912092/Seiko+2026+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Seiko × Rowing Blazers × Wind Vintage",
@@ -1331,8 +1331,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://wornandwound.com/library/uploads/2026/07/Seiko-5-x-Rowing-Blazers-2026-94.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Seiko × SEGA",
@@ -1361,8 +1361,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://image-cdn.hypb.st/https%3A%2F%2Fhypebeast.com%2Fimage%2F2026%2F02%2F12%2Fseiko-sega-65th-anniversary-collaboration-watch-release-info-tw.jpg?w=1080&cbr=1&q=90&fit=max",
+      "imageCredit": "Hypebeast"
     },
     {
       "brand": "Sinn",
@@ -1393,7 +1393,11 @@
         "note": "Purchase page reads: \"Availability : Temporarily Sold Out\""
       },
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Spinnaker",
@@ -1424,8 +1428,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"Add To Cart $425.00\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.shopify.com/s/files/1/0014/6158/3938/t/3/assets/meta.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Studio Underd0g × Time+Tide",
@@ -1453,8 +1457,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://timeandtidewatches.com/wp-content/uploads/2026/02/featured-image-studio-underdog-burnt-pizza.jpg",
+      "imageCredit": "Time+Tide"
     },
     {
       "brand": "Studio Underd0g × Time+Tide",
@@ -1482,8 +1486,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://timeandtidewatches.com/wp-content/uploads/2026/02/featured-image-studio-underdog-burnt-pizza.jpg",
+      "imageCredit": "Time+Tide"
     },
     {
       "brand": "Timex × Hodinkee",
@@ -1511,8 +1515,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.watchesofswitzerland.com/cdn/shop/files/wos-cover-image_6a469a40-eb75-4ee7-9d07-25b310fc6131.jpg?v=1747873086&width=1200",
+      "imageCredit": "Watches of Switzerland"
     },
     {
       "brand": "Timex × Worn & Wound",
@@ -1540,8 +1544,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.shopify.com/s/files/1/0014/6158/3938/t/3/assets/meta.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Tissot",
@@ -1604,8 +1608,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"Regular price $23,400.00 Buy Now\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://quillandpad.com/wp-content/uploads/2026/06/wear-3.jpg",
+      "imageCredit": "Quill & Pad"
     },
     {
       "brand": "Unimatic",
@@ -1632,8 +1636,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://twobrokewatchsnobs.com/wp-content/uploads/2026/04/Monta-Noble-40-05.jpg",
+      "imageCredit": "Two Broke Watch Snobs"
     },
     {
       "brand": "Unimatic",
@@ -1663,8 +1667,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"Modello Uno U1S-PD6-RB Limited Edition - ProDiver EDITION OF 300 $ 1.820,00\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.unimaticwatches.com/wp-content/uploads/2026/02/1-1-1024x576.jpg",
+      "imageCredit": "Unimatic"
     },
     {
       "brand": "Unimatic × Tullio Abbate",
@@ -1692,8 +1696,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.gearpatrol.com/wp-content/uploads/sites/2/2026/07/watches-you-missed-7-12-26-lead.webp",
+      "imageCredit": "Gear Patrol"
     },
     {
       "brand": "Wren / Ben's Watches",
@@ -1720,8 +1724,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://shop.timeandtidewatches.com/cdn/shop/collections/studio-editions.jpg?v=1762828871",
+      "imageCredit": "Time+Tide"
     },
     {
       "brand": "Yema",
@@ -1751,8 +1755,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"ADD TO CART\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
+      "imageCredit": "Yema"
     },
     {
       "brand": "Yema",
@@ -1782,8 +1786,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"ADD TO CART\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
+      "imageCredit": "Yema"
     },
     {
       "brand": "Zodiac × Worn & Wound",
@@ -1811,8 +1815,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.shopify.com/s/files/1/0014/6158/3938/t/3/assets/meta.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Citizen",
@@ -1839,8 +1843,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/07/Citizen-Campanola-Kojo-BU0020-71N-BU0024-02N-featured.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "Grand Seiko",
@@ -1868,8 +1872,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Ming",
@@ -1929,8 +1933,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breitling",
@@ -1958,8 +1962,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breitling",
@@ -1986,8 +1990,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breitling",
@@ -2012,8 +2016,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breitling",
@@ -2040,8 +2044,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Zenith-GFJ-Calibre-135-Double-Signed-Naoya-Hida-review-9.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Breitling",
@@ -2068,8 +2072,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Casio G-Shock",
@@ -2097,8 +2101,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.g-central.com/wp-content/uploads/2026/02/G-Shock-Mudmaster-GWG-B1000TLC-1A-Angle.webp",
+      "imageCredit": "G-Central"
     },
     {
       "brand": "Chopard",
@@ -2123,8 +2127,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Chopard-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Chopard",
@@ -2151,8 +2155,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Chopard-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Chopard",
@@ -2179,8 +2183,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Chopard-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Citizen",
@@ -2206,7 +2210,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Citizen",
@@ -2233,8 +2241,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Citizen-Eco-Drive-50th-Anniversary-Edition-AQ4091-56W-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Citizen",
@@ -2259,8 +2267,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://i0.wp.com/deployant.com/wp-content/uploads/2026/07/AQ4094-58L_PDP_Alt_Imagery_02_2026.jpeg?fit=1098%2C1373&ssl=1",
+      "imageCredit": "Deployant"
     },
     {
       "brand": "Hublot",
@@ -2287,8 +2295,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Hublot",
@@ -2315,8 +2323,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Hublot",
@@ -2341,8 +2349,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Junghans",
@@ -2368,7 +2376,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Junghans",
@@ -2394,7 +2406,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Nivada Grenchen",
@@ -2422,7 +2438,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Norqain",
@@ -2450,8 +2470,8 @@
         "date": "2026-08-04",
         "note": "Purchase page reads: \"In Stock ... $6,490 Freedom GMT Enjoy Life \"Holiday\" Limited Edition\""
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://twobrokewatchsnobs.com/wp-content/uploads/2026/04/Monta-Noble-40-05.jpg",
+      "imageCredit": "Two Broke Watch Snobs"
     },
     {
       "brand": "Omega",
@@ -2479,8 +2499,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/Omega-Seamaster-Diver-300M-Chronograph-007-First-Light-review-video-game-into-reality-10.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Omega",
@@ -2508,8 +2528,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/01/OMEGA-Seamaster-Diver-300M-Milano-Cortina-2026-White-Ceramic-review-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Omega",
@@ -2537,8 +2557,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Omega-Seamaster-Diver-300M-Milano-Cortina-2026-Paralympic-Games-Edition-White-Ceramic-review-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Omega",
@@ -2565,8 +2585,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.gearpatrol.com/wp-content/uploads/sites/2/2026/07/omega-speedmaster-masters-green-lead.webp",
+      "imageCredit": "Gear Patrol"
     },
     {
       "brand": "Orient Star",
@@ -2593,8 +2613,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://orient-watch.com/images/dummy/news-thumb.png",
+      "imageCredit": "Orient"
     },
     {
       "brand": "TAG Heuer",
@@ -2622,8 +2642,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://assets.thehourmarkers.com/public/COVERS_FOR_ARTICLES_34_318398ba11.png",
+      "imageCredit": "The Hour Markers"
     },
     {
       "brand": "TAG Heuer",
@@ -2651,8 +2671,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-TAG-Heuer-Watch-Releases-.jpeg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "MB&F",
@@ -2680,8 +2700,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://wornandwound.com/library/uploads/2025/09/MBF-Raffle-7.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Omega",
@@ -2713,7 +2733,12 @@
         "note": "'Currently unavailable online — join the wish list' on omegawatches.com"
       },
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "blocked",
+        "note": "fetch failed: ReadTimeout"
+      }
     },
     {
       "brand": "Sinn",
@@ -2741,7 +2766,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Sinn",
@@ -2769,7 +2798,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Worn & Wound × BOLDR",
@@ -2797,8 +2830,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.gearpatrol.com/wp-content/uploads/sites/2/2026/06/worn-wound-boldr-conquer-2026-hed-gear-patrol.webp",
+      "imageCredit": "Gear Patrol"
     },
     {
       "brand": "A. Lange & Söhne",
@@ -2823,8 +2856,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.fratellowatches.com/cdn-cgi/image/anim=false/wp-content/uploads/2026/04/A-Lange-Sohne-Tourbillon-Lumen-and-Saxonia-Annual-Calendar_4.jpg",
+      "imageCredit": "Fratello"
     },
     {
       "brand": "A. Lange & Söhne",
@@ -2849,8 +2882,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.fratellowatches.com/cdn-cgi/image/anim=false/wp-content/uploads/2026/04/A-Lange-Sohne-Tourbillon-Lumen-and-Saxonia-Annual-Calendar_4.jpg",
+      "imageCredit": "Fratello"
     },
     {
       "brand": "Armin Strom",
@@ -2877,8 +2910,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/Armin-Strom-Dual-Time-GMT-Resonance-Aventurine-Video-Review-3.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -2903,8 +2936,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Armin-Strom-Dual-Time-GMT-Resonance-Rose-Gold-2.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -2929,8 +2962,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Armin-Strom-Minute-Repeater-Resonance-12-59-First-Edition-review-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -2955,8 +2988,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/07/Armin-Strom-Mirrored-Force-Resonance-Red-review-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -2983,8 +3016,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Armin-Strom-Mirrored-Force-Resonance-Ruby-8.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -3009,8 +3042,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Armin-Strom-Orbit-Midnight-Purple-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Armin Strom",
@@ -3035,8 +3068,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/01/Armin-Strom-Tribute2-Aurum-Edition-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Audemars Piguet",
@@ -3063,8 +3096,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.watchtime.com/watchtime_en-us/blt22276bff283176bd/bltb347a7a627a0d8ff/6a1011dbb6882c6727c7c3ce/Audemars-Piguet-Royal-Oak-Concept-Flying-Tourbillon-Yoon-und-Verbal_649x365.webp",
+      "imageCredit": "WatchTime"
     },
     {
       "brand": "Audemars Piguet",
@@ -3089,8 +3122,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/05/2026-Audemars-Piguet-Releases-.jpeg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Blancpain",
@@ -3115,8 +3148,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/bfft-lume-shot.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Blancpain",
@@ -3141,8 +3174,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/bfft-lume-shot.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Blancpain",
@@ -3169,8 +3202,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/bfft-lume-shot.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Bovet",
@@ -3195,8 +3228,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Bovet-Recital-31-perpetual-calendar-review-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Bovet",
@@ -3221,8 +3254,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Bovet-recital-32-True-GMT-Tourbillon-review-4.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Breguet",
@@ -3249,8 +3282,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/2026-Breguet-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breguet",
@@ -3277,8 +3310,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Breguet-225th-Anniversary-Tourbillon-collection-7755-5887-7047-review.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Breguet",
@@ -3305,8 +3338,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Breguet-225th-Anniversary-Tourbillon-collection-7755-5887-7047-review.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Breguet",
@@ -3333,8 +3366,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Breguet-225th-Anniversary-Tourbillon-collection-7755-5887-7047-review.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Breitling",
@@ -3361,8 +3394,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Breitling",
@@ -3387,8 +3420,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/02/breitling-2026-header.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Bvlgari",
@@ -3441,8 +3474,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Cartier-Prive-Crash-Skeleton-Platinum-review-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Cartier",
@@ -3469,8 +3502,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/PUWA11936_WW26_CARTIER_PRIVE_24x30-RVB.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Casio G-Shock",
@@ -3497,8 +3530,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.g-central.com/wp-content/uploads/2026/03/GMW-BZ5000RC-1-Angle-2.webp",
+      "imageCredit": "G-Central"
     },
     {
       "brand": "Casio G-Shock",
@@ -3527,7 +3560,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3555,7 +3592,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3583,7 +3624,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3611,7 +3656,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3639,8 +3688,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://somethingaboutrocks.com/wp-content/uploads/2026/07/f29adfac-f67f-4061-b096-17d6a3e8cefa.jpg?wsr",
+      "imageCredit": "Something About Rocks"
     },
     {
       "brand": "Casio G-Shock",
@@ -3668,7 +3717,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3697,7 +3750,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -3726,7 +3783,11 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Chopard",
@@ -3754,8 +3815,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://revolutionwatch.com/wp-content/uploads/2026/05/V6-Web-Banner-Chopard-L.U.C-Quattro-Revolution-Re-edition-scaled.jpg",
+      "imageCredit": "Revolution"
     },
     {
       "brand": "Chopard",
@@ -3782,8 +3843,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Chopard-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Citizen",
@@ -3810,8 +3871,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a3b0424eca3f21ca35bf47e/1782854995661/Citizen+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Citizen",
@@ -3839,8 +3900,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.notebookcheck.net/fileadmin/Notebooks/News/_nc5/Citizen-Campanola.png",
+      "imageCredit": "Notebookcheck"
     },
     {
       "brand": "Citizen",
@@ -3868,8 +3929,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a3b0424eca3f21ca35bf47e/1782854995661/Citizen+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Credor",
@@ -3897,8 +3958,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Credor",
@@ -3926,8 +3987,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Credor",
@@ -3955,8 +4016,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Czapek & Cie",
@@ -3981,8 +4042,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Czapek-Antarctique-S-Ice-Cloud-and-Promenade-Midnight-Pearl-mother-of-pearl.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Czapek & Cie",
@@ -4008,7 +4069,12 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "blocked",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -4033,8 +4099,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/01/Czapek-Faubourg-de-Cracovie-Crossroads-Victory-Green-chronograph-review-3.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Czapek & Cie",
@@ -4061,8 +4127,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/Czapek-Promenade-Goutte-de-Rosee-Green-enamel-5.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Czapek & Cie",
@@ -4087,8 +4153,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Czapek-Antarctique-S-Ice-Cloud-and-Promenade-Midnight-Pearl-mother-of-pearl.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "De Bethune",
@@ -4115,8 +4181,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/De-Bethune-DB27-Night-Hawk-EsperLuxe-9.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "De Bethune × Louis Vuitton",
@@ -4143,8 +4209,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://image-cdn.hypb.st/https%3A%2F%2Fhypebeast.com%2Fimage%2F2026%2F02%2F03%2FDe-Bethune-Louis-Vuitton-LVDB-03-Louis-Varius-Project-watch-Release-Info-tw.jpg?w=1080&cbr=1&q=90&fit=max",
+      "imageCredit": "Hypebeast"
     },
     {
       "brand": "Girard-Perregaux",
@@ -4172,8 +4238,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Girard-Perregaux-La-Esmeralda-Tourbillon-A-Secret-Eternity-Edition-Red-Year-of-the-Horse-2026-3.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Glashütte Original",
@@ -4200,8 +4266,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/07/Glashutte-Original-SeaQ-and-SeaQ-Panorama-Date-Northern-Tide-Limited-Edition-North-America-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Glashütte Original",
@@ -4228,8 +4294,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Glashutte-Original-Seventies-Chronograph-XV-Limited-Edition-Black-and-White-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Grand Seiko",
@@ -4254,8 +4320,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.grand-seiko.com/us-en/special/watchesandwonders2026/assets/img/og.jpg",
+      "imageCredit": "Grand Seiko"
     },
     {
       "brand": "Grand Seiko",
@@ -4283,8 +4349,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Grand Seiko",
@@ -4312,8 +4378,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Grand Seiko",
@@ -4341,8 +4407,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Grand Seiko",
@@ -4370,8 +4436,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Grand Seiko",
@@ -4399,8 +4465,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405405fdf9fa6a91e30737/1782854817466/GS+Credor+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Greubel Forsey",
@@ -4425,8 +4491,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Greubel-Forsey-Balancier-3-Titanium-Blue-review-10.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Greubel Forsey",
@@ -4453,8 +4519,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Greubel-Forsey-Balancier-Convexe-S2-White-Ceramic-Black-Ceramic-Final-Editions-review-5.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Greubel Forsey",
@@ -4479,8 +4545,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Greubel-Forsey-Balancier-QM-Featured.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Grönefeld",
@@ -4505,8 +4571,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.prod.website-files.com/67321d25202facb90019c0eb/6978dde0d866ba170a0a93c6_Gronefeld-News-OG.avif",
+      "imageCredit": "Grönefeld"
     },
     {
       "brand": "H. Moser & Cie.",
@@ -4533,8 +4599,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/07/Moser-Endeavour-Minute-Repeater-Tourbillon-Skeleton-Cosmic-Rain-2.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "H. Moser & Cie.",
@@ -4559,8 +4625,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/05/image-13.png",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "H. Moser & Cie.",
@@ -4589,8 +4655,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/H-Moser-Cie-Streamliner-Alpine-Drivers-and-Mechanics-Pink-Edition-2026-BTW-Alpine-Formula-1-Team-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "H. Moser & Cie.",
@@ -4617,8 +4683,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/H-Moser-Cie-Streamliner-Small-Seconds-Lime-Green-Enamel-Boutique-Edition-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "H. Moser & Cie. × Reebok",
@@ -4645,8 +4711,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/H-Moser-Cie-x-Reebok-Streamliner-Pump-video-review-3.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Hublot",
@@ -4673,8 +4739,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://images-luxe.outlookindia.com/2026/06/13145529/Collab-Cover.jpg",
+      "imageCredit": "Outlook Luxe"
     },
     {
       "brand": "Hublot",
@@ -4701,8 +4767,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://nxtmag.tech/wp-content/uploads/2026/05/Classic-Fusion-Titanium-Retroverse_Group-scaled.jpeg",
+      "imageCredit": "NXT Mag"
     },
     {
       "brand": "Hublot",
@@ -4727,8 +4793,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Hublot",
@@ -4753,8 +4819,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Hublot",
@@ -4781,8 +4847,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Hublot_Big-Bang-Reloaded-Kylian-Mbappe-11.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "IWC",
@@ -4807,8 +4873,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/2026-IWC-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "IWC",
@@ -4833,8 +4899,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/2026-IWC-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4859,8 +4925,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4885,8 +4951,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4911,8 +4977,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4939,8 +5005,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4967,8 +5033,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -4993,8 +5059,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/Master-Hybris-Artistica-Ultra-Thin-Minute-Repeater_Q13125S2_Front11-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "King Seiko",
@@ -5022,8 +5088,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405eacc4ad0b7e6b7f8eda/1782854912092/Seiko+2026+H1+Square.jpg?format=1500w",
+      "imageCredit": "Plus9Time"
     },
     {
       "brand": "Krayon",
@@ -5048,8 +5114,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Krayon-Anyday-Rose-Gold-Edition-2026-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Krayon",
@@ -5074,8 +5140,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/07/Krayon-Parhelion-feat.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "MB&F",
@@ -5100,8 +5166,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/MBF-Horological-Machine-12-The-Guardian-HM12-Featured.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "MB&F",
@@ -5126,8 +5192,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchilove.com/wp-content/uploads/2026/05/MBandF_LMP_Chromatic_Lifestyle_Trio_2_Lres.jpg",
+      "imageCredit": "WatchILove"
     },
     {
       "brand": "MB&F",
@@ -5154,8 +5220,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/MBF-LM101-EVO-NYC-EDITION-Featured.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Ming",
@@ -5182,8 +5248,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/MING-57.04-Phoenix-Monopusher-Chronograph-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Oris",
@@ -5210,8 +5276,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Oris-Holstein-Edition-2026-Calibre-401-Artelier-2.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Panerai",
@@ -5236,8 +5302,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/PAM01631_DET_021.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Panerai",
@@ -5262,8 +5328,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/PAM01631_DET_021.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Panerai",
@@ -5291,8 +5357,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/PAM01631_DET_021.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Panerai",
@@ -5319,8 +5385,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/PAM01631_DET_021.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -5347,8 +5413,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Parmigiani-Fleurier-Watch-Releases-.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -5375,8 +5441,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Parmigiani-Fleurier-Watch-Releases-.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -5403,8 +5469,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Parmigiani-Fleurier-Watch-Releases-.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -5431,8 +5497,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Parmigiani-Fleurier-Watch-Releases-.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Patek Philippe",
@@ -5459,8 +5525,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.watchtime.com/watchtime_en-us/blt22276bff283176bd/blt5ddb52730aa43065/69ddb50541dce1587b27ce08/WatchTime-Patek-Philippe-Nautilus_5810_1G-001-Title_649x365.webp",
+      "imageCredit": "WatchTime"
     },
     {
       "brand": "Patek Philippe",
@@ -5487,8 +5553,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Patek-philippe-Nautilus-58101G-001-50th-anniversary-limited-edition-5.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Patek Philippe",
@@ -5515,8 +5581,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.watchtime.com/watchtime_en-us/blt22276bff283176bd/blt5ddb52730aa43065/69ddb50541dce1587b27ce08/WatchTime-Patek-Philippe-Nautilus_5810_1G-001-Title_649x365.webp",
+      "imageCredit": "WatchTime"
     },
     {
       "brand": "Patek Philippe",
@@ -5543,8 +5609,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Patek-philippe-Nautilus-58101G-001-50th-anniversary-limited-edition-5.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Ressence × Marc Newson",
@@ -5571,8 +5637,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2025/11/UR-FREAK-Ulysse-Nardin-x-Urwerk-Collaboration-Watch-review-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Sylvain Pinaud",
@@ -5597,8 +5663,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/04/Sylvain-Pinaud-Tourbillon-header.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "TAG Heuer",
@@ -5623,8 +5689,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-TAG-Heuer-Watch-Releases-.jpeg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Tudor",
@@ -5682,8 +5748,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://images-luxe.outlookindia.com/2026/06/13145529/Collab-Cover.jpg",
+      "imageCredit": "Outlook Luxe"
     },
     {
       "brand": "Ulysse Nardin",
@@ -5709,7 +5775,12 @@
       "soldOutOn": null,
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "blocked",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Unimatic × Rocky Mountain Watches",
@@ -5737,8 +5808,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://masterhorologer.com/wp-content/uploads/2026/03/UNIMATIC-x-Rocky-Mountain-Watches-Modello-Due-Toolwatch-Limited-Edition-1.jpg",
+      "imageCredit": "Master Horologer"
     },
     {
       "brand": "Urwerk",
@@ -5765,8 +5836,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/Urwerk-UR-10-Spacemeter-Blue-Final-Edition-Featured.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Urwerk",
@@ -5791,8 +5862,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Urwerk-UR-100V-LS-Ceramic-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Urwerk",
@@ -5817,8 +5888,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Urwerk-UR-101-Diamond-Sky-2026-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Urwerk",
@@ -5845,8 +5916,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Urwerk-UR-120-Blue-Planet-Limited-Edition-Featured.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Vacheron Constantin",
@@ -5874,8 +5945,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/06/Vacheron-Constantin-metiers-dart-Tribute-To-Great-Civilisations-2026.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "Vacheron Constantin",
@@ -5900,8 +5971,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/04/Vacheron-Constantin-Overseas-Self-Winding-Ultra-Thin-hands.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "Vacheron Constantin",
@@ -5926,8 +5997,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/2026-Vacheron-Constantin-Watch-Releases-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Zenith",
@@ -5954,8 +6025,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Zenith-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Zenith",
@@ -5980,8 +6051,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://revolutionwatch.com/wp-content/uploads/2026/04/Zenith-Watches-and-Wonders-2026-Web-Banner.jpg",
+      "imageCredit": "Revolution"
     },
     {
       "brand": "Zenith",
@@ -6006,8 +6077,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://revolutionwatch.com/wp-content/uploads/2026/04/Zenith-Watches-and-Wonders-2026-Web-Banner.jpg",
+      "imageCredit": "Revolution"
     },
     {
       "brand": "Zenith",
@@ -6034,8 +6105,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Zenith-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Zenith",
@@ -6060,8 +6131,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/2026-Zenith-Watch-Releases.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Zenith",
@@ -6088,8 +6159,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://revolutionwatch.com/wp-content/uploads/2026/04/Zenith-Watches-and-Wonders-2026-Web-Banner.jpg",
+      "imageCredit": "Revolution"
     },
     {
       "brand": "Zenith",
@@ -6116,8 +6187,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Zenith-GFJ-Calibre-135-Double-Signed-Naoya-Hida-review-9.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Zenith",
@@ -6144,8 +6215,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://revolutionwatch.com/wp-content/uploads/2026/04/Zenith-Watches-and-Wonders-2026-Web-Banner.jpg",
+      "imageCredit": "Revolution"
     },
     {
       "brand": "Fears",
@@ -6170,8 +6241,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://wornandwound.com/library/uploads/2026/01/Fears-Brunswich-BWD-2026-4.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "M.A.D.Editions (MB&F)",
@@ -6198,8 +6269,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://mrstateless.com/wp-content/uploads/2026/05/MADEditions_MAD2LIVE_1100x667_5.jpg",
+      "imageCredit": "Mr Stateless"
     },
     {
       "brand": "Studio Underd0g",
@@ -6224,8 +6295,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://mrstateless.com/wp-content/uploads/2026/02/StudioUnderd0g_EstablishesTheD0ghouse_1100x667_3.jpg",
+      "imageCredit": "Mr Stateless"
     },
     {
       "brand": "TAG Heuer",
@@ -6253,8 +6324,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/07/TAG-Heuer-Monaco-Chronograph-x-Goodwood-Festival-of-Speed-2026-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Audemars Piguet",
@@ -6281,8 +6352,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/05/2026-Audemars-Piguet-Releases-.jpeg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Baltic × SpaceOne",
@@ -6309,8 +6380,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://watchesbysjx.com/wp-content/uploads/2026/05/Baltic-Space-One-Seconde-Majeure-composite-1.jpg",
+      "imageCredit": "SJX"
     },
     {
       "brand": "Blancpain",
@@ -6335,8 +6406,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/06/bfft-lume-shot.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Casio G-Shock",
@@ -6363,8 +6434,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.g-central.com/wp-content/uploads/2026/03/GMW-BZ5000RC-1-Angle-2.webp",
+      "imageCredit": "G-Central"
     },
     {
       "brand": "Casio G-Shock",
@@ -6392,7 +6463,11 @@
       "soldOutOn": "2026-08-03",
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -6420,7 +6495,11 @@
       "soldOutOn": "2026-08-03",
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Christopher Ward",
@@ -6447,8 +6526,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://wornandwound.com/library/uploads/2026/07/CW-Twelve-Xander-banner.jpg",
+      "imageCredit": "Worn & Wound"
     },
     {
       "brand": "Citizen",
@@ -6475,8 +6554,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://images-luxe.outlookindia.com/2026/06/13145529/Collab-Cover.jpg",
+      "imageCredit": "Outlook Luxe"
     },
     {
       "brand": "Furlan Marri",
@@ -6503,8 +6582,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://shop.timeandtidewatches.com/cdn/shop/files/Meteorite_Octa_Packshot_2.png?v=1775604188",
+      "imageCredit": "Time+Tide"
     },
     {
       "brand": "Glashütte Original",
@@ -6534,8 +6613,8 @@
         "date": "2026-08-03",
         "note": "Out of stock at Teddy Baldassarre — contact to purchase"
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/07/Glashutte-Original-SeaQ-and-SeaQ-Panorama-Date-Northern-Tide-Limited-Edition-North-America-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Grand Seiko",
@@ -6563,8 +6642,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.notebookcheck.net/fileadmin/Notebooks/News/_nc5/Grand-Seiko-SBGA21.png",
+      "imageCredit": "Notebookcheck"
     },
     {
       "brand": "Grönefeld",
@@ -6592,8 +6671,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.prod.website-files.com/67321d25202facb90019c0eb/6978dde0d866ba170a0a93c6_Gronefeld-News-OG.avif",
+      "imageCredit": "Grönefeld"
     },
     {
       "brand": "Islander / Long Island Watch",
@@ -6620,8 +6699,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://longislandwatch.com/cdn/shop/files/1200x628_Social_Share_Image_vf1_1204x630.png?v=1785713010",
+      "imageCredit": "Long Island Watch"
     },
     {
       "brand": "Kurono Tokyo",
@@ -6650,7 +6729,11 @@
       "soldOutOn": "2026-08-03",
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Kurono Tokyo",
@@ -6679,7 +6762,11 @@
       "soldOutOn": "2026-08-03",
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Louis Erard",
@@ -6707,8 +6794,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.watchtime.com/watchtime_en-us/blt22276bff283176bd/blt452747238c8df179/697aa5cbb8c38101644ba17d/WatchTime-Louis-Erard_x_Monica-Bonvicini-Not-For-You-Ref-34242AA02.BVAS28-Title_649x365.webp",
+      "imageCredit": "WatchTime"
     },
     {
       "brand": "Ming",
@@ -6735,8 +6822,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/MING-29.06-Peep-Show-polarized-sapphire-dial-7.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Ming",
@@ -6763,8 +6850,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Ming-56.00-Starfield-first-integrated-bracelet-sports-watch-11.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -6791,8 +6878,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Naoya-Hida-2026-Collection-including-new-Chronograph-Type7-Valjoux-23.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -6820,8 +6907,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Naoya-Hida-2026-Collection-including-new-Chronograph-Type7-Valjoux-23.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -6848,8 +6935,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Naoya-Hida-2026-Collection-including-new-Chronograph-Type7-Valjoux-23.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -6876,8 +6963,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Naoya-Hida-2026-Collection-including-new-Chronograph-Type7-Valjoux-23.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Nivada Grenchen",
@@ -6903,7 +6990,11 @@
       "soldOutOn": "2026-08-03",
       "verified": null,
       "image": null,
-      "imageCredit": null
+      "imageCredit": null,
+      "imageProbe": {
+        "date": "2026-08-04",
+        "result": "none"
+      }
     },
     {
       "brand": "Omega / Swatch",
@@ -6934,8 +7025,8 @@
         "date": "2026-08-03",
         "note": "ESTA lottery window closed"
       },
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.fratellowatches.com/cdn-cgi/image/anim=false/wp-content/uploads/2026/07/sp01_26_Moonswatch_1969_SSX01B700_picture_close-up_HD.jpg",
+      "imageCredit": "Fratello"
     },
     {
       "brand": "Ressence",
@@ -6963,8 +7054,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Ressence-Type-9-IKE-Terumasa-Ikeda-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Seiko Prospex",
@@ -6992,8 +7083,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://cdn.hiconsumption.com/wp-content/uploads/2026/02/Seiko-Shohei-Ohtani-2026-Watches-0-Hero.jpg",
+      "imageCredit": "HiConsumption"
     },
     {
       "brand": "Simon Brette",
@@ -7018,8 +7109,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://substackcdn.com/image/fetch/$s_!RJ1y!,w_1200,h_675,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2248129f-d615-40f7-b8a2-92467c65b7c8_1616x1558.png",
+      "imageCredit": "SF Watch Lover"
     },
     {
       "brand": "Swatch × Audemars Piguet",
@@ -7046,8 +7137,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/06/Zenith-GFJ-Calibre-135-Double-Signed-Naoya-Hida-review-9.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "The Armoury × Naoya Hida",
@@ -7076,8 +7167,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/05/The-Armoury-x-Naoya-Hida-Reference-Type-4A-2-Floating-Feathers-1.jpg",
+      "imageCredit": "Monochrome"
     },
     {
       "brand": "Vacheron Constantin",
@@ -7104,8 +7195,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://www.luxurybazaar.com/grey-market/wp-content/uploads/2026/04/2026-Vacheron-Constantin-Watch-Releases-1.jpg",
+      "imageCredit": "Luxury Bazaar"
     },
     {
       "brand": "Ōtsuka Lōtec",
@@ -7133,8 +7224,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": "2026-08-03",
       "verified": null,
-      "image": null,
-      "imageCredit": null
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Otsuka-Lotec-No.8-Jumping-Hour-Retrograde-Minute-Japan-Indie-Watchmaker-Jiro-Katayama-8.jpg",
+      "imageCredit": "Monochrome"
     }
   ],
   "calendar": {
