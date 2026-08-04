@@ -42,26 +42,79 @@ const tierBadge = (w, tier) =>
   w.document.querySelector(`[data-tier="${tier}"] .n`)?.textContent.trim();
 const rows = (w) => w.document.querySelectorAll("[data-id]").length;
 
+// NOTHING is deleted from the register: all 252 entries render by default and
+// every figure counts all of them. Only the FILTER BUTTONS are narrowed to the
+// four actionable tiers — the other three are still listed, searchable and
+// explained in the availability key. The test mirrors the rule rather than
+// importing it, so changing one and not the other fails here rather than live.
+const UNFILTERABLE = ["Waitlist or ballot", "AD or boutique", "In person only"];
+const keep = (list) => list
+  .map((w) => (w.tier === "Retailer enquiry" ? { ...w, tier: "Buy at retailer", rank: 3 } : w));
+
 (async () => {
   // Expectations are DERIVED from data.json, never hardcoded. Pinning them to
   // one day's snapshot would make this fail every time the refresh does its job.
-  const tally = (t) => BASE.watches.filter((x) => x.tier === t).length;
-  const N = BASE.watches.length;
+  const KEPT = keep(BASE.watches);
+  const tally = (t) => KEPT.filter((x) => x.tier === t).length;
+  const N = KEPT.length;
 
   console.log("\n=== 1. THE PAGE MATCHES THE CURRENT data.json ===");
   let w = await load(BASE);
   check("rows rendered", rows(w), N);
+  check("the whole file is the register — nothing dropped", N, BASE.watches.length);
+  check("un-buttoned tiers still render", (() => {
+    const shown = [...w.document.querySelectorAll("[data-id] [title]")]
+      .map((n) => n.getAttribute("title"));
+    return UNFILTERABLE.every((t) => !tally(t) || shown.includes(t));
+  })(), true);
   check("masthead: buyable online", txt(w, "#t-buy"), tally("Buy online now"));
   check("masthead: runs tracked", txt(w, "#t-total"), N);
   check("masthead: confirmed gone", txt(w, "#t-gone"), tally("Gone"));
-  check("masthead: brands", txt(w, "#t-brands"), new Set(BASE.watches.map((x) => x.brand)).size);
+  check("masthead: brands", txt(w, "#t-brands"), new Set(KEPT.map((x) => x.brand)).size);
   check("masthead: updated", txt(w, "#t-updated"), BASE.meta.updated);
   check("colophon: revision", txt(w, "#c-rev"), BASE.meta.revision);
-  check("colophon: photos resolved", txt(w, "#c-imgs"), BASE.watches.filter((x) => x.image).length);
+  check("colophon: photos resolved", txt(w, "#c-imgs"), KEPT.filter((x) => x.image).length);
   check("colophon: total", txt(w, "#c-total"), N);
   check("filter badge: All", tierBadge(w, "All"), N);
   check("filter badge: Buy online now", tierBadge(w, "Buy online now"), tally("Buy online now"));
   check("filter badge: Gone", tierBadge(w, "Gone"), tally("Gone"));
+  check("Retailer enquiry is remapped, not shown",
+        tierBadge(w, "Buy at retailer"), tally("Buy at retailer"));
+  // Rendered content only — the script's own source names the old tier, since
+  // that is what it remaps FROM.
+  check("no 'Retailer enquiry' reaches the reader", (() => {
+    const seen = [...w.document.querySelectorAll("#list [title], #keyRows, [data-tier]")]
+      .map((n) => (n.getAttribute("title") || "") + " " + n.textContent);
+    return seen.some((s) => s.includes("Retailer enquiry"));
+  })(), false);
+  check("exactly five filter buttons: All + the four actionable tiers",
+        w.document.querySelectorAll("[data-tier]").length, 5);
+  check("the three un-buttoned tiers get no chip",
+        UNFILTERABLE.some((t) => w.document.querySelector(`[data-tier="${t}"]`)), false);
+  check("every filter yields exactly its own count", (() => {
+    for (const t of ["Buy online now", "Buy at retailer", "Drop upcoming", "Gone"]) {
+      const btn = w.document.querySelector(`[data-tier="${t}"]`);
+      if (!btn) return `no button for ${t}`;
+      btn.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+      if (rows(w) !== tally(t)) return `${t}: ${rows(w)} rows, expected ${tally(t)}`;
+    }
+    w.document.querySelector('[data-tier="All"]').dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+    return rows(w) === N ? true : `All: ${rows(w)} rows, expected ${N}`;
+  })(), true);
+  check("the availability key explains every tier in the data",
+        w.document.querySelector("#keyRows").children.length,
+        new Set(KEPT.map((x) => x.tier)).size);
+  check("an un-buttoned watch is still findable by search", (() => {
+    const hidden = KEPT.find((x) => UNFILTERABLE.includes(x.tier));
+    if (!hidden) return true;
+    const q = w.document.querySelector("#q");
+    q.value = hidden.model;
+    q.dispatchEvent(new w.Event("input", { bubbles: true }));
+    const hit = !!w.document.querySelector(`[data-id="${hidden.id}"]`);
+    q.value = "";
+    q.dispatchEvent(new w.Event("input", { bubbles: true }));
+    return hit;
+  })(), true);
 
   console.log("\n=== 2. SIMULATED WEEKLY REFRESH — data.json only, index.html untouched ===");
   const next = JSON.parse(JSON.stringify(BASE));
@@ -84,14 +137,14 @@ const rows = (w) => w.document.querySelectorAll("[data-id]").length;
   check("masthead: runs tracked", txt(w, "#t-total"), N + 4);
   check("masthead: confirmed gone", txt(w, "#t-gone"), tally("Gone") + 2);
   check("masthead: brands", txt(w, "#t-brands"),
-        new Set(BASE.watches.map((x) => x.brand)).size + 4);
+        new Set(KEPT.map((x) => x.brand)).size + 4);
   check("masthead: updated", txt(w, "#t-updated"), "2026-08-10");
   check("colophon: revision", txt(w, "#c-rev"), BASE.meta.revision + 1);
   check("filter badge: All", tierBadge(w, "All"), N + 4);
   check("filter badge: Gone", tierBadge(w, "Gone"), tally("Gone") + 2);
 
   console.log("\n=== 3. DEEP LINK  /#<id> ===");
-  const target = BASE.watches.find(x => x.image);           // one with a photograph
+  const target = KEPT.find(x => x.image);                   // one with a photograph
   w = await load(BASE, "#" + target.id);
   let item = [...w.document.querySelectorAll("[data-id]")].find(x => x.dataset.id === target.id);
   check("target row exists", !!item, true);
@@ -150,6 +203,54 @@ const rows = (w) => w.document.querySelectorAll("[data-id]").length;
   // jsdom has no canvas, so this also proves the wordmark degrades instead of
   // taking the page down when text metrics are unavailable.
   check("page still renders without canvas metrics", rows(w), N);
+  check("date window carries a real date",
+        /^\d{1,2}$/.test(txt(w, "#lockup [data-date]") || ""), true);
+  check("wordmark is trademarked", w.document.querySelector("#lockup").textContent.includes("™"), true);
+  check("footer carries the trademark notice",
+        HTML.includes("is a trademark of Conn LLC, Toronto, Ontario, Canada"), true);
+  check("all five dial treatments are available",
+        w.document.querySelectorAll("template[data-dial]").length, 4); // plain needs no markup
+  check("stat ledger is a ruled register, not a sentence",
+        w.document.querySelectorAll('[data-mq="hstats"] [id^="t-"]').length, 5);
+
+  console.log("\n=== 6. THE MOBILE CONTRACT ===");
+  // The whole ≤720px pass keys off data-mq and nothing else, so a renamed hook
+  // silently drops a rule on phones while desktop stays perfect.
+  const MQ = ["hgrid", "hleft", "hdiv", "hstats", "lockup", "wide", "search", "sort",
+              "flabel", "fbar", "cols", "detail", "two", "row2", "badge"];
+  const media = HTML.slice(HTML.indexOf("@media (max-width:720px)"));
+  for (const hook of MQ) {
+    const inDom = !!w.document.querySelector(`[data-mq="${hook}"]`) ||
+                  HTML.includes(`data-mq="${hook}"`);
+    check(`hook "${hook}" is present and styled`,
+          inDom && media.includes(`[data-mq="${hook}"]`), true);
+  }
+  check("rows carry the column hook", !!w.document.querySelector(`[data-id] [data-mq="cols"]`), true);
+  check("mobile rules override the inline styles",
+        (media.match(/!important/g) || []).length >= 20, true);
+  check("expanded frame carries the detail hook", (() => {
+    const t = KEPT.find(x => x.image);
+    return HTML.includes('data-mq="detail"');
+  })(), true);
+
+  console.log("\n=== 7. COMPUTED SYMMETRIC MARGINS ===");
+  // padRight must come off documentElement.clientWidth. 100vw counts the
+  // scrollbar and the register drifts out of line with the stats column.
+  check("no style value measures the viewport with vw", /[:(]\s*100vw/.test(HTML), false);
+  check("the pad is measured off documentElement.clientWidth",
+        HTML.includes("documentElement.clientWidth"), true);
+  check("filter bar and main share one symmetric pad", (() => {
+    const bar = w.document.querySelector("#fbar").style;
+    const main = w.document.querySelector("#main").style;
+    return bar.paddingLeft === bar.paddingRight
+        && main.paddingLeft === main.paddingRight
+        && main.paddingLeft === bar.paddingLeft
+        && /^[\d.]+px$/.test(bar.paddingLeft);
+  })(), true);
+  check("the register line is indented to match", (() => {
+    const wide = [...w.document.querySelectorAll('[data-mq="wide"]')];
+    return wide.length === 2 && wide.every((n) => /^[\d.]+px$/.test(n.style.paddingLeft));
+  })(), true);
 
   console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES"} — ${pass} passed, ${fail} failed\n`);
   process.exit(fail ? 1 : 0);

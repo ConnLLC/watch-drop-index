@@ -2,24 +2,33 @@
 """
 Build index.html for the Watch Drop Index.
 
-Design direction: "The Catalogue" (design draft 1, approved 2026-08-04). The
-markup and every inline style value below are ported verbatim from the design
-reference; they are the spec, not suggestions. If you are restyling this, change
-the reference first — Code makes no design decisions on this project.
+Design direction: "The Catalogue" — v1 LOCKED (desktop + mobile), design brief of
+2026-08-04 05:53 UTC. The markup and every inline style value below are ported
+verbatim from the design reference; they are the spec, not suggestions. If you
+are restyling this, change the reference first — Code makes no design decisions
+on this project. Anything ambiguous goes to Design on the RELAY thread.
 
 The page reads data.json at runtime, so routine updates need NO rebuild — change
 data.json, commit, done. Only run this when the template itself changes.
 
-Two things in here are load-bearing and easy to break:
+Four things in here are load-bearing and easy to break:
 
   * The #t-* / #c-* ids and the `.n` badge inside each [data-tier] button are a
     contract with the weekly refresh. Every figure on the page is re-read from
     data.json at load; without those hooks the site keeps advertising whatever
     the numbers were the day it was built.
 
+  * The data-mq attributes are the entire mobile pass. The @media block keys off
+    them and nothing else, so renaming one silently drops a rule at ≤720px while
+    desktop stays perfect.
+
   * The wordmark's clock is real. Hand positions come from negative CSS
     animation-delays computed against local time, and the letter spacing is
     aligned on measured glyph bearings, re-measured once webfonts land.
+
+  * Lower sections are margined by a computed symmetric pad, not a max-width.
+    It reads documentElement.clientWidth — never 100vw, which includes the
+    scrollbar and would break the alignment against the stats column.
 """
 import json, os, html
 from collections import Counter
@@ -31,13 +40,22 @@ with open(os.path.join(HERE, "data.json")) as fh:
 meta = payload["meta"]
 items = payload["watches"]
 
-TIERS = ["Buy online now", "Drop upcoming", "Retailer enquiry", "Waitlist or ballot",
+# Every entry stays in the register and in every derived figure — nothing is
+# deleted (design's amended ruling, 2026-08-04 06:08). Only the FILTER BUTTONS
+# are narrowed to the four actionable tiers; the other three are still listed,
+# searchable, sorted into rank position, and explained in the availability key.
+# TIERS is in sort order, which is not the same as rank order.
+TIERS = ["Buy online now", "Buy at retailer", "Drop upcoming", "Waitlist or ballot",
          "AD or boutique", "In person only", "Gone"]
-counts = Counter(i["tier"] for i in items)
-buy_now = counts.get("Buy online now", 0)
+FILTERABLE = ["Buy online now", "Buy at retailer", "Drop upcoming", "Gone"]
+
+_kept = [dict(i, tier="Buy at retailer", rank=3) if i["tier"] == "Retailer enquiry" else i
+         for i in items]
+counts = Counter(i["tier"] for i in _kept)
 
 # The comp carries these as style-hover / style-focus attributes, which are a
-# design-tool construct rather than real HTML. Everything else stays inline,
+# design-tool construct rather than real HTML. The @media block and the keyframes
+# are lifted verbatim from the reference helmet. Everything else stays inline,
 # exactly as delivered.
 CSS = """
 body{margin:0;background:#f4f1ea;border-top:5px solid #17130d}
@@ -46,21 +64,46 @@ a{color:#8a5a2b}a:hover{color:#17130d}
 input::placeholder{color:#a09786}
 @keyframes wdi-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes wdi-badge-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wdi-dateflip{0%{transform:translateY(0)}42%{transform:translateY(-140%)}42.01%{transform:translateY(140%)}100%{transform:translateY(0)}}
 input[type=search]:focus{border-color:#17130d}
 .wdi-btn:hover{border-color:#17130d;color:#17130d}
 .wdi-row:hover{background:#ece7da}
 .wdi-cta:hover{background:#8a5a2b;border-color:#8a5a2b;color:#f4f1ea}
 .wdi-badge:hover{border-color:#17130d}
-/* PROVISIONAL — pending design's ruling. The comp specifies no focus state, and
-   the rows are div[role=button], so a keyboard user would otherwise have no way
-   to see where they are. Uses only ink from the approved palette; no new value
-   has been invented. */
+/* PROVISIONAL — pending design's ruling, flagged twice on the RELAY thread. The
+   comp specifies no focus state, and the rows are div[role=button], so a
+   keyboard user would otherwise have no way to see where they are. Uses only
+   ink from the approved palette; no new value has been invented. */
 .wdi-row:focus-visible{outline:1px solid #17130d;outline-offset:-1px;background:#ece7da}
+@media (max-width:720px){
+  [data-mq="hgrid"]{display:block !important}
+  [data-mq="hleft"]{max-width:none !important}
+  [data-mq="hdiv"]{display:none !important}
+  [data-mq="hstats"]{max-width:none !important;margin-top:26px}
+  [data-mq="lockup"]{font-size:38px !important}
+  [data-mq="wide"]{width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:0 !important}
+  [data-mq="search"]{width:100% !important;margin:10px 0 0 !important}
+  [data-mq="sort"]{width:100% !important;margin:10px 0 0 !important}
+  [data-mq="flabel"]{width:auto !important;margin-right:6px !important}
+  [data-mq="fbar"] button{padding:7px 10px !important;font-size:11.5px !important}
+  [data-mq="cols"]{grid-template-columns:16px minmax(0,1fr) 100px !important;min-height:48px !important}
+  [data-mq="cols"] > *:nth-child(3), [data-mq="cols"] > *:nth-child(5){display:none !important}
+  [data-mq="detail"]{display:block !important;padding:8px 2px 22px 16px !important}
+  [data-mq="detail"] > div:first-child{margin-bottom:18px}
+  [data-mq="two"]{grid-template-columns:1fr !important}
+  [data-mq="row2"]{grid-template-columns:1fr !important;gap:2px !important}
+  [data-mq="badge"]{font-size:16px !important;right:14px !important;bottom:14px !important;padding:12px 38px 12px 14px !important}
+}
 """
 
 JS = r"""
 (function () {
-  var TIERS = ["Buy online now","Drop upcoming","Retailer enquiry","Waitlist or ballot","AD or boutique","In person only","Gone"];
+  /* Sort order, which is deliberately not rank order — "Buy at retailer" is
+     rank 3 but sorts second. */
+  var TIERS = ["Buy online now","Buy at retailer","Drop upcoming","Waitlist or ballot","AD or boutique","In person only","Gone"];
+  /* Only these get a filter button. The other three still appear in the list,
+     in search and in the availability key — they just have no chip of their own. */
+  var FILTERABLE = ["Buy online now","Buy at retailer","Drop upcoming","Gone"];
   var HELP = __HELP__;
   var CONF = {
     high: "brand source, or several credible outlets agree",
@@ -69,7 +112,6 @@ JS = r"""
   };
 
   var DOT = function (r) { return r === 0 ? "#1e6b41" : r <= 2 ? "#35597e" : r <= 5 ? "#97701c" : "#b0776b"; };
-  var fmtC = function (n) { return n >= 1e6 ? "$" + (n / 1e6).toFixed(1) + "M" : n >= 1000 ? "$" + Math.round(n / 1000) + "k" : "$" + n; };
   var fmtFull = function (n) { return n >= 1e6 ? "$" + (n / 1e6).toFixed(2) + "M" : "$" + n.toLocaleString("en-US"); };
   var shortEd = function (s) {
     var t = String(s);
@@ -101,6 +143,23 @@ JS = r"""
   var state = { q: "", tier: "All", cat: "All", band: "All", sort: "tier", open: {}, payload: null, showBadge: false };
   var DATA = [];
 
+  /* ---- computed symmetric margins --------------------------------------- */
+  /* The lower sections are not centred by a max-width — they carry an equal
+     computed pad on both sides so the register lines up with the stats column
+     above it. clientWidth, never 100vw: the latter counts the scrollbar and the
+     alignment drifts by its width. */
+  function applyMetrics() {
+    var cw = document.documentElement.clientWidth;
+    var colW = (Math.min(cw, 1200) - 157) / 2;
+    var padRight = (30 + Math.max(0, colW - 400)) + "px";
+    var regIndent = Math.max(0, Math.max(0, colW - 400) - Math.max(0, colW - 460)) + "px";
+    var bar = el("#fbar"), main = el("#main");
+    if (bar) bar.style.padding = "12px " + padRight + " 13px " + padRight;
+    if (main) main.style.padding = "0 " + padRight + " 0 " + padRight;
+    var wides = document.querySelectorAll('[data-mq="wide"]');
+    for (var i = 0; i < wides.length; i++) wides[i].style.paddingLeft = regIndent;
+  }
+
   /* ---- the clock -------------------------------------------------------- */
   /* Hand positions are pure CSS rotation; local time enters only as a negative
      animation-delay, i.e. "start as though you had already been running this
@@ -122,6 +181,54 @@ JS = r"""
       var n = root.querySelector('[data-clock="' + k + '"]');
       if (n) n.style.animationDelay = map[k];
     });
+  }
+
+  /* ---- the date window --------------------------------------------------- */
+  /* A real date, and it rolls at midnight the way a wheel does rather than
+     silently swapping. Scheduled 80ms past midnight so it lands after the day
+     has actually changed. */
+  function applyDate(root) {
+    var n = root.querySelector("[data-date]");
+    if (n) n.textContent = new Date().getDate();
+  }
+
+  function flipDate() {
+    var all = document.querySelectorAll("[data-date]");
+    for (var i = 0; i < all.length; i++) {
+      var n = all[i];
+      n.style.animation = "wdi-dateflip .5s ease-in-out";
+      (function (node) {
+        setTimeout(function () { node.textContent = new Date().getDate(); }, 250);
+        setTimeout(function () { node.style.animation = "none"; }, 700);
+      })(n);
+    }
+  }
+
+  function scheduleFlip() {
+    var n = new Date();
+    var next = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 0, 80);
+    setTimeout(function () { flipDate(); scheduleFlip(); }, next - n);
+  }
+
+  /* ---- the dial ---------------------------------------------------------- */
+  /* Plain on a reader's first ever visit, then a different treatment each time
+     they come back. The masthead only — the corner badge is always plain. */
+  var dialChoice = null;
+  function pickDial() {
+    if (dialChoice) return dialChoice;
+    try {
+      if (!localStorage.getItem("wdi-visited")) { dialChoice = "plain"; localStorage.setItem("wdi-visited", "1"); }
+      else { var o = ["plain", "rim", "railroad", "guilloche", "lume"]; dialChoice = o[Math.floor(Math.random() * o.length)]; }
+    } catch (e) { dialChoice = "plain"; }
+    return dialChoice;
+  }
+
+  function applyDial(root) {
+    var ds = pickDial();
+    if (ds === "plain") return;
+    var tpl = document.querySelector('template[data-dial="' + ds + '"]');
+    var anchor = root.querySelector('[data-clock="hour"]');
+    if (tpl && anchor) anchor.parentNode.insertBefore(tpl.content.cloneNode(true), anchor);
   }
 
   /* ---- optical alignment of the wordmark -------------------------------- */
@@ -167,8 +274,8 @@ JS = r"""
       (na ? "font-size:12px;color:#a09786;font-style:italic" : "font-size:13.5px;color:#17130d;font-weight:650");
     var priceRow = na ? "on request" : (approx ? "~" : "") + fmtFull(d.priceNum);
 
-    var h = '<div data-id="' + esc(d.id) + '" style="border-bottom:1px solid ' + (open ? "#c9c0ad;background:#faf8f2" : "#e9e4d8") + '">' +
-      '<div class="wdi-row" role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '" aria-controls="p-' + esc(d.id) + '"' +
+    var h = '<div data-id="' + esc(d.id) + '" style="border-bottom:1px solid ' + (open ? "#c9c0ad;background:#faf8f2" : "#d5cdbc") + '">' +
+      '<div class="wdi-row" data-mq="cols" role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '" aria-controls="p-' + esc(d.id) + '"' +
       ' style="display:grid;grid-template-columns:16px minmax(0,1fr) 130px 112px 16px;gap:14px;align-items:center;min-height:43px;padding:0 4px 0 2px;cursor:pointer">' +
       '<span style="width:7px;height:7px;border-radius:50%;justify-self:center;background:' + dot + '" title="' + esc(d.tier) + '"></span>' +
       '<span style="min-width:0;display:flex;align-items:baseline;gap:11px">' +
@@ -200,37 +307,46 @@ JS = r"""
         '</div></div></figure>';
     }
 
-    var th = 'style="text-align:left;font-weight:700;color:#8a8071;font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:7px 18px 7px 0;vertical-align:top;white-space:nowrap;width:1px"';
-    var td = 'style="padding:7px 0;vertical-align:top;border-bottom:1px solid #e9e4d8;color:#17130d"';
-    var tdNum = 'style="padding:7px 0;vertical-align:top;border-bottom:1px solid #e9e4d8;color:#17130d;font-variant-numeric:tabular-nums"';
+    /* The caption ledger under the photograph — reference, release and how much
+       we trust the entry, in the catalogue's own register style. */
+    var cap = 'style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:#8a8071;font-weight:700;padding-top:2px"';
+    var capRow = 'style="display:grid;grid-template-columns:88px 1fr;gap:12px;padding:6px 0;border-bottom:1px solid #e9e4d8"';
+    var ledger = '<div style="margin-top:12px;border-top:2px solid #17130d">' +
+      '<div ' + capRow + '><span ' + cap + '>Reference</span><span style="font-size:12.5px;color:#17130d;font-variant-numeric:tabular-nums;letter-spacing:.03em;overflow-wrap:anywhere;text-align:right">' + esc(d.ref || "—") + '</span></div>' +
+      '<div ' + capRow + '><span ' + cap + '>Released</span><span style="font-size:12.5px;color:#17130d;text-align:right">' + esc(d.date) + ' · ' + esc(d.cat) + '</span></div>' +
+      '<div ' + capRow + ' title="' + esc(CONF[d.conf] || "") + '"><span ' + cap + '>Confidence</span><span style="font-size:12.5px;color:#17130d;text-transform:capitalize;text-align:right">' + esc(d.conf) + '</span></div>' +
+      '</div>';
+
+    var th = 'style="text-align:left;font-weight:700;color:#8a8071;font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:5px 18px 5px 0;vertical-align:top;white-space:nowrap;width:1px"';
+    var td = 'style="padding:5px 0;vertical-align:top;border-bottom:1px solid #e9e4d8;color:#17130d"';
+    var tdNum = 'style="padding:5px 0;vertical-align:top;border-bottom:1px solid #e9e4d8;color:#17130d;font-variant-numeric:tabular-nums"';
+    var tdLast = 'style="padding:5px 0;vertical-align:top;color:#17130d"';
 
     var rows =
       '<tr><th ' + th + '>Availability</th><td ' + td + '><span style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:1px;margin-right:7px;background:' + dot + '"></span><b style="font-weight:650">' + esc(d.tier) + '</b><span style="color:#8a8071"> — ' + esc(HELP[d.tier] || "") + '</span></td></tr>' +
       '<tr><th ' + th + '>Price</th><td ' + tdNum + '>' + esc(d.price) + '</td></tr>' +
       '<tr><th ' + th + '>Edition</th><td ' + td + '>' + esc(d.edition) + '</td></tr>' +
-      '<tr><th ' + th + '>Reference</th><td style="padding:7px 0;vertical-align:top;border-bottom:1px solid #e9e4d8;color:#17130d;font-variant-numeric:tabular-nums;letter-spacing:.03em">' + esc(d.ref || "—") + '</td></tr>' +
-      '<tr><th ' + th + '>Specification</th><td ' + td + '>' + esc(d.specs) + '</td></tr>' +
-      '<tr><th ' + th + '>Released</th><td ' + td + '>' + esc(d.date) + ' · ' + esc(d.cat) + '</td></tr>' +
-      '<tr><th ' + th + '>Confidence</th><td style="padding:7px 0;vertical-align:top;color:#17130d"><b style="font-weight:650;text-transform:capitalize">' + esc(d.conf) + '</b><span style="color:#8a8071"> — ' + esc(CONF[d.conf] || "") + '</span></td></tr>';
+      '<tr><th ' + th + '>Specification</th><td ' + tdLast + '>' + esc(d.specs) + '</td></tr>';
 
     var verified = d.verified
-      ? '<p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#1e5c38"><span style="font-weight:700">✓ Stock checked ' + esc(d.verified.date) + '</span><span style="color:#3a342b"> — ' + esc(d.verified.note) + '</span></p>'
+      ? '<p style="margin:0 0 10px;font-size:13px;line-height:1.5;color:#1e5c38"><span style="font-weight:700">✓ Stock checked ' + esc(d.verified.date) + '</span><span style="color:#3a342b"> — ' + esc(d.verified.note) + '</span></p>'
       : "";
 
     var tags = (d.tags || []).filter(function (t) { return t !== "Buy online"; });
     var tagLine = tags.length
-      ? '<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a8071;font-weight:600;margin:0 0 18px">' + esc(tags.join("  ·  ")) + '</div>'
+      ? '<div style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a8071;font-weight:600;margin:0 0 12px">' + esc(tags.join("  ·  ")) + '</div>'
       : "";
 
     var ctaStyle = "display:inline-block;font-size:13px;font-weight:600;letter-spacing:.02em;padding:11px 22px;border:1px solid #17130d;text-decoration:none;" +
       (d.rank <= 2 ? "background:#17130d;color:#f4f1ea" : "background:transparent;color:#17130d");
     var host = (function () { try { return new URL(d.source).hostname.replace(/^www\./, ""); } catch (e) { return "the source"; } })();
 
-    return '<div style="display:grid;grid-template-columns:310px minmax(0,1fr);gap:34px;padding:10px 4px 34px 32px">' + fig +
+    return '<div data-mq="detail" style="display:grid;grid-template-columns:310px minmax(0,1fr);gap:28px;padding:8px 4px 24px 32px">' +
+      '<div style="min-width:0">' + fig + ledger + '</div>' +
       '<div style="min-width:0">' +
-      '<p style="font-family:\'Newsreader\',serif;font-size:17.5px;line-height:1.55;color:#17130d;margin:0 0 14px">' + esc(d.desc) + '</p>' +
+      '<p style="font-family:\'Newsreader\',serif;font-size:17.5px;line-height:1.5;color:#17130d;margin:0 0 10px">' + esc(d.desc) + '</p>' +
       verified +
-      '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 16px"><tbody>' + rows + '</tbody></table>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 12px"><tbody>' + rows + '</tbody></table>' +
       tagLine +
       '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">' +
       '<a class="wdi-cta" href="' + esc(d.buy) + '" target="_blank" rel="noopener" style="' + ctaStyle + '">' + esc(d.buyLabel || (d.rank <= 2 ? "Buy" : "Where to find it")) + '</a>' +
@@ -247,7 +363,7 @@ JS = r"""
   function renderChrome(byTier) {
     var out = "";
     var list = [{ key: "All", label: "All", n: DATA.length }];
-    TIERS.forEach(function (t) { if (byTier[t]) list.push({ key: t, label: t, n: byTier[t] }); });
+    FILTERABLE.forEach(function (t) { if (byTier[t]) list.push({ key: t, label: t, n: byTier[t] }); });
     list.forEach(function (b) {
       var on = state.tier === b.key;
       var s = btnStyle(on);
@@ -263,15 +379,6 @@ JS = r"""
       out += '<button class="wdi-btn" data-band="' + esc(k) + '" style="' + btnStyle(state.band === k) + '">' + esc(k === "All" ? "Any" : k) + '</button>';
     });
     el("#bandBtns").innerHTML = out;
-
-    var cats = [];
-    DATA.forEach(function (d) { if (cats.indexOf(d.cat) < 0) cats.push(d.cat); });
-    cats.sort();
-    out = '<button class="wdi-btn" data-cat="All" style="' + btnStyle(state.cat === "All") + '">All segments</button>';
-    cats.forEach(function (c) {
-      out += '<button class="wdi-btn" data-cat="' + esc(c) + '" style="' + btnStyle(state.cat === c) + '">' + esc(c) + '</button>';
-    });
-    el("#catBtns").innerHTML = out;
   }
 
   /* ---- sections from the calendar --------------------------------------- */
@@ -279,8 +386,10 @@ JS = r"""
     var out = "";
     TIERS.forEach(function (t) {
       if (!byTier[t]) return;
-      out += '<div style="display:grid;grid-template-columns:180px 1fr;gap:18px;padding:10px 0;border-bottom:1px solid #e9e4d8;font-size:13.5px;color:#8a8071">' +
-        '<b style="color:#17130d;font-weight:650;display:flex;align-items:center;gap:9px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + DOT(TIERS.indexOf(t)) + '"></span>' + esc(t) + '</b>' +
+      var r = t === "Gone" ? 6 : t === "Buy at retailer" ? 3 : t === "Drop upcoming" ? 1
+            : t === "Waitlist or ballot" ? 3 : t === "AD or boutique" ? 4 : t === "In person only" ? 5 : 0;
+      out += '<div data-mq="row2" style="display:grid;grid-template-columns:180px 1fr;gap:18px;padding:10px 0;border-bottom:1px solid #e9e4d8;font-size:13.5px;color:#8a8071">' +
+        '<b style="color:#17130d;font-weight:650;display:flex;align-items:center;gap:9px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + DOT(r) + '"></span>' + esc(t) + '</b>' +
         '<span>' + esc(HELP[t] || "") + '</span></div>';
     });
     el("#keyRows").innerHTML = out;
@@ -289,7 +398,7 @@ JS = r"""
       var detail = withWhere
         ? '<b style="color:#5c5546;font-weight:600">' + esc(d.where || "") + '</b> ' + esc(d.detail ? "— " + d.detail : "")
         : esc(d.detail || "");
-      return '<li style="display:grid;grid-template-columns:168px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #e9e4d8">' +
+      return '<li data-mq="row2" style="display:grid;grid-template-columns:168px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #e9e4d8">' +
         '<div style="font-size:13px;font-weight:650;color:#17130d;font-variant-numeric:tabular-nums">' + esc(d.date) + '</div>' +
         '<div><div style="font-weight:600;color:#17130d;margin-bottom:2px;font-size:14px">' + esc(d.what) + '</div>' +
         '<div style="font-size:13.5px;color:#8a8071;line-height:1.5">' + detail + '</div></div></li>';
@@ -319,7 +428,9 @@ JS = r"""
       return true;
     });
     var sort = state.sort;
-    if (sort === "tier") rows.sort(function (a, b) { return a.rank - b.rank || ((b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum)); });
+    /* Ordered by the tier list, not by raw rank — the two are no longer the same
+       thing now that "Buy at retailer" is remapped. */
+    if (sort === "tier") rows.sort(function (a, b) { return TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) || ((b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum)); });
     if (sort === "date") rows.sort(function (a, b) { return dkey(b) - dkey(a) || a.brand.localeCompare(b.brand); });
     if (sort === "brand") rows.sort(function (a, b) { return a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model); });
     if (sort === "priceAsc") rows.sort(function (a, b) { return (a.priceNum == null ? 9e12 : a.priceNum) - (b.priceNum == null ? 9e12 : b.priceNum); });
@@ -332,10 +443,6 @@ JS = r"""
     el("#loading").style.display = "none";
     el("#empty").style.display = rows.length ? "none" : "block";
     el("#list").innerHTML = rows.map(rowHTML).join("");
-
-    var priced = rows.map(function (r) { return r.priceNum; }).filter(function (v) { return v != null; }).sort(function (a, b) { return a - b; });
-    el("#tally").textContent = rows.length + " of " + DATA.length +
-      (priced.length ? " · " + fmtC(priced[0]) + "–" + fmtC(priced[priced.length - 1]) + " · median " + fmtC(priced[Math.floor(priced.length / 2)]) : "");
 
     renderChrome(byTier);
     hydrate(byTier);
@@ -359,7 +466,17 @@ JS = r"""
 
   /* ---- corner badge ------------------------------------------------------ */
   /* Mounted and unmounted rather than shown and hidden, so the .6s rise replays
-     each time it appears — and so its clock is re-synced on every mount. */
+     each time it appears — and so its clock is re-synced on every mount. It
+     arrives the moment the masthead wordmark disappears under the sticky bar,
+     measured rather than assumed, so it does not depend on the header's height
+     staying what it was the day this was written. */
+  function badgeWanted() {
+    var lg = el("#lockup");
+    if (!lg) return window.scrollY > 430;
+    var st = el("#fbarwrap");
+    return lg.getBoundingClientRect().bottom <= (st ? st.offsetHeight : 0);
+  }
+
   function setBadge(on) {
     var host = el("#badgeHost");
     if (on && !host.firstChild) {
@@ -368,6 +485,7 @@ JS = r"""
       var node = host.firstElementChild;
       applyBearings(node);
       applyDelays(node);
+      applyDate(node);
       node.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
       node.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
@@ -409,8 +527,13 @@ JS = r"""
   function boot() {
     if (booted) return;
     booted = true;
-    applyBearings(el("#lockup"));
-    applyDelays(el("#lockup"));
+    applyMetrics();
+    var lock = el("#lockup");
+    applyDial(lock);
+    applyBearings(lock);
+    applyDelays(lock);
+    applyDate(lock);
+    scheduleFlip();
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(function () {
         applyBearings(el("#lockup"));
@@ -420,9 +543,14 @@ JS = r"""
     }
 
     window.addEventListener("scroll", function () {
-      var v = window.scrollY > 430;
+      var v = badgeWanted();
       if (v !== state.showBadge) { state.showBadge = v; setBadge(v); }
     }, { passive: true });
+
+    /* Re-pads only. The reference re-renders on resize but leaves the badge's
+       visibility to the scroll handler, so resizing never mounts or unmounts it
+       — matched deliberately rather than "improved". */
+    window.addEventListener("resize", applyMetrics);
 
     el("#q").addEventListener("input", function (e) { state.q = e.target.value; render(); });
     el("#sort").addEventListener("change", function (e) { state.sort = e.target.value; render(); });
@@ -433,11 +561,10 @@ JS = r"""
     });
 
     document.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-tier],[data-band],[data-cat]");
+      var b = e.target.closest("[data-tier],[data-band]");
       if (b) {
         if (b.hasAttribute("data-tier")) state.tier = b.getAttribute("data-tier");
-        else if (b.hasAttribute("data-band")) state.band = b.getAttribute("data-band");
-        else state.cat = b.getAttribute("data-cat");
+        else state.band = b.getAttribute("data-band");
         return render();
       }
       var row = e.target.closest(".wdi-row");
@@ -463,7 +590,11 @@ JS = r"""
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (p) {
         state.payload = p;
-        DATA = p.watches || [];
+        /* Every entry is in the register. The only transformation is the
+           "Retailer enquiry" remap, applied once here so nothing downstream has
+           to know about the old name. */
+        DATA = (p.watches || [])
+          .map(function (w) { return w.tier === "Retailer enquiry" ? Object.assign({}, w, { tier: "Buy at retailer", rank: 3 }) : w; });
         render();
         renderSections(p.calendar || {}, (function () { var b = {}; DATA.forEach(function (d) { b[d.tier] = (b[d.tier] || 0) + 1; }); return b; })());
         var deep = location.hash.slice(1);
@@ -482,31 +613,69 @@ JS = r"""
 TIER_HELP = {
     "Buy online now": "Add to cart on a brand webshop or an authorised online retailer.",
     "Drop upcoming": "Announced with a date. Nothing to buy yet.",
-    "Retailer enquiry": "At retail, but not purchasable online — call or visit.",
+    "Buy at retailer": "Available for purchase now at physical retail — not online. We list what we know about where.",
     "Waitlist or ballot": "Entry by lottery, ballot or waitlist.",
     "AD or boutique": "Allocation only. Never sold online.",
     "In person only": "Sold at an event or a single physical location.",
     "Gone": "Sold out, closed or fully allocated.",
 }
 
+# The half-dial detail treatments. Every one is clipped to the same sector as the
+# arc so nothing ever paints behind the letters. The masthead picks one per
+# visit; the corner badge is always plain, so these live only in the masthead.
+DIALS = {
+    "rim": '<span style="position:absolute;left:-1.72em;top:-1.72em;width:3.44em;height:3.44em;border:.055em solid #17130d;border-radius:50%;opacity:.75;clip-path:polygon(50% -4%, 104% -4%, 104% 104%, 33% 104%, 33% 60%, 50% 60%);filter:drop-shadow(.04em .05em .04em rgba(23,19,13,.3))"></span>',
+    "railroad": (
+        '<span style="position:absolute;left:-1.45em;top:-1.45em;width:2.9em;height:2.9em;border:1px solid #17130d;border-radius:50%;opacity:.32;clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>'
+        + "".join(
+            f'<span style="position:absolute;left:0;top:0;width:.05em;height:.16em;background:#17130d;opacity:.5;transform:translate(-50%,-50%) rotate({a}deg) translateY(-1.37em)"></span>'
+            for a in (0, 30, 60, 120, 150, 180)
+        )
+    ),
+    "guilloche": (
+        '<span style="position:absolute;left:-1.08em;top:-1.08em;width:2.16em;height:2.16em;border-radius:50%;border:1px solid rgba(23,19,13,.25);background:repeating-conic-gradient(rgba(23,19,13,.13) 0deg 2deg, rgba(23,19,13,0) 2deg 5deg);clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>'
+        '<span style="position:absolute;left:-.72em;top:-.72em;width:1.44em;height:1.44em;border-radius:50%;border:1px solid rgba(23,19,13,.18);clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>'
+    ),
+    "lume": (
+        '<span style="position:absolute;left:0;top:0;width:.18em;height:.16em;background:#8a5a2b;clip-path:polygon(50% 100%,0 0,100% 0);transform:translate(-50%,-50%) rotate(0deg) translateY(-1.38em)"></span>'
+        + "".join(
+            f'<span style="position:absolute;left:0;top:0;width:.11em;height:.11em;border-radius:50%;background:#8a5a2b;opacity:.85;transform:translate(-50%,-50%) rotate({a}deg) translateY(-1.38em)"></span>'
+            for a in (30, 60, 120, 150, 180)
+        )
+    ),
+}
 
-def lockup(px, ident):
+DIAL_TEMPLATES = "".join(
+    f'<template data-dial="{k}">{v}</template>' for k, v in DIALS.items()
+)
+
+DATE_WINDOW = (
+    '<span style="position:absolute;left:.86em;top:-.23em;width:.54em;height:.46em;background:#fdfbf5;'
+    'border:.035em solid #b9ae97;box-shadow:inset .02em .05em .07em rgba(23,19,13,.3), inset -.02em -.03em .05em rgba(255,255,255,.95), 0 .02em .03em rgba(255,255,255,.7);'
+    'display:flex;align-items:center;justify-content:center;overflow:hidden">'
+    '<span data-date style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:.3em;color:#17130d;'
+    'line-height:1;font-variant-numeric:tabular-nums;animation:none"></span></span>'
+)
+
+
+def lockup(px):
     """The stacked wordmark. `px` drives the canvas measurement for the optical
-    bearings; the clock markup differs slightly between the two sizes, exactly as
-    the reference delivers it — the masthead hands carry paper keylines behind
-    them, the badge hands use a box-shadow instead."""
+    bearings. The masthead and the badge differ in three delivered ways, and only
+    those three: the WATCH row's optical shift, the seconds hand's paper keyline
+    and counterweight, and whether a dial treatment can appear at all.
+
+    Both hour and minute hands carry a paper underlay rather than a box-shadow.
+    A shadow is clipped away by clip-path, which is what made the badge's hands
+    vanish over the ink letters — design's fix of 2026-08-04 04:04."""
     big = px == 46
+    shift = "-3px" if big else "-.065em"
     hand_hour = (
         '<span style="position:absolute;left:-.17em;bottom:-.05em;width:.34em;height:1.2em;background:#f4f1ea;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span>'
         '<span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span>'
-        if big else
-        '<span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%);box-shadow:0 0 0 1px #f4f1ea"></span>'
     )
     hand_min = (
         '<span style="position:absolute;left:-.15em;bottom:-.05em;width:.3em;height:1.6em;background:#f4f1ea;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span>'
         '<span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span>'
-        if big else
-        '<span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%);box-shadow:0 0 0 1px #f4f1ea"></span>'
     )
     hand_sec = (
         '<span style="position:absolute;left:-.06em;bottom:-.45em;width:.12em;height:2.02em;background:#f4f1ea"></span>'
@@ -515,24 +684,29 @@ def lockup(px, ident):
         if big else
         '<span style="position:absolute;left:-.025em;bottom:-.4em;width:.05em;height:1.92em;background:#8a5a2b"></span>'
     )
-    return f'''<span style="display:block;width:3.9em"><span style="display:flex;justify-content:space-between;width:3.6em"><span data-b="wl">W</span><span>A</span><span>T</span><span>C</span><span data-b="hr">H</span></span></span>
+    return f'''<span style="display:block;width:3.9em"><span style="display:flex;justify-content:space-between;width:3.6em;position:relative;left:{shift}"><span data-b="wl">W</span><span>A</span><span>T</span><span>C</span><span data-b="hr">H</span></span></span>
       <span style="position:relative;display:block;width:3.9em;height:1em">
         <span style="position:absolute;left:0;top:0;display:flex;justify-content:space-between;align-items:center;width:2.85em;height:1em"><span data-b="dl">D</span><span>R</span><span>O</span><span>P</span></span>
         <span style="position:absolute;right:0;top:.17em;width:.6em;height:.6em;border-radius:50%;background:#8a5a2b"><span style="position:absolute;left:50%;top:50%;width:0;height:0">
           <span style="position:absolute;left:-1.7em;top:-1.7em;width:3.4em;height:3.4em;border:1px solid #17130d;border-radius:50%;opacity:.6;clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>
+          {DATE_WINDOW}
           <span data-clock="hour" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 43200s linear infinite">{hand_hour}</span>
           <span data-clock="min" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 3600s linear infinite">{hand_min}</span>
           <span data-clock="sec" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 60s linear infinite">{hand_sec}</span>
           <span style="position:absolute;left:-.1em;top:-.1em;width:.2em;height:.2em;border-radius:50%;background:#17130d;box-shadow:0 0 0 1px #f4f1ea"></span>
         </span></span>
       </span>
-      <span style="display:block;width:3.9em"><span style="display:flex;justify-content:space-between;width:3.6em"><span data-b="il">I</span><span>N</span><span>D</span><span>E</span><span data-b="xr">X</span></span></span>'''
+      <span style="display:block;width:3.9em;position:relative"><span style="display:flex;justify-content:space-between;width:3.6em"><span data-b="il">I</span><span>N</span><span>D</span><span>E</span><span data-b="xr">X</span></span><span style="position:absolute;right:-.62em;bottom:.06em;font-size:.24em;color:#8a8071;letter-spacing:.08em;font-weight:600">™</span></span>'''
 
 
 dom = meta.get("domain", "")
 SECTION_RULE = '<div style="width:26px;height:2px;background:#17130d;margin:{m}"></div>'
 H2 = ('<h2 style="font-family:\'Newsreader\',serif;font-size:25px;font-weight:500;color:#17130d;'
       'margin:{m};letter-spacing:-.01em">{t}</h2>')
+STAT_LABEL = ('font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;'
+              'color:#8a8071;font-weight:700')
+STAT_ROW = ('display:flex;justify-content:space-between;align-items:baseline;'
+            'padding:9px 0;border-bottom:1px solid #e9e4d8')
 
 HTML = f"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -563,60 +737,58 @@ HTML = f"""<!DOCTYPE html>
     </div>
   </div>
 
-  <header style="max-width:1140px;margin:0 auto;padding:34px 30px 0;text-align:center">
-    <div id="lockup" data-logo-px="46" aria-label="Watch Drop Index" style="display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:46px;font-weight:600;letter-spacing:0;color:#17130d;margin:0 auto;width:max-content">
-      {lockup(46, "lockup")}
+  <header style="max-width:1140px;margin:0 auto;padding:38px 30px 0">
+    <div data-mq="hgrid" style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0 48px;align-items:center">
+    <div data-mq="hleft" style="justify-self:end;width:100%;max-width:460px;display:grid;justify-items:center;text-align:center;position:relative">
+    <div id="lockup" data-logo-px="46" data-mq="lockup" aria-label="Watch Drop Index" style="display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:46px;font-weight:600;letter-spacing:0;color:#17130d;margin:0 auto;width:max-content">
+      {lockup(46)}
     </div>
-    <div style="display:flex;align-items:center;gap:16px;margin:18px auto 0;max-width:720px">
-      <div style="flex:1;height:1px;background:#c9c0ad"></div>
-      <div style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#17130d;font-weight:600;white-space:nowrap">The Limited-Edition Register · 2026</div>
-      <div style="flex:1;height:1px;background:#c9c0ad"></div>
+    <div data-mq="wide" style="display:flex;align-items:center;justify-content:center;gap:16px;margin:24px -48px 0 0;width:calc(100% + 48px);box-sizing:border-box;padding-left:0">
+      <div style="flex:.25 1 0;height:1px;background:#c9c0ad"></div>
+      <div style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#17130d;font-weight:600;white-space:nowrap">The Limited-Edition Register</div>
+      <div style="flex:.25 1 0;height:1px;background:#c9c0ad"></div>
     </div>
-    <p style="font-family:'Newsreader',serif;font-style:italic;font-size:19px;line-height:1.5;color:#5c5546;margin:14px auto 0;white-space:nowrap">Track The Release &amp; Availability of Limited Edition Watches</p>
-    <p style="margin:22px 0 0;padding:12px 0;border-top:1px solid #ddd6c8;border-bottom:1px solid #ddd6c8;font-size:13px;color:#8a8071;font-variant-numeric:tabular-nums">
-      <b id="t-buy" style="color:#1e6b41;font-weight:700">{buy_now}</b> buyable online today
-      <span style="margin:0 10px;color:#c9c0ad">·</span>
-      <b id="t-total" style="color:#17130d;font-weight:700">{len(items)}</b> limited runs tracked
-      <span style="margin:0 10px;color:#c9c0ad">·</span>
-      <b id="t-gone" style="color:#17130d;font-weight:700">{counts.get('Gone', 0)}</b> confirmed gone
-      <span style="margin:0 10px;color:#c9c0ad">·</span>
-      <b id="t-brands" style="color:#17130d;font-weight:700">{meta['brands']}</b> brands
-      <span style="margin:0 10px;color:#c9c0ad">·</span>
-      updated <span id="t-updated" style="color:#17130d;font-weight:600">{html.escape(meta['updated'])}</span>
-    </p>
+    <p data-mq="wide" style="font-family:'Newsreader',serif;font-style:italic;font-size:15px;line-height:1.5;color:#5c5546;margin:6px -48px 0 0;text-wrap:balance;width:calc(100% + 48px);box-sizing:border-box;padding-left:0;text-align:center">Track Release &amp; Availability of Limited Edition Watches</p></div>
+    <div data-mq="hdiv" style="background:#ddd6c8;align-self:stretch;min-height:180px"></div>
+    <div data-mq="hstats" style="justify-self:start;width:100%;max-width:400px;font-variant-numeric:tabular-nums">
+      <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8a8071;font-weight:700;padding-bottom:8px">The register at a glance</div>
+      <div style="border-top:2px solid #17130d">
+        <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Buyable online today</span><b id="t-buy" style="color:#1e6b41;font-weight:700;font-size:15px">{counts.get('Buy online now', 0)}</b></div>
+        <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Limited runs tracked</span><b id="t-total" style="color:#17130d;font-weight:700;font-size:15px">{len(_kept)}</b></div>
+        <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Confirmed gone</span><b id="t-gone" style="color:#17130d;font-weight:700;font-size:15px">{counts.get('Gone', 0)}</b></div>
+        <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Brands</span><b id="t-brands" style="color:#17130d;font-weight:700;font-size:15px">{len({i['brand'] for i in _kept})}</b></div>
+        <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Updated</span><span id="t-updated" style="color:#17130d;font-weight:600;font-size:13px">{html.escape(meta['updated'])}</span></div>
+      </div>
+    </div>
+    </div>
   </header>
 
-  <div style="position:sticky;top:0;z-index:30;background:#f4f1ea;border-bottom:2px solid #17130d">
-    <div style="max-width:1140px;margin:0 auto;padding:12px 30px 13px">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input id="q" type="search" placeholder="Search brand, model, reference, movement…" style="flex:1;min-width:220px;padding:8px 12px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:13.5px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;outline:none">
-        <select id="sort" style="padding:8px 10px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:12.5px;font-family:'Archivo',sans-serif;color:#3a342b;border-radius:0">
-          <option value="tier">Most obtainable first</option>
+  <div id="fbarwrap" style="position:sticky;top:0;z-index:30;background:#f4f1ea;border-bottom:2px solid #17130d">
+    <div id="fbar" data-mq="fbar" style="max-width:1200px;box-sizing:border-box;margin:0 auto;padding:12px 30px 13px 30px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+        <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Availability:</span>
+        <span id="tierBtns" style="display:contents"></span>
+        <input id="q" data-mq="search" type="search" placeholder="Search brand, model, reference…" style="margin-left:auto;width:260px;padding:7px 12px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:13px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;outline:none">
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px">
+        <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Price:</span>
+        <span id="bandBtns" style="display:contents"></span>
+        <button id="reset" style="border:none;background:none;padding:5px 10px;font-size:12px;font-family:'Archivo',sans-serif;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Reset</button>
+        <select id="sort" data-mq="sort" style="margin-left:auto;width:150px;padding:6px 8px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:12.5px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;cursor:pointer">
+          <option value="tier">Sort by</option>
           <option value="date">Newest first</option>
           <option value="brand">Brand A–Z</option>
           <option value="priceAsc">Price: low to high</option>
           <option value="priceDesc">Price: high to low</option>
           <option value="edition">Smallest edition first</option>
         </select>
-        <span id="tally" style="margin-left:auto;font-size:12px;color:#8a8071;font-variant-numeric:tabular-nums;white-space:nowrap"></span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px">
-        <span style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;margin-right:4px">Availability</span>
-        <span id="tierBtns" style="display:contents"></span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px">
-        <span style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;margin-right:4px">Price</span>
-        <span id="bandBtns" style="display:contents"></span>
-        <span style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;margin:0 4px 0 12px">Segment</span>
-        <span id="catBtns" style="display:contents"></span>
-        <button id="reset" style="border:none;background:none;padding:5px 10px;font-size:12px;font-family:'Archivo',sans-serif;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Reset</button>
       </div>
     </div>
   </div>
 
-  <main style="max-width:1140px;margin:0 auto;padding:0 30px">
+  <main id="main" style="max-width:1200px;box-sizing:border-box;margin:0 auto;padding:0 30px 0 30px">
 
-    <div style="display:grid;grid-template-columns:16px minmax(0,1fr) 130px 112px 16px;gap:14px;padding:10px 4px 8px 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">
+    <div data-mq="cols" style="display:grid;grid-template-columns:16px minmax(0,1fr) 130px 112px 16px;gap:14px;padding:10px 4px 8px 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">
       <span></span><span>Brand &amp; model</span><span style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end">Edition</span><span style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end">USD</span><span></span>
     </div>
 
@@ -645,7 +817,7 @@ HTML = f"""<!DOCTYPE html>
       <ul id="events" style="list-style:none;padding:0;margin:0;border-top:1px solid #ddd6c8"></ul>
     </section>
 
-    <section style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
+    <section data-mq="two" style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
       <div>
         {SECTION_RULE.format(m='56px 0 0')}
         {H2.format(m='12px 0 16px', t='Not happening in 2026')}
@@ -659,7 +831,7 @@ HTML = f"""<!DOCTYPE html>
     </section>
 
     <footer style="margin-top:64px;border-top:2px solid #17130d;padding:26px 0 80px;font-size:13.5px;color:#8a8071">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
+      <div data-mq="two" style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
         <div>
           <h3 style="font-family:'Newsreader',serif;font-size:17px;color:#17130d;margin:0 0 10px;font-weight:600">Method</h3>
           <ul style="margin:0;padding-left:18px;line-height:1.55">
@@ -682,13 +854,15 @@ HTML = f"""<!DOCTYPE html>
           </ul>
         </div>
       </div>
-      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{meta.get('imagesResolved', 0)}</span> of <span id="c-total">{len(items)}</span> photographs resolved · every entry links to the source it came from</p>
+      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{sum(1 for i in _kept if i.get('image'))}</span> of <span id="c-total">{len(_kept)}</span> photographs resolved · every entry links to the source it came from</p>
+      <p style="margin-top:10px;font-size:10px;letter-spacing:.1em;text-align:center;color:#a09786">WATCH DROP INDEX™ is a trademark of Conn LLC, Toronto, Ontario, Canada. All rights reserved.</p>
     </footer>
 
   </main>
 
   <div id="badgeHost"></div>
-  <template id="badgeTpl"><div class="wdi-badge" data-logo-px="20" role="button" tabindex="0" title="Back to top" style="position:fixed;right:24px;bottom:22px;z-index:40;display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:20px;font-weight:600;letter-spacing:0;color:#17130d;cursor:pointer;background:#f4f1ea;border:1px solid #c9c0ad;padding:16px 44px 16px 18px;box-shadow:0 6px 26px rgba(23,19,13,.28);animation:wdi-badge-in .6s cubic-bezier(.22,.61,.36,1) both">{lockup(20, "badge")}</div></template>
+  <template id="badgeTpl"><div class="wdi-badge" data-logo-px="20" data-mq="badge" role="button" tabindex="0" title="Back to top" style="position:fixed;right:24px;bottom:22px;z-index:40;display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:20px;font-weight:600;letter-spacing:0;color:#17130d;cursor:pointer;background:#f4f1ea;border:1px solid #c9c0ad;padding:16px 44px 16px 18px;box-shadow:0 6px 26px rgba(23,19,13,.28);animation:wdi-badge-in .6s cubic-bezier(.22,.61,.36,1) both">{lockup(20)}</div></template>
+  {DIAL_TEMPLATES}
 </div>
 <script>{JS.replace('__HELP__', json.dumps(TIER_HELP, ensure_ascii=False))}</script>
 </body></html>
@@ -696,5 +870,7 @@ HTML = f"""<!DOCTYPE html>
 
 with open(os.path.join(HERE, "index.html"), "w") as fh:
     fh.write(HTML)
-print(f"built index.html — template only; {len(items)} entries load from data.json at runtime")
-print(f"  buyable online: {buy_now} · photos: {meta.get('imagesResolved',0)} · size: {len(HTML)//1024} KB")
+print(f"built index.html — template only; entries load from data.json at runtime")
+_filterable = sum(counts.get(t, 0) for t in FILTERABLE)
+print(f"  register: {len(_kept)} entries · {_filterable} in the four filterable tiers")
+print(f"  buyable online: {counts.get('Buy online now', 0)} · gone: {counts.get('Gone', 0)} · size: {len(HTML)//1024} KB")
