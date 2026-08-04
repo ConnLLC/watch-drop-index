@@ -178,7 +178,22 @@ Each run:
    second, a `displayModel` when the model runs past 38 characters. It will not guess:
    an uncertain maker or a short title that introduces a word absent from the full name
    leaves the field unset and goes into the report for design to rule on.
-6. **Commits** with a summarising message and a full report in the body.
+6. **Expires the calendar.** A "Dated opportunities" list still advertising last week's
+   drop is the small, visible rot that tells a reader nobody is home — and catching it
+   needs arithmetic, not research, so this stage is deterministic and free. Anything whose
+   date has passed moves out of `calendar.drops` / `calendar.events` into
+   `calendar.passed` (nothing is deleted, and the page doesn't render `passed`, so no
+   visual treatment had to be invented). A range expires on its **end**; "Mid-Aug 2026"
+   and "Now → Sept 2026" resolve generously, because an opportunity lingering a day too
+   long beats one vanishing while it's still live. An entry with no date at all ("Live
+   now") is retired by the register instead: the watch it links to going `Gone` is the
+   evidence.
+
+   `expected` and `notHappening` are curated research, so the job **does not rewrite
+   them** — replacing a stale claim with an unreviewed generation trades one problem for
+   a worse one. Anything unconfirmed for 30 days is listed in the report; confirm or
+   correct it, then stamp `checkedOn` on the item.
+7. **Commits** with a summarising message and a full report in the body.
 
 Stages run **2 → 4 → 3**, which is the budget's priority order (below): the paid stages
 go first, most valuable first, and the free one goes last. A side benefit is that a watch

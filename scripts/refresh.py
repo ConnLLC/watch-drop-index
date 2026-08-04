@@ -1127,11 +1127,135 @@ def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
     return summary
 
 
+# -------------------------------------------------------- stage 6: calendar
+"""
+The refresh spec covered `watches` and said nothing about `calendar`, so the
+calendar has been quietly rotting: a "Dated opportunities" list advertising a
+drop that happened last week is the small, visible kind of rot that tells a
+reader nobody is home — and it needs no research to notice, only a date.
+
+So this stage is deterministic and free. Expiry is arithmetic, not judgement:
+no model call, no cost, nothing for the spend guard to gate. Editorial claims
+(`expected`, `notHappening`) are NOT rewritten by a model — those are curated
+research, and quietly regenerating them would trade a stale claim for an
+unreviewed one. They are stamped and surfaced when they go stale instead.
+
+Nothing is deleted, exactly as with the register: an expired item moves to
+`calendar.passed`, which the page does not render. That keeps the historical
+record, and — because it invents no new visual treatment — it needs no ruling
+from design to ship.
+"""
+
+CALENDAR_STALE_DAYS = 30   # how long an un-rechecked editorial claim may stand
+
+MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+          "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+# "early/mid/late Oct" — the day a month-qualifier resolves to. Deliberately
+# generous: an opportunity that lingers a few days too long is a smaller sin
+# than one that vanishes while it is still live.
+QUALIFIERS = {"early": 10, "mid": 20, "late": 0}   # 0 = end of month
+
+
+def month_end(year: int, month: int) -> dt.date:
+    return (dt.date(year + month // 12, month % 12 + 1, 1) - dt.timedelta(days=1))
+
+
+def calendar_end(text: str) -> dt.date | None:
+    """The last day an entry could still be true. Returns None when the string
+    carries no date at all ("Live now"), which is a different thing from a date
+    that has passed and is handled differently by the caller.
+
+    Reads the LAST date in the string, so a range ("13–16 Aug 2026", "Now →
+    Sept 2026") expires on its end rather than its start."""
+    s = (text or "").strip()
+    if not s:
+        return None
+    year_m = re.search(r"\b(20\d\d)\b", s)
+    if not year_m:
+        return None
+    year = int(year_m.group(1))
+
+    # Take the last month mentioned; a range's end month is the one that matters.
+    months = [(m.start(), MONTHS[m.group(1).lower()[:3]])
+              for m in re.finditer(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?",
+                                   s, re.I)]
+    if not months:
+        q = re.search(r"\bQ([1-4])\b", s, re.I)
+        return month_end(year, int(q.group(1)) * 3) if q else dt.date(year, 12, 31)
+    at, month = months[-1]
+
+    # A day number immediately before that month token ("16 Aug", "7–10 Dec").
+    head = s[:at]
+    days = re.findall(r"\b(\d{1,2})\b", head)
+    if days:
+        try:
+            return dt.date(year, month, int(days[-1]))
+        except ValueError:
+            return month_end(year, month)
+
+    for word, day in QUALIFIERS.items():
+        if re.search(rf"\b{word}\b", head, re.I):
+            return dt.date(year, month, day) if day else month_end(year, month)
+    return month_end(year, month)
+
+
+def stage_calendar(cal: dict, watches: list[dict]) -> dict:
+    log("\n[6] CALENDAR — expiring anything whose date has passed")
+    now = dt.date.fromisoformat(today())
+    summary = {"expired": [], "undated": [], "stale": [], "resolved": []}
+    passed = cal.setdefault("passed", [])
+    by_url = {}
+    for w in watches:
+        for key in ("buy", "source"):
+            if w.get(key):
+                by_url.setdefault(w[key], w)
+
+    for kind in ("drops", "events"):
+        keep = []
+        for item in cal.get(kind, []):
+            end = calendar_end(item.get("date", ""))
+            if end is None:
+                # No date to expire on. These are "Live now" style entries, and
+                # the register already knows whether they are still live — so
+                # the linked watch going Gone is what retires them.
+                linked = by_url.get(item.get("url", ""))
+                if linked and linked.get("rank") == 6:
+                    item["passedOn"], item["kind"] = today(), kind
+                    item["passedBecause"] = f"{linked['brand']} {linked['model']} is now Gone"
+                    passed.append(item)
+                    summary["expired"].append(item)
+                    continue
+                summary["undated"].append(item)
+                keep.append(item)
+                continue
+            if end < now:
+                item["passedOn"], item["kind"] = today(), kind
+                item["passedBecause"] = f"ended {end.isoformat()}"
+                passed.append(item)
+                summary["expired"].append(item)
+                continue
+            keep.append(item)
+        cal[kind] = keep
+
+    # Editorial claims are stamped, not rewritten. An unstamped claim counts as
+    # stale on its first pass, which is correct — nobody has confirmed it since
+    # it was written.
+    for kind in ("expected", "notHappening"):
+        for item in cal.get(kind, []):
+            age = days_since(item.get("checkedOn"))
+            if age >= CALENDAR_STALE_DAYS:
+                summary["stale"].append((kind, item, age))
+
+    log(f"    expired {len(summary['expired'])} · still undated {len(summary['undated'])}"
+        f" · editorial claims needing a look {len(summary['stale'])}")
+    return summary
+
+
 # ------------------------------------------------------------------- report
 
 
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
-                 model: "Model | None" = None) -> str:
+                 model: "Model | None" = None, cal: dict | None = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
 
     # Spend goes near the top and is reported on EVERY run, generous ceiling or
@@ -1192,6 +1316,25 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                 L += [f"- …and {len(worst) - 15} other outlet(s) with fewer than "
                       f"{len(worst[15][1]) + 1} each", ""]
 
+    if cal:
+        L += ["## Calendar", "",
+              f"- Expired and moved out of the live list: **{len(cal['expired'])}**",
+              f"- Still live but carrying no date: **{len(cal['undated'])}**",
+              f"- Editorial claims older than {CALENDAR_STALE_DAYS} days: **{len(cal['stale'])}**", ""]
+        if cal["expired"]:
+            L += [f"- ~~{i.get('what', '?')}~~ — {i.get('passedBecause', 'expired')}"
+                  for i in cal["expired"]] + [""]
+        if cal["stale"]:
+            # Deliberately a question for a person, not a rewrite by the model:
+            # these are curated research claims, and replacing one with an
+            # unreviewed generation trades a stale fact for an invented one.
+            L += ["### Editorial claims due a re-check", "",
+                  "> Not auto-rewritten — these are researched claims. Confirm or correct "
+                  "them, then stamp `checkedOn` on the item in `data.json`.", ""]
+            L += [f"- **{i.get('what', '?')}** ({kind}) — "
+                  + ("never checked" if age >= 1e8 else f"last checked {int(age)} days ago")
+                  for kind, i, age in cal["stale"]] + [""]
+
     if news:
         L += ["## New releases", "", f"- Added: **{len(news['added'])}**", ""]
         if news["added"]:
@@ -1227,7 +1370,7 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Weekly refresh for the Watch Drop Index.")
-    ap.add_argument("--stages", default="2,3,4", help="comma-separated stage numbers")
+    ap.add_argument("--stages", default="2,3,4,6", help="comma-separated stage numbers")
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
@@ -1280,13 +1423,17 @@ def main() -> int:
     # they are never the thing a budget stop takes away. Running them after the
     # new-releases search also means this week's additions get their pictures
     # this week instead of next.
-    avail = photos = news = {}
+    avail = photos = news = cal = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
     if 4 in stages:
         news = stage_new_releases(watches, model, meta.get("updated", "2026-01-01"))
     if 3 in stages:
         photos = stage_photos(watches, args.photo_batch)
+    # Free and deterministic, so it runs whatever the budget did — the calendar
+    # rotting is the one failure a reader can see without checking anything.
+    if 6 in stages:
+        cal = stage_calendar(payload.setdefault("calendar", {}), watches)
 
     log(f"\nSPEND — {model.cad:.2f} CAD of {args.budget:.2f} "
         f"({model.calls} model call{'' if model.calls == 1 else 's'}, "
@@ -1300,7 +1447,7 @@ def main() -> int:
             f"({gone_now / start_count:.0%} of the register, cap is {GONE_BLAST_RADIUS:.0%}).")
         log("That pattern means the fetch layer broke, not that the market cleared.")
         write_report(meta, avail, photos, news, f"BLOCKED — {gone_now} Gone flips exceeds the "
-                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model)
+                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal)
         return 20
 
     # Silence is a failure — but only silence we actually went looking for.
@@ -1312,7 +1459,7 @@ def main() -> int:
         log(f"\nFAILING: {attempted} availability checks and not one page was readable.")
         log("Silence on this scale is a broken fetch layer, not a quiet week.")
         write_report(meta, avail, photos, news, "FAILED — zero pages readable across "
-                                                f"{attempted} checks. Not committed.", model)
+                                                f"{attempted} checks. Not committed.", model, cal)
         return 21
 
     meta["updated"] = today()
@@ -1324,7 +1471,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.", model)
+        write_report(meta, avail, photos, news, "No changes.", model, cal)
         return 10
 
     parts = []
@@ -1338,6 +1485,8 @@ def main() -> int:
         parts.append(f"{len(photos['resolved'])} photos resolved")
     if avail.get("confirmed"):
         parts.append(f"{len(avail['confirmed'])} stock checks")
+    if cal.get("expired"):
+        parts.append(f"{len(cal['expired'])} calendar entries expired")
     subject = f"refresh {today()} — " + (", ".join(parts) if parts else "no material change")
 
     if args.dry_run:
@@ -1346,7 +1495,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject, model)
+    write_report(meta, avail, photos, news, subject, model, cal)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")

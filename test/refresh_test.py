@@ -537,6 +537,78 @@ check("two requests to one outlet are spaced apart", gaps_ok, True)
 check("but different outlets still run in parallel",
       max(t for _, t in hits) - min(t for _, t in hits) < 6 * 0.25, True)
 
+section("The calendar expires on dates, deterministically and for free")
+# A "Dated opportunities" list advertising a drop that already happened is the
+# small visible rot that tells a reader nobody is home — and it needs no
+# research to catch, only arithmetic. So this is plain code, not a model call.
+for text, want in [
+    ("6 Aug 2026", "2026-08-06"),
+    ("13–16 Aug 2026", "2026-08-16"),       # a range expires on its END
+    ("2–6 Sept 2026", "2026-09-06"),        # 4-letter month abbreviation
+    ("Now → Sept 2026", "2026-09-30"),      # open-ended window: end of month
+    ("Now → early Oct 2026", "2026-10-10"),
+    ("Mid-Aug 2026", "2026-08-20"),
+    ("Nov 2026", "2026-11-30"),
+    ("Q4 2026", "2026-12-31"),
+    ("31 Feb 2026", "2026-02-28"),          # an impossible day must not raise
+    ("Live now", None),                     # no date at all — a different case
+    ("", None),
+]:
+    got = R.calendar_end(text)
+    check(f"{text!r} ends {want}", got.isoformat() if got else None, want)
+
+check("the whole stage takes no model", "model" in R.stage_calendar.__code__.co_varnames, False)
+
+
+def run_calendar(cal, watches, when):
+    orig = R.today
+    R.today = lambda: when
+    try:
+        return R.stage_calendar(cal, watches)
+    finally:
+        R.today = orig
+
+
+cal = {"drops": [{"date": "6 Aug 2026", "what": "Ming batch", "url": "https://m.example/x"},
+                 {"date": "Nov 2026", "what": "Baltic deliveries", "url": "https://b.example/x"}],
+       "events": [{"date": "13–16 Aug 2026", "what": "Watch Week Aspen"}],
+       "expected": [{"what": "GWD novelties"}],
+       "notHappening": [{"what": "Only Watch 2026", "checkedOn": R.today()}]}
+summary = run_calendar(cal, [], "2026-08-17")
+
+check("a passed drop leaves the live list", [d["what"] for d in cal["drops"]], ["Baltic deliveries"])
+check("a finished event leaves too", cal["events"], [])
+check("...but nothing is deleted", sorted(i["what"] for i in cal["passed"]),
+      ["Ming batch", "Watch Week Aspen"])
+check("...with the reason recorded",
+      [i["passedBecause"] for i in cal["passed"] if i["what"] == "Ming batch"], ["ended 2026-08-06"])
+check("a future date is left alone", len(summary["expired"]), 2)
+check("an unstamped editorial claim is flagged",
+      [i["what"] for _, i, _ in summary["stale"]], ["GWD novelties"])
+check("...and a freshly-stamped one is not", len(summary["stale"]), 1)
+
+# The day before, none of it should move — an opportunity must not vanish while
+# it is still live.
+cal2 = {"drops": [{"date": "6 Aug 2026", "what": "Ming batch"}], "events": [],
+        "expected": [], "notHappening": []}
+run_calendar(cal2, [], "2026-08-06")
+check("a drop is still live on its own day", [d["what"] for d in cal2["drops"]], ["Ming batch"])
+
+# "Live now" has no date to expire on, so the register retires it: the linked
+# watch going Gone is the evidence.
+live = {"date": "Live now", "what": "Doxa for Hodinkee", "url": "https://le.example/doxa"}
+cal3 = {"drops": [live], "events": [], "expected": [], "notHappening": []}
+run_calendar(cal3, [entry(buy="https://le.example/doxa", rank=0)], "2026-08-17")
+check("an undated drop survives while its watch is buyable", cal3["drops"], [live])
+cal4 = {"drops": [dict(live)], "events": [], "expected": [], "notHappening": []}
+s4 = run_calendar(cal4, [entry(buy="https://le.example/doxa", rank=6, tier="Gone")], "2026-08-17")
+check("...and retires when that watch goes Gone", cal4["drops"], [])
+check("...naming the watch as the reason",
+      "is now Gone" in cal4["passed"][0]["passedBecause"], True)
+check("an undated drop with no link is reported, not silently kept forever",
+      len(run_calendar({"drops": [{"date": "Live now", "what": "orphan"}], "events": [],
+                        "expected": [], "notHappening": []}, [], "2026-08-17")["undated"]), 1)
+
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())
 (tmp / "data.json").write_text("{ this is not json")
