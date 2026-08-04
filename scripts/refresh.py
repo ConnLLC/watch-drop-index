@@ -60,6 +60,13 @@ GONE_BLAST_RADIUS = 0.15   # refuse to commit if this share of entries flips to 
 PHOTO_BATCH = 36           # coverage converges in a couple of months at this rate
 PHOTO_RETRY_DAYS = 28      # how long before re-probing a source that errored
 MAX_NEW_ENTRIES = 25       # a week that yields more than this is a bug, not a boom
+
+# SCOPE (Lowell, 2026-08-04): a production cap is not a limited edition. Entries
+# matching these do not render — the same three patterns are in build.py and in
+# the page's script, and the three copies must not drift.
+NOT_LE = [re.compile(r"not formally limited", re.I),
+          re.compile(r"^capped", re.I),
+          re.compile(r"annually", re.I)]
 MIN_PAGE_TEXT = 200        # below this the page is JS-only or a bot wall: unreadable
 FETCH_TIMEOUT = 25
 MAX_PAGE_CHARS = 9000      # what we hand the model, from the end-of-header onward
@@ -198,6 +205,11 @@ def rank_for(status: str, buy_label: str, tags: list[str]) -> int:
 def apply_tier(entry: dict) -> None:
     entry["rank"] = rank_for(entry["status"], entry.get("buyLabel", ""), entry.get("tags", []))
     entry["tier"] = TIERS[entry["rank"]]
+
+
+def in_scope(entry: dict) -> bool:
+    edition = str(entry.get("edition", "")).strip()
+    return not any(rx.search(edition) for rx in NOT_LE)
 
 
 def days_since(iso: str | None) -> float:
@@ -726,6 +738,166 @@ Omit any watch the notes describe too vaguely to record properly.
 --- END ---"""
 
 
+""" ---------------------------------------------------- ledger display names
+
+The ledger is a register, so it reads like one: the brand column names the
+MANUFACTURER, and the model column carries a short editorial title. Design set
+those by hand for the founding 252 and baked them into the page. Anything added
+after that has to arrive with its own, in data.json — which is what this does.
+
+Two rules, both from design (v1.2 and v1.3 §9), and both closed:
+
+  displayBrand — only for a collab (× or /). The maker is named first by
+  convention, and the page already assumes that, so this field is written ONLY
+  when the maker is listed SECOND. If it cannot be told which party actually
+  makes the watch, the field is left unset and the name goes to design. The page
+  falls back safely either way.
+
+  displayModel — only when the model runs past 38 characters. Keep the family and
+  the edition identity (the quoted edition name especially); drop calibre
+  numbers, spec words, mm sizes, reference numbers and parenthetical variant
+  lists. Never invent a word that is not in the full name.
+
+Guessing is the one thing that is not allowed: a wrong maker attribution is a
+factual error about who built a watch, and an invented model word is worse than
+a long one. Both failure modes leave the field unset and surface the name in the
+report for design to rule on.
+"""
+
+DISPLAY_LIMIT = 38
+
+NAMING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "names": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "maker": {
+                        "type": "string",
+                        "description": "For a collab: the party that MANUFACTURES the watch, "
+                                       "copied exactly as it appears in the brand string. "
+                                       "Empty when the entry is not a collab or you cannot tell.",
+                    },
+                    "maker_certain": {"type": "boolean"},
+                    "short_model": {
+                        "type": "string",
+                        "description": f"The model name at {DISPLAY_LIMIT} characters or fewer, "
+                                       "using only words present in the full name. Empty if the "
+                                       "rule cannot get there without losing the identity.",
+                    },
+                },
+                "required": ["id", "maker", "maker_certain", "short_model"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["names"],
+    "additionalProperties": False,
+}
+
+NAMING_PROMPT = """You are keeping a watch register's ledger column readable.
+
+For each entry below, do two things.
+
+1. MAKER. If the brand is a collaboration (it contains × or /), say which party
+   actually MANUFACTURES the watch — the one whose factory builds it, not the
+   retailer, magazine, artist or fashion house that commissioned it. Copy the
+   name exactly as it appears inside the brand string. Set maker_certain false
+   if you are not sure; a wrong attribution is a factual error about who built
+   the watch. If the brand is not a collaboration, leave maker empty.
+
+2. SHORT MODEL. If the model name is longer than {limit} characters, shorten it
+   to {limit} or fewer:
+     KEEP  the family name and the edition identity — a quoted edition name
+           ("Tribute to Concorde") always survives, with its quotation marks.
+     DROP  calibre numbers (B01, 9SA5), spec words (Chronograph, Automatic,
+           Self-Winding, Date) unless the spec IS the identity, mm sizes,
+           reference numbers, and parenthetical variant lists.
+     NEVER introduce a word that does not appear in the full name.
+   If you cannot get under {limit} without losing what identifies the watch,
+   return an empty short_model. Leave it empty too when the name is already
+   {limit} characters or fewer.
+
+Entries:
+{entries}
+"""
+
+
+def needs_display_names(entry: dict) -> bool:
+    return bool(re.search(r"[×/]", entry["brand"])) or len(entry["model"]) > DISPLAY_LIMIT
+
+
+def _words(s: str) -> set[str]:
+    return {w for w in re.findall(r"[A-Za-z0-9]+", s.lower())}
+
+
+def assign_display_names(entries: list[dict], model: Model) -> list[str]:
+    """Fills displayBrand/displayModel in place. Returns the names design has to
+    rule on — anything the rules could not settle without guessing."""
+    todo = [e for e in entries if needs_display_names(e)]
+    if not todo:
+        return []
+
+    listing = "\n".join(
+        f'- id {e["id"]}\n  brand: {e["brand"]}\n  model: {e["model"]}' for e in todo
+    )
+    parsed = model.structured(
+        NAMING_PROMPT.format(limit=DISPLAY_LIMIT, entries=listing),
+        NAMING_SCHEMA, max_tokens=4000,
+    )
+    by_id = {e["id"]: e for e in todo}
+    answers = {a["id"]: a for a in (parsed or {}).get("names", [])}
+    queries: list[str] = []
+
+    for eid, e in by_id.items():
+        a = answers.get(eid, {})
+
+        if re.search(r"[×/]", e["brand"]):
+            parties = [p.strip() for p in re.split(r"\s*[×/]\s*", e["brand"]) if p.strip()]
+            maker = (a.get("maker") or "").strip()
+            if not maker or not a.get("maker_certain") or maker not in parties:
+                queries.append(f'collab brand "{e["brand"]}" — which party makes the watch?')
+            elif maker != parties[0]:
+                # First name = maker is what the page already assumes, so only the
+                # second-named case needs a field written at all.
+                e["displayBrand"] = maker
+
+        if len(e["model"]) > DISPLAY_LIMIT:
+            short = (a.get("short_model") or "").strip()
+            invented = _words(short) - _words(e["model"])
+            if not short or len(short) > DISPLAY_LIMIT or invented:
+                why = ("no short title" if not short
+                       else f"still {len(short)} characters" if len(short) > DISPLAY_LIMIT
+                       else "introduces " + ", ".join(sorted(invented)))
+                queries.append(f'model "{e["model"]}" ({len(e["model"])} chars) — {why}')
+            else:
+                e["displayModel"] = short
+
+    return queries
+
+
+def apply_corrections(watches: list[dict], path: Path) -> tuple[int, list[str]]:
+    """Folds Lowell's admin export into data.json, verbatim. His edits are the
+    top of the precedence order and this job never overwrites them afterwards —
+    once a name is here by hand, the naming pass leaves it alone."""
+    payload = json.loads(path.read_text())
+    by_id = {w["id"]: w for w in watches}
+    applied, unknown = 0, []
+    for wid, fields in payload.items():
+        target = by_id.get(wid)
+        if not target:
+            unknown.append(wid)
+            continue
+        for field in ("displayBrand", "displayModel", "desc"):
+            if field in fields and str(fields[field]).strip():
+                target[field] = fields[field]
+        applied += 1
+    return applied, unknown
+
+
 def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
     log(f"\n[4] NEW RELEASES — searching the press since {since}")
     summary = {"added": [], "rejected": [], "notes": None}
@@ -784,7 +956,21 @@ def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
         watches.append(entry)
         summary["added"].append(entry)
 
-    log(f"    added {len(summary['added'])} · rejected {len(summary['rejected'])}")
+    summary["design"] = assign_display_names(summary["added"], model)
+    named = sum(1 for e in summary["added"] if e.get("displayBrand") or e.get("displayModel"))
+
+    # An entry whose edition is a production cap is NOT a limited edition, so the
+    # page will not render it. That is the rule working, not a bug — the data is
+    # never "fixed" to force it on. It is reported because an addition nobody can
+    # see would otherwise look like the job doing nothing.
+    summary["out_of_scope"] = [e for e in summary["added"] if not in_scope(e)]
+
+    log(f"    added {len(summary['added'])} · rejected {len(summary['rejected'])}"
+        f" · ledger names written {named}")
+    if summary["design"]:
+        log(f"    {len(summary['design'])} name(s) need design's ruling — see the report")
+    if summary["out_of_scope"]:
+        log(f"    {len(summary['out_of_scope'])} added but out of scope (won't render)")
     return summary
 
 
@@ -832,6 +1018,20 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
             L += ["<details><summary>Rejected candidates "
                   f"({len(news['rejected'])})</summary>", ""]
             L += [f"- {n} — {why}" for n, why in news["rejected"]] + ["", "</details>", ""]
+        if news.get("out_of_scope"):
+            L += ["### Added but out of scope — these do not appear on the site", "",
+                  "> A production cap is not a limited edition. They stay in the file and "
+                  "start rendering by themselves if a later run confirms a real edition "
+                  "size. Do not edit the data to force them on.", ""]
+            L += [f"- **{e['brand']} {e['model']}** — {e['edition']}" for e in news["out_of_scope"]] + [""]
+        if news.get("design"):
+            # This is a question, not a note: the entries below are on the site
+            # under their full names until design rules, which is the safe state
+            # but not the finished one.
+            L += ["### For design — ledger names this run would not guess", "",
+                  "> Post these on the WATCHDROP RELAY thread. Until they are ruled on, "
+                  "the entries show their full brand and model.", ""]
+            L += [f"- {q}" for q in news["design"]] + [""]
 
     REPORT.write_text("\n".join(L))
     return "\n".join(L)
@@ -847,6 +1047,8 @@ def main() -> int:
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
     ap.add_argument("--photo-batch", type=int, default=PHOTO_BATCH)
+    ap.add_argument("--corrections", type=Path, default=None,
+                    help="apply Lowell's admin export (Copy corrections JSON) into data.json")
     args = ap.parse_args()
     stages = {int(s) for s in args.stages.split(",") if s.strip()}
 
@@ -874,6 +1076,13 @@ def main() -> int:
     model = Model(enabled=not args.no_api)
     if args.no_api:
         log("    (--no-api: fetch layer only, no model calls)")
+
+    # Lowell's hand corrections go in before anything else looks at a name, so a
+    # run can never write a display name over an edit he made this morning.
+    if args.corrections:
+        applied, unknown = apply_corrections(watches, args.corrections)
+        log(f"    corrections applied to {applied} entr{'y' if applied == 1 else 'ies'}"
+            + (f" · {len(unknown)} unknown id(s): {', '.join(unknown[:5])}" if unknown else ""))
 
     avail = photos = news = {}
     if 2 in stages:

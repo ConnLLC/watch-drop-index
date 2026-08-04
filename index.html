@@ -29,28 +29,54 @@ input[type=search]:focus{border-color:#17130d}
 .wdi-row:hover{background:#ece7da}
 .wdi-cta:hover{background:#8a5a2b;border-color:#8a5a2b;color:#f4f1ea}
 .wdi-badge:hover{border-color:#17130d}
+.wdi-sort:hover{color:#17130d}
+.wdi-ghost:hover{background:#17130d;color:#f4f1ea}
 /* PROVISIONAL — pending design's ruling, flagged twice on the RELAY thread. The
    comp specifies no focus state, and the rows are div[role=button], so a
    keyboard user would otherwise have no way to see where they are. Uses only
    ink from the approved palette; no new value has been invented. */
 .wdi-row:focus-visible{outline:1px solid #17130d;outline-offset:-1px;background:#ece7da}
+/* Lifted verbatim from the v1.3 reference helmet (design, 2026-08-04 18:12).
+   The stat ledger being hidden rather than removed is now design's own rule —
+   #t-buy/#t-total/#t-gone/#t-brands/#t-updated are the weekly refresh's
+   hydration contract and have to stay in the DOM to be rewritten.
+   Row grids key off nth-child, so the six children of [data-mq="cols"] are
+   positional: dot, brand+model, Released, Edition, USD, chevron. Reordering
+   them silently rearranges the phone layout. */
 @media (max-width:720px){
+  [data-mq="utilwrap"]{padding:0 20px !important}
+  [data-mq="util"]{gap:12px}
+  [data-mq="utc"]{display:none !important}
+  [data-mq="hdr"]{padding:26px 20px 0 !important}
   [data-mq="hgrid"]{display:block !important}
   [data-mq="hleft"]{max-width:none !important}
   [data-mq="hdiv"]{display:none !important}
-  /* Lowell, 2026-08-04: the stat ledger is desktop-only. HIDDEN, not removed —
-     #t-buy/#t-total/#t-gone/#t-brands/#t-updated are the weekly refresh's
-     hydration contract and must stay in the DOM to be rewritten. Diverges from
-     design's reference until they fold it in; raised on the RELAY thread. */
   [data-mq="hstats"]{display:none !important}
-  [data-mq="lockup"]{font-size:38px !important}
+  [data-mq="lockup"]{font-size:34px !important}
   [data-mq="wide"]{width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:0 !important}
-  [data-mq="search"]{width:100% !important;margin:10px 0 0 !important}
-  [data-mq="sort"]{width:100% !important;margin:10px 0 0 !important}
-  [data-mq="flabel"]{width:auto !important;margin-right:6px !important}
+  div[data-mq="wide"]{margin-top:16px !important}
+  [data-mq="fwrap"]{position:static !important}
+  [data-mq="fbar"]{padding:10px 20px 12px !important;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  [data-mq="fbar"] > div{display:contents}
+  [data-mq="flabel"]{display:none !important}
   [data-mq="fbar"] button{padding:7px 10px !important;font-size:11.5px !important}
-  [data-mq="cols"]{grid-template-columns:16px minmax(0,1fr) 100px !important;min-height:48px !important}
-  [data-mq="cols"] > *:nth-child(3), [data-mq="cols"] > *:nth-child(5){display:none !important}
+  [data-mq="pband"],[data-mq="preset"]{display:none !important}
+  [data-mq="search"]{flex:1 1 140px;min-width:140px;width:auto !important;margin:0 !important}
+  [data-mq="sort"]{flex:1 1 104px;min-width:104px;max-width:170px;width:auto !important;margin:0 !important}
+  [data-mq="main"]{padding:0 20px !important}
+  [data-mq="colh"]{grid-template-columns:16px minmax(0,1fr) 96px !important;gap:12px !important}
+  [data-mq="colh"] > *:nth-child(3), [data-mq="colh"] > *:nth-child(4), [data-mq="colh"] > *:nth-child(6){display:none !important}
+  [data-mq="colh"] > *:nth-child(2) > span:first-child{width:auto !important}
+  [data-mq="cols"]{grid-template-columns:16px minmax(0,1fr) 96px !important;grid-template-rows:auto auto;gap:1px 12px !important;min-height:38px !important;padding:8px 4px 8px 2px !important}
+  [data-mq="cols"] > *:nth-child(1){grid-row:1/3}
+  [data-mq="cols"] > *:nth-child(2){grid-row:1/3;flex-direction:column;align-items:flex-start;gap:1px !important;line-height:1.35 !important}
+  [data-mq="cols"] > *:nth-child(5){line-height:1.35 !important}
+  [data-mq="cols"] > *:nth-child(2) > span{width:auto !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important;box-sizing:border-box}
+  [data-mq="cols"] > *:nth-child(2) > span:last-child{font-size:15.5px !important}
+  [data-mq="cols"] > *:nth-child(4){display:none !important}
+  [data-mq="cols"] > *:nth-child(3){display:flex !important;grid-column:3;grid-row:2;border-left:none !important;line-height:1.3 !important;font-size:11px !important;align-self:center;justify-content:flex-end}
+  [data-mq="cols"] > *:nth-child(5){grid-column:3;grid-row:1;align-self:center}
+  [data-mq="cols"] > *:nth-child(6){display:none !important}
   [data-mq="detail"]{display:block !important;padding:8px 2px 22px 16px !important}
   [data-mq="detail"] > div:first-child{margin-bottom:18px}
   [data-mq="two"]{grid-template-columns:1fr !important}
@@ -61,14 +87,14 @@ input[type=search]:focus{border-color:#17130d}
 </head><body>
 <div style="min-height:100vh;background:#f4f1ea;color:#3a342b;font-family:'Archivo',sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased">
 
-  <div style="max-width:1140px;margin:0 auto;padding:0 30px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 10px;border-bottom:1px solid #ddd6c8;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8a8071;font-weight:600">
+  <div data-mq="utilwrap" style="max-width:1140px;margin:0 auto;padding:0 30px">
+    <div data-mq="util" style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 10px;border-bottom:1px solid #ddd6c8;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8a8071;font-weight:600">
       <span>watchdropindex.com</span>
-      <span>Refreshed weekly · Mondays 09:00 UTC</span>
+      <span>Refreshed weekly<span data-mq="utc"> · Mondays 09:00 UTC</span></span>
     </div>
   </div>
 
-  <header style="max-width:1140px;margin:0 auto;padding:38px 30px 0">
+  <header data-mq="hdr" style="max-width:1140px;margin:0 auto;padding:38px 30px 0">
     <div data-mq="hgrid" style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0 48px;align-items:center">
     <div data-mq="hleft" style="justify-self:end;width:100%;max-width:460px;display:grid;justify-items:center;text-align:center;position:relative">
     <div id="lockup" data-logo-px="46" data-mq="lockup" aria-label="Watch Drop Index" style="display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:46px;font-weight:600;letter-spacing:0;color:#17130d;margin:0 auto;width:max-content">
@@ -77,11 +103,11 @@ input[type=search]:focus{border-color:#17130d}
         <span style="position:absolute;left:0;top:0;display:flex;justify-content:space-between;align-items:center;width:2.85em;height:1em"><span data-b="dl">D</span><span>R</span><span>O</span><span>P</span></span>
         <span style="position:absolute;right:0;top:.17em;width:.6em;height:.6em;border-radius:50%;background:#8a5a2b"><span style="position:absolute;left:50%;top:50%;width:0;height:0">
           <span style="position:absolute;left:-1.7em;top:-1.7em;width:3.4em;height:3.4em;border:1px solid #17130d;border-radius:50%;opacity:.6;clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>
-          <span style="position:absolute;left:.86em;top:-.23em;width:.54em;height:.46em;background:#fdfbf5;border:.035em solid #b9ae97;box-shadow:inset .02em .05em .07em rgba(23,19,13,.3), inset -.02em -.03em .05em rgba(255,255,255,.95), 0 .02em .03em rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;overflow:hidden"><span data-date style="font-family:'Archivo',sans-serif;font-weight:600;font-size:.3em;color:#17130d;line-height:1;font-variant-numeric:tabular-nums;animation:none"></span></span>
-          <span data-clock="hour" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 43200s linear infinite"><span style="position:absolute;left:-.17em;bottom:-.05em;width:.34em;height:1.2em;background:#f4f1ea;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span><span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span></span>
-          <span data-clock="min" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 3600s linear infinite"><span style="position:absolute;left:-.15em;bottom:-.05em;width:.3em;height:1.6em;background:#f4f1ea;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span><span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span></span>
-          <span data-clock="sec" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 60s linear infinite"><span style="position:absolute;left:-.06em;bottom:-.45em;width:.12em;height:2.02em;background:#f4f1ea"></span><span style="position:absolute;left:-.025em;bottom:-.4em;width:.05em;height:1.92em;background:#8a5a2b"></span><span style="position:absolute;left:-.09em;bottom:-.5em;width:.18em;height:.18em;border-radius:50%;background:#8a5a2b;box-shadow:0 0 0 1px #f4f1ea"></span></span>
-          <span style="position:absolute;left:-.1em;top:-.1em;width:.2em;height:.2em;border-radius:50%;background:#17130d;box-shadow:0 0 0 1px #f4f1ea"></span>
+          <span style="position:absolute;left:.86em;top:-.23em;width:.54em;height:.46em;background:#fdfbf5;z-index:1;border:.035em solid #b9ae97;box-shadow:inset .02em .05em .07em rgba(23,19,13,.3), inset -.02em -.03em .05em rgba(255,255,255,.95), 0 .02em .03em rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;overflow:hidden"><span data-date style="font-family:'Archivo',sans-serif;font-weight:600;font-size:.3em;color:#17130d;line-height:1;font-variant-numeric:tabular-nums;animation:none"></span></span>
+          <span data-clock="hour" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 43200s linear infinite"><span style="position:absolute;left:-.17em;bottom:-.05em;width:.34em;height:1.2em;background:#f4f1ea;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span><span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span></span>
+          <span data-clock="min" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 3600s linear infinite"><span style="position:absolute;left:-.15em;bottom:-.05em;width:.3em;height:1.6em;background:#f4f1ea;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span><span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span></span>
+          <span data-clock="sec" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 60s linear infinite"><span style="position:absolute;left:-.06em;bottom:-.45em;width:.12em;height:2.02em;background:#f4f1ea"></span><span style="position:absolute;left:-.025em;bottom:-.4em;width:.05em;height:1.92em;background:#8a5a2b"></span><span style="position:absolute;left:-.09em;bottom:-.5em;width:.18em;height:.18em;border-radius:50%;background:#8a5a2b;box-shadow:0 0 0 1px #f4f1ea"></span></span>
+          <span style="position:absolute;left:-.1em;top:-.1em;width:.2em;height:.2em;border-radius:50%;background:#17130d;z-index:3;box-shadow:0 0 0 1px #f4f1ea"></span>
         </span></span>
       </span>
       <span style="display:block;width:3.9em;position:relative"><span style="display:flex;justify-content:space-between;width:3.6em"><span data-b="il">I</span><span>N</span><span>D</span><span>E</span><span data-b="xr">X</span></span><span style="position:absolute;right:-.62em;bottom:.06em;font-size:.24em;color:#8a8071;letter-spacing:.08em;font-weight:600">™</span></span>
@@ -96,17 +122,17 @@ input[type=search]:focus{border-color:#17130d}
     <div data-mq="hstats" style="justify-self:start;width:100%;max-width:400px;font-variant-numeric:tabular-nums">
       <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8a8071;font-weight:700;padding-bottom:8px">The register at a glance</div>
       <div style="border-top:2px solid #17130d">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Buyable online today</span><b id="t-buy" style="color:#1e6b41;font-weight:700;font-size:15px">58</b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Limited runs tracked</span><b id="t-total" style="color:#17130d;font-weight:700;font-size:15px">252</b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Confirmed gone</span><b id="t-gone" style="color:#17130d;font-weight:700;font-size:15px">33</b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Brands</span><b id="t-brands" style="color:#17130d;font-weight:700;font-size:15px">94</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Buyable online today</span><b id="t-buy" style="color:#1e6b41;font-weight:700;font-size:15px">55</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Limited runs tracked</span><b id="t-total" style="color:#17130d;font-weight:700;font-size:15px">246</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Confirmed gone</span><b id="t-gone" style="color:#17130d;font-weight:700;font-size:15px">31</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Brands</span><b id="t-brands" style="color:#17130d;font-weight:700;font-size:15px">91</b></div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #e9e4d8"><span style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">Updated</span><span id="t-updated" style="color:#17130d;font-weight:600;font-size:13px">2026-08-04</span></div>
       </div>
     </div>
     </div>
   </header>
 
-  <div id="fbarwrap" style="position:sticky;top:0;z-index:30;background:#f4f1ea;border-bottom:2px solid #17130d">
+  <div id="fbarwrap" data-mq="fwrap" style="position:sticky;top:0;z-index:30;background:#f4f1ea;border-bottom:2px solid #17130d">
     <div id="fbar" data-mq="fbar" style="max-width:1200px;box-sizing:border-box;margin:0 auto;padding:12px 30px 13px 30px">
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Availability:</span>
@@ -116,7 +142,7 @@ input[type=search]:focus{border-color:#17130d}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px">
         <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Price:</span>
         <span id="bandBtns" style="display:contents"></span>
-        <button id="reset" style="border:none;background:none;padding:5px 10px;font-size:12px;font-family:'Archivo',sans-serif;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Reset</button>
+        <button id="reset" data-mq="preset" style="border:none;background:none;padding:5px 10px;font-size:12px;font-family:'Archivo',sans-serif;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Reset</button>
         <select id="sort" data-mq="sort" style="margin-left:auto;width:150px;padding:6px 8px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:12.5px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;cursor:pointer">
           <option value="tier">Sort by</option>
           <option value="date">Newest first</option>
@@ -129,16 +155,33 @@ input[type=search]:focus{border-color:#17130d}
     </div>
   </div>
 
-  <main id="main" style="max-width:1200px;box-sizing:border-box;margin:0 auto;padding:0 30px 0 30px">
+  <main id="main" data-mq="main" style="max-width:1200px;box-sizing:border-box;margin:0 auto;padding:0 30px 0 30px">
 
-    <div data-mq="cols" style="display:grid;grid-template-columns:16px minmax(0,1fr) 130px 112px 16px;gap:14px;padding:10px 4px 8px 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">
-      <span></span><span>Brand &amp; model</span><span style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end">Edition</span><span style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end">USD</span><span></span>
+    <!-- The header's Brand label carries the same 175px + 11px gap as the row
+         below it, so "Model" sits exactly over the model column. All five
+         labels sort; JS only writes the ▾/▴ into the arr- spans. -->
+    <div data-mq="colh" style="display:grid;grid-template-columns:16px minmax(0,1fr) 92px 70px 112px 16px;gap:14px;padding:10px 4px 8px 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700">
+      <span></span><span style="display:flex;gap:11px"><span class="wdi-sort" data-sortcol="brand" role="button" tabindex="0" style="width:175px;flex:none;cursor:pointer;white-space:nowrap">Brand<span id="arr-brand"></span></span><span class="wdi-sort" data-sortcol="model" role="button" tabindex="0" style="cursor:pointer;white-space:nowrap">Model<span id="arr-model"></span></span></span><span class="wdi-sort" data-sortcol="date" role="button" tabindex="0" style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;cursor:pointer;white-space:nowrap">Released<span id="arr-date"></span></span><span class="wdi-sort" data-sortcol="edition" role="button" tabindex="0" style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;cursor:pointer;white-space:nowrap">Edition<span id="arr-edition"></span></span><span class="wdi-sort" data-sortcol="price" role="button" tabindex="0" style="text-align:right;border-left:1px solid #ddd6c8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;cursor:pointer;white-space:nowrap">USD<span id="arr-price"></span></span><span></span>
     </div>
 
     <div id="loading" style="padding:70px 0;text-align:center;font-family:'Newsreader',serif;font-style:italic;font-size:17px;color:#8a8071;border-top:2px solid #17130d">Loading the register…</div>
     <div id="empty" style="display:none;padding:70px 0;text-align:center;font-family:'Newsreader',serif;font-style:italic;font-size:17px;color:#8a8071;border-top:2px solid #17130d">Nothing matches those filters.</div>
 
     <div id="list" style="border-top:2px solid #17130d"></div>
+
+    <!-- Editor's journal. Rendered to the reference exactly, but it only ever
+         mounts for an unlocked admin (see adminUnlocked() in the script) — on
+         the live site the query string alone is not a gate. -->
+    <section id="journal" style="display:none">
+      <div style="width:26px;height:2px;background:#8a5a2b;margin:64px 0 0"></div>
+      <h2 style="font-family:'Newsreader',serif;font-size:25px;font-weight:500;color:#17130d;margin:12px 0 4px;letter-spacing:-.01em">Editor's journal — name changes</h2>
+      <p style="color:#8a8071;font-size:13.5px;margin:0 0 10px;max-width:720px">Every entry whose ledger name differs from the register data, and the source of the change. Your corrections apply immediately on this device and export for the weekly job. Rows carry a bronze ° where a name or description has been changed. Descriptions are edited inside the entry — open its row.</p>
+      <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 14px">
+        <button id="copyPatch" class="wdi-ghost" style="border:1px solid #17130d;background:none;padding:6px 12px;font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#17130d;cursor:pointer">Copy corrections JSON</button>
+        <span id="ovCount" style="font-size:12px;color:#8a8071;font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div id="journalRows" style="border-top:2px solid #17130d"></div>
+    </section>
 
     <section>
       <div style="width:26px;height:2px;background:#17130d;margin:64px 0 0"></div>
@@ -197,7 +240,7 @@ input[type=search]:focus{border-color:#17130d}
           </ul>
         </div>
       </div>
-      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · watchdropindex.com · revision <span id="c-rev">3</span> · <span id="c-imgs">40</span> of <span id="c-total">252</span> photographs resolved · every entry links to the source it came from</p>
+      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · watchdropindex.com · revision <span id="c-rev">3</span> · <span id="c-imgs">37</span> of <span id="c-total">246</span> photographs resolved · every entry links to the source it came from</p>
       <p style="margin-top:10px;font-size:10px;letter-spacing:.1em;text-align:center;color:#a09786">WATCH DROP INDEX™ is a trademark of Conn LLC, Toronto, Ontario, Canada. All rights reserved.</p>
     </footer>
 
@@ -209,11 +252,11 @@ input[type=search]:focus{border-color:#17130d}
         <span style="position:absolute;left:0;top:0;display:flex;justify-content:space-between;align-items:center;width:2.85em;height:1em"><span data-b="dl">D</span><span>R</span><span>O</span><span>P</span></span>
         <span style="position:absolute;right:0;top:.17em;width:.6em;height:.6em;border-radius:50%;background:#8a5a2b"><span style="position:absolute;left:50%;top:50%;width:0;height:0">
           <span style="position:absolute;left:-1.7em;top:-1.7em;width:3.4em;height:3.4em;border:1px solid #17130d;border-radius:50%;opacity:.6;clip-path:polygon(50% -3%, 103% -3%, 103% 103%, 34% 103%, 34% 60%, 50% 60%)"></span>
-          <span style="position:absolute;left:.86em;top:-.23em;width:.54em;height:.46em;background:#fdfbf5;border:.035em solid #b9ae97;box-shadow:inset .02em .05em .07em rgba(23,19,13,.3), inset -.02em -.03em .05em rgba(255,255,255,.95), 0 .02em .03em rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;overflow:hidden"><span data-date style="font-family:'Archivo',sans-serif;font-weight:600;font-size:.3em;color:#17130d;line-height:1;font-variant-numeric:tabular-nums;animation:none"></span></span>
-          <span data-clock="hour" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 43200s linear infinite"><span style="position:absolute;left:-.17em;bottom:-.05em;width:.34em;height:1.2em;background:#f4f1ea;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span><span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span></span>
-          <span data-clock="min" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 3600s linear infinite"><span style="position:absolute;left:-.15em;bottom:-.05em;width:.3em;height:1.6em;background:#f4f1ea;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span><span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span></span>
-          <span data-clock="sec" style="position:absolute;left:0;top:0;width:0;height:0;animation:wdi-spin 60s linear infinite"><span style="position:absolute;left:-.025em;bottom:-.4em;width:.05em;height:1.92em;background:#8a5a2b"></span></span>
-          <span style="position:absolute;left:-.1em;top:-.1em;width:.2em;height:.2em;border-radius:50%;background:#17130d;box-shadow:0 0 0 1px #f4f1ea"></span>
+          <span style="position:absolute;left:.86em;top:-.23em;width:.54em;height:.46em;background:#fdfbf5;z-index:1;border:.035em solid #b9ae97;box-shadow:inset .02em .05em .07em rgba(23,19,13,.3), inset -.02em -.03em .05em rgba(255,255,255,.95), 0 .02em .03em rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;overflow:hidden"><span data-date style="font-family:'Archivo',sans-serif;font-weight:600;font-size:.3em;color:#17130d;line-height:1;font-variant-numeric:tabular-nums;animation:none"></span></span>
+          <span data-clock="hour" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 43200s linear infinite"><span style="position:absolute;left:-.17em;bottom:-.05em;width:.34em;height:1.2em;background:#f4f1ea;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span><span style="position:absolute;left:-.12em;bottom:0;width:.24em;height:1.13em;background:#17130d;clip-path:polygon(50% 0,100% 12%,74% 100%,26% 100%,0 12%)"></span></span>
+          <span data-clock="min" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 3600s linear infinite"><span style="position:absolute;left:-.15em;bottom:-.05em;width:.3em;height:1.6em;background:#f4f1ea;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span><span style="position:absolute;left:-.1em;bottom:0;width:.2em;height:1.53em;background:#17130d;clip-path:polygon(50% 0,100% 10%,72% 100%,28% 100%,0 10%)"></span></span>
+          <span data-clock="sec" style="position:absolute;left:0;top:0;width:0;height:0;z-index:2;animation:wdi-spin 60s linear infinite"><span style="position:absolute;left:-.025em;bottom:-.4em;width:.05em;height:1.92em;background:#8a5a2b"></span></span>
+          <span style="position:absolute;left:-.1em;top:-.1em;width:.2em;height:.2em;border-radius:50%;background:#17130d;z-index:3;box-shadow:0 0 0 1px #f4f1ea"></span>
         </span></span>
       </span>
       <span style="display:block;width:3.9em;position:relative"><span style="display:flex;justify-content:space-between;width:3.6em"><span data-b="il">I</span><span>N</span><span>D</span><span>E</span><span data-b="xr">X</span></span><span style="position:absolute;right:-.62em;bottom:.06em;font-size:.24em;color:#8a8071;letter-spacing:.08em;font-weight:600">™</span></span></div></template>
@@ -228,6 +271,20 @@ input[type=search]:focus{border-color:#17130d}
      in search and in the availability key — they just have no chip of their own. */
   var FILTERABLE = ["Buy online now","Buy at retailer","Drop upcoming","Gone"];
   var HELP = {"Buy online now": "Add to cart on a brand webshop or an authorised online retailer.", "Drop upcoming": "Announced with a date. Nothing to buy yet.", "Buy at retailer": "Available for purchase now at physical retail — not online. We list what we know about where.", "Waitlist or ballot": "Entry by lottery, ballot or waitlist.", "AD or boutique": "Allocation only. Never sold online.", "In person only": "Sold at an event or a single physical location.", "Gone": "Sold out, closed or fully allocated."};
+  /* Brand column shows the watch MANUFACTURER only. Default: the first name in a
+     collab (the maker-first convention); MAKER overrides the four cases where the
+     maker is listed second. The full collab string stays in the data, in the
+     search hay and on the register plate. */
+  var MAKER = {"Worn & Wound × BOLDR": "BOLDR", "The Armoury × Naoya Hida": "Naoya Hida & Co.", "Omega / Swatch": "Swatch", "Swatch × Audemars Piguet": "Swatch"};
+  /* Editorial short titles for the ledger. Keep family + edition identity, drop
+     calibre numbers, spec words, mm sizes, references and variant lists; ≤38
+     characters. Every pair is an editorial decision, not a truncation — these
+     come from design and are never regenerated mechanically. Entries added by
+     the weekly job carry displayBrand/displayModel in data.json instead, and
+     those win over these maps. */
+  var SHORT = {"Navitimer B01 Chronograph 43 \"Tribute to Concorde\"": "Navitimer \"Tribute to Concorde\"", "Antarctique \"Frozen Meteor\" (38.5 & 40.5mm)": "Antarctique \"Frozen Meteor\"", "Antarctique Dark Sector Titanium \"Cosmic Blue\"": "Antarctique Dark Sector \"Cosmic Blue\"", "\"Ice Forest at Dawn\" Spring Drive U.F.A.": "\"Ice Forest at Dawn\" U.F.A.", "Master Collection Moon Phase \"Year of the Horse\"": "Master Moon Phase \"Year of the Horse\"", "Le Régulateur Esprit Flinqué (blue & grey)": "Le Régulateur Esprit Flinqué", "× Alain Silberstein Régulateur Tourbillon Blue": "× Silberstein Régulateur Tourbillon", "US 250 Anthracite Navigator (SSNAV-D Auto Type II)": "US 250 Anthracite Navigator", "Iced Sea Automatic Date 0 Oxygen LE 300 — coral dial": "Iced Sea 0 Oxygen LE 300 (coral)", "Iced Sea Automatic Date 0 Oxygen LE 700 — subfossil wood dial": "Iced Sea 0 Oxygen LE 700 (subfossil)", "Star Legacy Nicolas Rieussec Chronograph LE 821": "Star Legacy Rieussec Chrono LE 821", "Lou Gehrig Limited Edition (Big Crown Pointer Date)": "Lou Gehrig Limited Edition", "\"Starry Sky\" 2026 series (SSH187 / HAB005 / HAB006 / HAB004 / SSJ039)": "\"Starry Sky\" 2026 series", "Marinemaster 1968 Heritage Diver × JAMSTEC": "Marinemaster 1968 × JAMSTEC", "Speedtimer Mechanical Chronograph 145th Anniversary": "Speedtimer 145th Anniversary", "5 Sports \"Rally Diver\" (38mm green / 42mm blue)": "5 Sports \"Rally Diver\"", "SEGA 65th Anniversary Chronograph (2 colourways)": "SEGA 65th Anniversary Chronograph", "936 S Black Chronograph, Fully Tegimented LE": "936 S Black Tegimented LE", "Croft Mid-Size Automatic \"Dolphin Project\"": "Croft \"Dolphin Project\"", "Field Watch with a Twist (Whirlpool / Storm)": "Field Watch with a Twist", "T-Race MotoGP 2026 Automatic Chronograph": "T-Race MotoGP 2026 Chronograph", "Trente-Deux × Exquisite Timepieces Purple LE": "Trente-Deux Purple LE", "GS9 Club member exclusive \"Minato-nezumi\"": "GS9 Club \"Minato-nezumi\"", "Aston Martin Aramco Formula One Navitimer B01": "Navitimer Aston Martin F1", "Navitimer B01 \"North America\" Limited Edition": "Navitimer \"North America\" LE", "Top Time B01 41 \"Tribute to DB5\" (Aston Martin)": "Top Time \"Tribute to DB5\"", "Mudmaster × Team Land Cruiser Toyota Auto Body": "Mudmaster × Team Land Cruiser", "Mille Miglia GTS Power Control \"Grigio-Blu\"": "Mille Miglia GTS \"Grigio-Blu\"", "The Citizen — Eco-Drive 50th Anniversary": "The Citizen Eco-Drive 50th", "Spirit of Big Bang Moon Phase \"Impact\" All Black": "Spirit of Big Bang \"Impact\" All Black", "Meister Chronoscope Edition (\"Classics in Captivating Colors\")": "Meister Chronoscope Edition", "F77 MKII Stone Dials (lapis / meteorite / aventurine)": "F77 MKII Stone Dials", "Seamaster Diver 300M Chronograph \"007 First Light\"": "Seamaster 300M \"007 First Light\"", "Seamaster Diver 300M Milano Cortina 2026": "Seamaster 300M Milano Cortina 2026", "Seamaster Diver 300M Paralympic Winter Games Milano Cortina": "Seamaster 300M Paralympic 2026", "Speedmaster Moonwatch Professional \"Masters Green\"": "Speedmaster Moonwatch \"Masters Green\"", "20th Anniversary raffles — LM101 Longhorn & M.A.D.1S": "LM101 Longhorn & M.A.D.1S raffles", "Conquer 2026 Limited Edition Chronograph": "Conquer 2026 LE Chronograph", "Lange 1 Tourbillon Perpetual Calendar \"Lumen\"": "Lange 1 Tourbillon Perpetual \"Lumen\"", "Minute Repeater Resonance 12:59 First Edition": "Minute Repeater Resonance 12:59", "Royal Oak Concept Flying Tourbillon \"Yoon & Verbal\"": "Royal Oak Concept \"Yoon & Verbal\"", "Villeret Calendrier Chinois Traditionnel \"Year of the Horse\"": "Villeret \"Year of the Horse\"", "Classique 7185 Chinese New Year \"Year of the Horse\"": "Classique 7185 \"Year of the Horse\"", "Classique Tourbillon Sidéral 7255PT/2N/9VU": "Classique Tourbillon Sidéral", "Marine Tourbillon Équation Marchante 5887PT/YS/5WV": "Marine Tourbillon Équation Marchante", "America250 Avenger Night Mission Chronograph": "America250 Avenger Night Mission", "Navitimer B19 Perpetual Calendar, full platinum": "Navitimer B19 Perpetual (platinum)", "Octo Finissimo Ultra Tourbillon Platinum": "Octo Finissimo Ultra Tourbillon", "L.U.C Quattro Spirit 25 \"Straw Marquetry\"": "L.U.C Quattro \"Straw Marquetry\"", "Goldfeather — Imari Nabeshima porcelain dial": "Goldfeather Imari Nabeshima", "Goldfeather — Urushi maki-e blue gradient": "Goldfeather Urushi maki-e", "Antarctique Tourbillon Titanium \"Cosmic Blue\"": "Antarctique Tourbillon \"Cosmic Blue\"", "Faubourg de Cracovie \"Crossroads\" Victory Green Chronograph": "Faubourg de Cracovie \"Crossroads\"", "La Esmeralda Tourbillon \"A Secret\" Eternity Edition (Red)": "La Esmeralda \"A Secret\" Eternity", "SeaQ Panorama Date \"Northern Tide\" 43.2mm": "SeaQ Panorama \"Northern Tide\"", "Seventies Chronograph XV Limited Edition": "Seventies Chronograph XV LE", "Balancier 3 Titanium Blue (2026 edition)": "Balancier 3 Titanium Blue", "Endeavour Minute Repeater Cylindrical Tourbillon Skeleton \"Cosmic Rain\"": "Endeavour Repeater \"Cosmic Rain\"", "Endeavour Perpetual Calendar Concept Tantalum": "Endeavour Perpetual Tantalum", "Streamliner Alpine Drivers + Mechanics Pink Edition (set)": "Streamliner Alpine Pink Edition set", "Streamliner Small Seconds Lime Green Enamel": "Streamliner Lime Green Enamel", "Big Bang Tourbillon \"GOAT\" (Novak Djokovic)": "Big Bang Tourbillon \"GOAT\"", "Classic Fusion Titanium \"Retroverse\" (The Hour Glass)": "Classic Fusion \"Retroverse\"", "Spirit of Big Bang Moon Phase \"Impact\" Diamond Sapphire": "Spirit of Big Bang \"Impact\" Diamond", "Spirit of Big Bang Moon Phase \"Impact\" Sapphire Osmium": "Spirit of Big Bang \"Impact\" Osmium", "Big Pilot's Watch Perpetual Calendar Ceralume": "Big Pilot Perpetual Ceralume", "Master Grande Tradition Tourbillon Jumping Date": "Master Tourbillon Jumping Date", "Master Hybris Artistica \"Inventiva Gyrotourbillon à Stratosphère\"": "Hybris Artistica Gyrotourbillon", "Master Hybris Mechanica Ultra-Thin Minute Repeater": "Hybris Mechanica Minute Repeater", "Reverso One \"La Vallée des Merveilles\" (3 models)": "Reverso One \"Vallée des Merveilles\"", "Reverso Tribute Enamel \"Hokusai Waterfalls\" (4 models)": "Reverso Tribute \"Hokusai Waterfalls\"", "Reverso Tribute Monoface \"Or Deco Cocktail\" (3 gem-set)": "Reverso Tribute \"Or Deco Cocktail\"", "LM Perpetual Chromatic Editions (3 gem-set)": "LM Perpetual Chromatic Editions", "Hölstein Edition 2026 (Artelier Small Seconds)": "Hölstein Edition 2026", "Radiomir California Bronzo + Platinumtech \"Experience\" set": "Radiomir California \"Experience\" set", "Submersible Navy SEALs \"Afniotech Experience\"": "Submersible Navy SEALs \"Afniotech\"", "Toric Chronographe Rattrapante Platinum": "Toric Rattrapante Platinum", "Nautilus 50th Anniversary Pocket Watch 958G-001": "Nautilus 50th Pocket Watch", "Modello Due UT2-NST \"Natural Selection\"": "Modello Due \"Natural Selection\"", "Métiers d'Art \"Tribute to Great Civilisations II\" (4 models)": "Métiers d'Art \"Great Civilisations II\"", "Overseas Self-Winding Ultra-Thin, Platinum": "Overseas Ultra-Thin Platinum", "Chronomaster Revival \"Liberty II\" (steel & carbon)": "Chronomaster Revival \"Liberty II\"", "Chronomaster Sport Skeleton, diamond-set rose gold": "Chronomaster Sport Skeleton rose gold", "Monaco Chronograph × Goodwood Festival of Speed": "Monaco Chronograph × Goodwood", "NH TYPE 2C-2 (porcelain dial) · TYPE 1E · TYPE 5B / 5B-1": "NH TYPE 2C-2 · 1E · 5B", "1965 Heritage Diver — Shohei Ohtani (grey & blue)": "1965 Heritage Diver Shohei Ohtani", "Les Cabinotiers Minute Repeater Tourbillon Skeleton": "Les Cabinotiers Repeater Tourbillon"};
+  var maker = function (b) { return MAKER[b] || (/[×\/]/.test(b) ? b.split(/\s*[×\/]\s*/)[0].trim() : b); };
+  var shortModel = function (m) { return SHORT[m] || m; };
   var CONF = {
     high: "brand source, or several credible outlets agree",
     medium: "one credible source",
@@ -236,17 +293,52 @@ input[type=search]:focus{border-color:#17130d}
 
   var DOT = function (r) { return r === 0 ? "#1e6b41" : r <= 2 ? "#35597e" : r <= 5 ? "#97701c" : "#b0776b"; };
   var fmtFull = function (n) { return n >= 1e6 ? "$" + (n / 1e6).toFixed(2) + "M" : "$" + n.toLocaleString("en-US"); };
+  /* The Edition column is a number or "N/A" — never prose. Status words beat
+     digits, so "Unconfirmed, likely 100" reads N/A rather than 100. The full
+     edition text stays on hover and in the expanded frame. */
   var shortEd = function (s) {
-    var t = String(s);
-    if (/unconfirmed|not disclosed|not stated/i.test(t)) return "—";
-    var nums = t.match(/\d[\d,]*/g);
-    if (!nums) return t.length > 16 ? t.slice(0, 15) + "…" : t;
-    if (/each|per (colour|color|version|metal|size|colourway)/i.test(t)) return nums[0] + " ea.";
-    if (nums.length > 1) return nums.slice(0, 2).join(" + ");
-    return nums[0];
+    var t = String(s || "").trim();
+    if (/unconfirmed|not stated|not disclosed|not numbered|special edition|size not stated/i.test(t)) return "N/A";
+    if (/^unique piece/i.test(t)) return "1";
+    var tot = t.match(/([\d,]+)\s*total/i); if (tot) return tot[1];
+    var nums = (t.match(/\d[\d,]*/g) || []).map(function (x) { return +x.replace(/,/g, ""); });
+    if (!nums.length) return "N/A";
+    if (/each/i.test(t) || /–|—|-\s*\d/.test(t.replace(/[\d,]+/, ""))) return /each/i.test(t) ? "N/A" : nums[0].toLocaleString("en-US");
+    if (nums.length > 1 && /\//.test(t)) return nums.reduce(function (a, b) { return a + b; }, 0).toLocaleString("en-US");
+    return nums[0].toLocaleString("en-US");
   };
+  var edN = function (e) { var s = shortEd(e); return s === "N/A" ? 9e12 : +s.replace(/,/g, ""); };
+
   var MONTH = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-  var dkey = function (d) { var m = (d.date || "").toLowerCase().match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/); return m ? MONTH[m[1]] : 0; };
+  /* Auction-house date grammar: day-first, no ordinals, no commas, no slashes.
+     May/June/July run in full, everything else is three letters — except Sept. */
+  var AB = {jan:"Jan",feb:"Feb",mar:"Mar",apr:"Apr",may:"May",jun:"June",jul:"July",aug:"Aug",sep:"Sept",oct:"Oct",nov:"Nov",dec:"Dec"};
+  /* One parser, used by BOTH the Released cell and its sort key, so the column
+     can never sort by a date it isn't showing. It prefers the month anchored to
+     2026 over an announce date: "Announced Dec 2025 for the Feb 2026 lunar year"
+     is a February release, and sorting it under December is the regression this
+     exists to prevent. */
+  var datePick = function (ds) {
+    ds = (ds || "").trim(); if (!ds) return null;
+    var re = /(?:(\d{1,2})\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?(?:\s+(\d{4}))?/gi;
+    var ms = [], m; while ((m = re.exec(ds))) ms.push({ day: m[1] ? +m[1] : 0, mon: m[2], yr: m[3] });
+    var find = function (f) { for (var i = 0; i < ms.length; i++) if (f(ms[i])) return ms[i]; return null; };
+    return find(function (x) { return x.yr === "2026"; }) || find(function (x) { return !x.yr; }) || ms[0] || null;
+  };
+  var dkey = function (d) { var p = datePick(d.date); return p ? MONTH[p.mon.toLowerCase().slice(0, 3)] * 40 + p.day : 0; };
+  /* The year always comes from the data string — never assumed to be 2026. */
+  var fmtDate = function (ds) {
+    ds = (ds || "").trim();
+    if (!ds) return "—";
+    var p = datePick(ds);
+    var yr = (p && p.yr) || ((ds.match(/\b(20\d\d)\b/) || [])[1]) || "";
+    if (p) {
+      var monYr = AB[p.mon.toLowerCase().slice(0, 3)] + (yr ? " " + yr : "");
+      return p.day ? p.day + " " + monYr : monYr;
+    }
+    var q = ds.match(/\bQ([1-4])\b/i);
+    return q ? "Q" + q[1] + (yr ? " " + yr : "") : (yr || "TBC");
+  };
 
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
@@ -263,8 +355,25 @@ input[type=search]:focus{border-color:#17130d}
     "No price": function (d) { return d.priceNum == null; }
   };
 
-  var state = { q: "", tier: "All", cat: "All", band: "All", sort: "tier", open: {}, payload: null, showBadge: false };
+  var state = { q: "", tier: "All", cat: "All", band: "All", sort: "tier", open: {},
+                payload: null, showBadge: false, admin: false, editId: null, descEditId: null };
   var DATA = [];
+
+  /* Build flag, shipped ON: the formatted date sits in a beveled aperture that
+     echoes the logo's 3-o'clock window. TBC and — stay outside it, because an
+     empty date window betrays the metaphor. */
+  var DATE_WIN = true;
+
+  /* ---- editor's overrides ------------------------------------------------- */
+  /* Lowell's hand corrections, this device only, exported as JSON for the weekly
+     job to fold into data.json. They outrank both the data's display fields and
+     the baked-in maps. */
+  function ovAll() { try { return JSON.parse(localStorage.getItem("wdi-admin-ov") || "{}"); } catch (e) { return {}; } }
+  function ovSave(o) { try { localStorage.setItem("wdi-admin-ov", JSON.stringify(o)); } catch (e) {} render(); }
+  /* Precedence, highest first: this device's edit, the field the weekly job
+     wrote, then design's map. */
+  function shownBrand(d) { var ov = ovAll()[d.id] || {}; return ov.displayBrand || d.displayBrand || maker(d.brand); }
+  function shownModel(d) { var ov = ovAll()[d.id] || {}; return ov.displayModel || d.displayModel || shortModel(d.model); }
 
   /* ---- computed symmetric margins --------------------------------------- */
   /* The lower sections are not centred by a max-width — they carry an equal
@@ -397,13 +506,27 @@ input[type=search]:focus{border-color:#17130d}
       (na ? "font-size:12px;color:#a09786;font-style:italic" : "font-size:13.5px;color:#17130d;font-weight:650");
     var priceRow = na ? "on request" : (approx ? "~" : "") + fmtFull(d.priceNum);
 
+    var sBrand = shownBrand(d), sModel = shownModel(d);
+    /* A bronze ° marks a row whose name or description has been edited. Admin
+       only — a reader never sees the editorial machinery. */
+    var mark = state.admin && (sBrand !== d.brand || sModel !== d.model || !!(ovAll()[d.id] || {}).desc) ? " °" : "";
+
+    var dateShort = fmtDate(d.date);
+    var useWin = DATE_WIN && dateShort !== "—" && dateShort !== "TBC";
+    var dateInner = useWin
+      ? '<span style="display:inline-block;max-width:100%;box-sizing:border-box;padding:1px 5px;background:#fdfbf5;border:1px solid #b9ae97;box-shadow:inset 1px 2px 2px rgba(23,19,13,.16), inset -1px -1px 1px rgba(255,255,255,.9);font-size:10.5px;line-height:1.35;color:#17130d;text-align:center;font-weight:600;overflow:hidden;text-overflow:ellipsis">' + esc(dateShort) + '</span>'
+      : '<span style="overflow:hidden;text-overflow:ellipsis">' + esc(dateShort) + '</span>';
+
+    /* Six children, and the phone layout addresses them by position — dot,
+       brand+model, Released, Edition, USD, chevron. */
     var h = '<div data-id="' + esc(d.id) + '" style="border-bottom:1px solid ' + (open ? "#c9c0ad;background:#faf8f2" : "#d5cdbc") + '">' +
       '<div class="wdi-row" data-mq="cols" role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '" aria-controls="p-' + esc(d.id) + '"' +
-      ' style="display:grid;grid-template-columns:16px minmax(0,1fr) 130px 112px 16px;gap:14px;align-items:center;min-height:43px;padding:0 4px 0 2px;cursor:pointer">' +
+      ' style="display:grid;grid-template-columns:16px minmax(0,1fr) 92px 70px 112px 16px;gap:14px;align-items:center;min-height:43px;padding:0 4px 0 2px;cursor:pointer">' +
       '<span style="width:7px;height:7px;border-radius:50%;justify-self:center;background:' + dot + '" title="' + esc(d.tier) + '"></span>' +
       '<span style="min-width:0;display:flex;align-items:baseline;gap:11px">' +
-      '<span style="font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:#8a8071;font-weight:650;flex:none;max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(d.brand) + '</span>' +
-      '<span style="' + modelStyle + '">' + esc(d.model) + '</span></span>' +
+      '<span style="font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:#8a8071;font-weight:650;flex:none;width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(sBrand) + '</span>' +
+      '<span title="' + esc(d.model) + '" style="' + modelStyle + '">' + esc(sModel + mark) + '</span></span>' +
+      '<span title="' + esc(d.date) + '" style="font-size:12px;color:#8a8071;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;border-left:1px solid #e9e4d8;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0">' + dateInner + '</span>' +
       '<span title="' + esc(d.edition) + '" style="font-size:12.5px;color:#8a8071;text-align:right;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:1px solid #e9e4d8;align-self:stretch;line-height:43px">' + esc(shortEd(d.edition)) + '</span>' +
       '<span style="' + priceStyle + '">' + esc(priceRow) + '</span>' +
       '<span style="color:#a09786;font-size:10px;text-align:center">' + (open ? "▾" : "▸") + '</span>' +
@@ -464,10 +587,27 @@ input[type=search]:focus{border-color:#17130d}
       (d.rank <= 2 ? "background:#17130d;color:#f4f1ea" : "background:transparent;color:#17130d");
     var host = (function () { try { return new URL(d.source).hostname.replace(/^www\./, ""); } catch (e) { return "the source"; } })();
 
+    /* The description is editable in place for an unlocked admin; everyone else
+       gets the paragraph and nothing else. */
+    var ov = ovAll()[d.id] || {};
+    var descBlock;
+    if (state.admin && state.descEditId === d.id) {
+      descBlock = '<textarea id="descDraft" style="width:100%;box-sizing:border-box;min-height:110px;font-family:\'Newsreader\',serif;font-size:16px;line-height:1.5;color:#17130d;background:#fbf9f4;border:1px solid #b9ae97;padding:10px;margin:0 0 8px;border-radius:0;outline:none">' + esc(ov.desc || d.desc) + '</textarea>' +
+        '<div style="display:flex;gap:12px;align-items:center;margin:0 0 12px">' +
+        '<button data-desc-save="' + esc(d.id) + '" style="border:1px solid #17130d;background:#17130d;color:#f4f1ea;padding:6px 14px;font-family:\'Archivo\',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Save</button>' +
+        '<button data-desc-cancel="1" style="border:none;background:none;color:#8a5a2b;font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:\'Archivo\',sans-serif;padding:0">Cancel</button>' +
+        '</div>';
+    } else {
+      descBlock = '<p style="font-family:\'Newsreader\',serif;font-size:17.5px;line-height:1.5;color:#17130d;margin:0 0 10px">' + esc(ov.desc || d.desc) + '</p>' +
+        (state.admin
+          ? '<p style="margin:-4px 0 10px"><a data-desc-edit="' + esc(d.id) + '" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Edit description</a></p>'
+          : "");
+    }
+
     return '<div data-mq="detail" style="display:grid;grid-template-columns:310px minmax(0,1fr);gap:28px;padding:8px 4px 24px 32px">' +
       '<div style="min-width:0">' + fig + ledger + '</div>' +
       '<div style="min-width:0">' +
-      '<p style="font-family:\'Newsreader\',serif;font-size:17.5px;line-height:1.5;color:#17130d;margin:0 0 10px">' + esc(d.desc) + '</p>' +
+      descBlock +
       verified +
       '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 12px"><tbody>' + rows + '</tbody></table>' +
       tagLine +
@@ -499,7 +639,9 @@ input[type=search]:focus{border-color:#17130d}
 
     out = "";
     Object.keys(BANDS).forEach(function (k) {
-      out += '<button class="wdi-btn" data-band="' + esc(k) + '" style="' + btnStyle(state.band === k) + '">' + esc(k === "All" ? "Any" : k) + '</button>';
+      /* data-mq="pband" is what hides the price bands on a phone — price
+         filtering is deliberately desktop-only. */
+      out += '<button class="wdi-btn" data-mq="pband" data-band="' + esc(k) + '" style="' + btnStyle(state.band === k) + '">' + esc(k === "All" ? "Any" : k) + '</button>';
     });
     el("#bandBtns").innerHTML = out;
   }
@@ -553,12 +695,19 @@ input[type=search]:focus{border-color:#17130d}
     var sort = state.sort;
     /* Ordered by the tier list, not by raw rank — the two are no longer the same
        thing now that "Buy at retailer" is remapped. */
+    /* Brand and Model sort on the name the reader can actually see; Edition and
+       Released sort on the same derived values their cells show. */
     if (sort === "tier") rows.sort(function (a, b) { return TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) || ((b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum)); });
     if (sort === "date") rows.sort(function (a, b) { return dkey(b) - dkey(a) || a.brand.localeCompare(b.brand); });
-    if (sort === "brand") rows.sort(function (a, b) { return a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model); });
+    if (sort === "dateAsc") rows.sort(function (a, b) { return dkey(a) - dkey(b) || a.brand.localeCompare(b.brand); });
+    if (sort === "brand") rows.sort(function (a, b) { return shownBrand(a).localeCompare(shownBrand(b)) || a.model.localeCompare(b.model); });
+    if (sort === "brandDesc") rows.sort(function (a, b) { return shownBrand(b).localeCompare(shownBrand(a)) || a.model.localeCompare(b.model); });
+    if (sort === "model") rows.sort(function (a, b) { return shownModel(a).localeCompare(shownModel(b)); });
+    if (sort === "modelDesc") rows.sort(function (a, b) { return shownModel(b).localeCompare(shownModel(a)); });
     if (sort === "priceAsc") rows.sort(function (a, b) { return (a.priceNum == null ? 9e12 : a.priceNum) - (b.priceNum == null ? 9e12 : b.priceNum); });
     if (sort === "priceDesc") rows.sort(function (a, b) { return (b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum); });
-    if (sort === "edition") rows.sort(function (a, b) { var n = function (s) { var m = String(s).replace(/,/g, "").match(/\d+/); return m ? +m[0] : 9e12; }; return n(a.edition) - n(b.edition); });
+    if (sort === "edition") rows.sort(function (a, b) { return edN(a.edition) - edN(b.edition); });
+    if (sort === "editionDesc") rows.sort(function (a, b) { return edN(b.edition) - edN(a.edition); });
 
     var byTier = {};
     DATA.forEach(function (d) { byTier[d.tier] = (byTier[d.tier] || 0) + 1; });
@@ -568,7 +717,34 @@ input[type=search]:focus{border-color:#17130d}
     el("#list").innerHTML = rows.map(rowHTML).join("");
 
     renderChrome(byTier);
+    renderArrows();
+    renderJournal();
     hydrate(byTier);
+  }
+
+  /* ---- sortable headers -------------------------------------------------- */
+  /* First click sorts each column the way it is most often wanted — brands and
+     models A–Z, newest releases first, smallest editions first, biggest money
+     first. A second click on the same header reverses it. */
+  var SORTCOLS = { brand: ["brand", "brandDesc"], model: ["model", "modelDesc"], date: ["date", "dateAsc"],
+                   edition: ["edition", "editionDesc"], price: ["priceDesc", "priceAsc"] };
+
+  function renderArrows() {
+    Object.keys(SORTCOLS).forEach(function (c) {
+      var pair = SORTCOLS[c], n = el("#arr-" + c);
+      if (n) n.textContent = state.sort === pair[0] ? " ▾" : state.sort === pair[1] ? " ▴" : "";
+    });
+  }
+
+  function sortByColumn(c) {
+    var pair = SORTCOLS[c];
+    if (!pair) return;
+    state.sort = state.sort === pair[0] ? pair[1] : pair[0];
+    /* The pulldown has no option for a header sort, so it drops back to its
+       label state rather than lying about what the list is ordered by. */
+    var sel = el("#sort");
+    if (sel) sel.value = ["tier", "date", "brand", "priceAsc", "priceDesc", "edition"].indexOf(state.sort) >= 0 ? state.sort : "tier";
+    render();
   }
 
   /* Every figure on the page is re-read from the data. Without this the weekly
@@ -585,6 +761,85 @@ input[type=search]:focus{border-color:#17130d}
     put("#c-rev", m.revision == null ? "" : m.revision);
     put("#c-imgs", DATA.filter(function (d) { return d.image; }).length);
     put("#c-total", DATA.length);
+  }
+
+  /* ---- editor's journal (admin only) ------------------------------------- */
+  /* Every entry whose ledger name differs from the register data, and where the
+     difference came from. The export is what the weekly job folds back into
+     data.json — see README, "corrections JSON". */
+  function renderJournal() {
+    var sec = el("#journal");
+    if (!sec) return;
+    if (!state.admin) { sec.style.display = "none"; return; }
+    sec.style.display = "";
+    var OV = ovAll();
+    var out = "";
+    DATA.forEach(function (d) {
+      var ov = OV[d.id] || {};
+      var sb = shownBrand(d), sm = shownModel(d);
+      if (sb === d.brand && sm === d.model && !ov.desc) return;
+      var src = (ov.displayBrand || ov.displayModel || ov.desc) ? "your edit"
+              : (d.displayBrand || d.displayModel) ? "weekly job" : "AI editorial";
+      out += '<div style="border-bottom:1px solid #e9e4d8">' +
+        '<div style="display:grid;grid-template-columns:minmax(0,1.15fr) 22px minmax(0,1fr) 92px 42px;gap:12px;padding:9px 0;font-size:13px;align-items:baseline">' +
+        '<span style="color:#8a8071">' + esc(d.brand + " — " + d.model) + '</span>' +
+        '<span style="color:#8a5a2b;text-align:center">→</span>' +
+        '<span style="color:#17130d;font-weight:600">' + esc(sb + " — " + sm) + '</span>' +
+        '<span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#a09786">' + src + '</span>' +
+        '<a data-jedit="' + esc(d.id) + '" style="font-size:12px;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:right">Edit</a>' +
+        '</div>';
+      if (state.editId === d.id) {
+        out += '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:2px 0 14px">' +
+          '<input id="editBrand" value="' + esc(sb) + '" placeholder="Brand shown" style="width:200px;padding:7px 10px;border:1px solid #b9ae97;background:#fbf9f4;font-size:13px;font-family:\'Archivo\',sans-serif;color:#17130d;border-radius:0;outline:none">' +
+          '<input id="editModel" value="' + esc(sm) + '" placeholder="Model shown" style="flex:1;min-width:260px;padding:7px 10px;border:1px solid #b9ae97;background:#fbf9f4;font-size:13px;font-family:\'Archivo\',sans-serif;color:#17130d;border-radius:0;outline:none">' +
+          '<button data-jsave="' + esc(d.id) + '" style="border:1px solid #17130d;background:#17130d;color:#f4f1ea;padding:7px 14px;font-family:\'Archivo\',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Save</button>' +
+          '<button data-jclear="' + esc(d.id) + '" style="border:1px solid #b9ae97;background:none;color:#8a8071;padding:7px 12px;font-family:\'Archivo\',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Clear my edit</button>' +
+          '<button data-jcancel="1" style="border:none;background:none;color:#8a5a2b;font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:\'Archivo\',sans-serif;padding:0">Cancel</button>' +
+          '</div>';
+      }
+      out += '</div>';
+    });
+    el("#journalRows").innerHTML = out;
+    el("#ovCount").textContent = Object.keys(OV).length + " correction(s) on this device";
+  }
+
+  /* ---- the admin gate ----------------------------------------------------- */
+  /* The reference opens the journal on ?admin=1. That is fine in a design tool
+     and useless on a public site, so the live gate is a shared secret: the URL
+     carries ?admin=<token> and only its SHA-256 is ever published here. The
+     token is Lowell's; it is not in this repository, and the digest below tells
+     an attacker nothing they can use. Once it matches, the session remembers,
+     so the token need not stay in the address bar.
+     Nothing here writes to the register — corrections live in this browser and
+     leave as JSON — so a secret link is proportionate protection for editorial
+     machinery rather than for data. */
+  var ADMIN_HASH = "42690b29f94043e16df11cd5927f0aa47ae33fae073a0b0ef58a1cbe10450eef";
+  var ADMIN_KEY = "wdi-admin-ok";
+
+  function sha256Hex(s) {
+    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve(null);
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+        return ("0" + b.toString(16)).slice(-2);
+      }).join("");
+    }).catch(function () { return null; });
+  }
+
+  function unlockAdmin() {
+    var tok = new URLSearchParams(location.search).get("admin");
+    var remembered = false;
+    try { remembered = sessionStorage.getItem(ADMIN_KEY) === "1"; } catch (e) {}
+    if (remembered) { state.admin = true; return Promise.resolve(); }
+    if (!tok || !ADMIN_HASH) return Promise.resolve();
+    return sha256Hex(tok).then(function (h) {
+      if (h && h === ADMIN_HASH) {
+        state.admin = true;
+        try { sessionStorage.setItem(ADMIN_KEY, "1"); } catch (e) {}
+        /* Take the token back out of the address bar so it does not travel in a
+           referer, a screenshot or a shared link. */
+        history.replaceState(null, "", location.pathname + location.hash);
+      }
+    });
   }
 
   /* ---- corner badge ------------------------------------------------------ */
@@ -690,6 +945,42 @@ input[type=search]:focus{border-color:#17130d}
         else state.band = b.getAttribute("data-band");
         return render();
       }
+      var head = e.target.closest("[data-sortcol]");
+      if (head) return sortByColumn(head.getAttribute("data-sortcol"));
+
+      /* Editor's controls. All of them live inside the row or the journal, so
+         they are matched before the row toggle — otherwise clicking Save would
+         also collapse the entry underneath it. */
+      var ed = e.target.closest("[data-desc-edit],[data-desc-save],[data-desc-cancel],[data-jedit],[data-jsave],[data-jclear],[data-jcancel],#copyPatch");
+      if (ed) {
+        e.stopPropagation();
+        var o = ovAll(), id;
+        if (ed.hasAttribute("data-desc-edit")) { state.descEditId = ed.getAttribute("data-desc-edit"); return render(); }
+        if (ed.hasAttribute("data-desc-cancel")) { state.descEditId = null; return render(); }
+        if (ed.hasAttribute("data-desc-save")) {
+          id = ed.getAttribute("data-desc-save");
+          o[id] = Object.assign({}, o[id], { desc: el("#descDraft").value });
+          state.descEditId = null;
+          return ovSave(o);
+        }
+        if (ed.hasAttribute("data-jedit")) { state.editId = ed.getAttribute("data-jedit"); return render(); }
+        if (ed.hasAttribute("data-jcancel")) { state.editId = null; return render(); }
+        if (ed.hasAttribute("data-jsave")) {
+          id = ed.getAttribute("data-jsave");
+          o[id] = Object.assign({}, o[id], { displayBrand: el("#editBrand").value, displayModel: el("#editModel").value });
+          state.editId = null;
+          return ovSave(o);
+        }
+        if (ed.hasAttribute("data-jclear")) {
+          delete o[ed.getAttribute("data-jclear")];
+          state.editId = null;
+          return ovSave(o);
+        }
+        if (ed.id === "copyPatch" && navigator.clipboard) {
+          return navigator.clipboard.writeText(JSON.stringify(ovAll(), null, 2));
+        }
+        return;
+      }
       var row = e.target.closest(".wdi-row");
       if (row) toggle(row.parentNode.getAttribute("data-id"));
     });
@@ -698,6 +989,8 @@ input[type=search]:focus{border-color:#17130d}
        does not activate on Enter or Space. Restored explicitly. */
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
+      var head = e.target.closest && e.target.closest("[data-sortcol]");
+      if (head) { e.preventDefault(); return sortByColumn(head.getAttribute("data-sortcol")); }
       var row = e.target.closest && e.target.closest(".wdi-row");
       if (!row) return;
       e.preventDefault();
@@ -709,14 +1002,22 @@ input[type=search]:focus{border-color:#17130d}
       if (id && !state.open[id]) openById(id, true);
     });
 
-    fetch("data.json", { cache: "no-store" })
+    unlockAdmin().then(function () { return fetch("data.json", { cache: "no-store" }); })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (p) {
         state.payload = p;
-        /* Every entry is in the register. The only transformation is the
-           "Retailer enquiry" remap, applied once here so nothing downstream has
-           to know about the old name. */
+        /* SCOPE, Lowell's ruling of 2026-08-04: a production cap is not a limited
+           edition. Filtered at the display layer only — data.json still holds all
+           252, so if a weekly run ever confirms one of these as a real numbered
+           edition, it reappears here on its own. Every figure on the page counts
+           what survives this filter.
+           Entries whose edition is unconfirmed, "special" or not disclosed DO
+           stay (their Edition cell reads N/A) — revisit later.
+           The only other transformation is the "Retailer enquiry" remap, applied
+           once here so nothing downstream has to know the old name. */
+        var NOT_LE = [/not formally limited/i, /^capped/i, /annually/i];
         DATA = (p.watches || [])
+          .filter(function (w) { var e = String(w.edition || "").trim(); return !NOT_LE.some(function (rx) { return rx.test(e); }); })
           .map(function (w) { return w.tier === "Retailer enquiry" ? Object.assign({}, w, { tier: "Buy at retailer", rank: 3 }) : w; });
         render();
         renderSections(p.calendar || {}, (function () { var b = {}; DATA.forEach(function (d) { b[d.tier] = (b[d.tier] || 0) + 1; }); return b; })());

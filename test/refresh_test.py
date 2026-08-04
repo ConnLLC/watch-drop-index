@@ -298,6 +298,106 @@ code, after = run_main(watches, lambda enabled=True: StubModel(default=verdict("
 check("exit 0", code, 0)
 check("data.json untouched on disk", after["meta"]["revision"], 1)
 
+section("Ledger display names — the job never guesses one")
+# A wrong maker is a factual error about who built a watch, and an invented model
+# word is worse than a long name. Both must leave the field unset and escalate.
+
+
+class NoAnswer:
+    def structured(self, *a, **k):
+        return None
+
+
+class Inventive:
+    """Answers, but with a word that is not in the full model name."""
+
+    def structured(self, *a, **k):
+        return {"names": [
+            {"id": "collab", "maker": "BOLDR", "maker_certain": True, "short_model": ""},
+            {"id": "long", "maker": "", "maker_certain": False,
+             "short_model": "Deepsea Challenger Special"},
+        ]}
+
+
+class Careful:
+    def structured(self, *a, **k):
+        return {"names": [
+            {"id": "collab", "maker": "BOLDR", "maker_certain": True, "short_model": ""},
+            {"id": "maker-first", "maker": "Baltic", "maker_certain": True, "short_model": ""},
+            {"id": "long", "maker": "", "maker_certain": False,
+             "short_model": "Deepsea Challenge Titanium"},
+        ]}
+
+
+def naming_fixtures():
+    return [
+        {"id": "collab", "brand": "Worn & Wound × BOLDR", "model": "Field Watch"},
+        {"id": "maker-first", "brand": "Baltic × SpaceOne", "model": "Seconde Majeure"},
+        {"id": "long", "brand": "Rolex",
+         "model": "Oyster Perpetual Deepsea Challenge Titanium RLX 50th"},
+    ]
+
+
+check("only collabs and long names are looked at",
+      [e["id"] for e in naming_fixtures() if R.needs_display_names(e)],
+      ["collab", "maker-first", "long"])
+check("a short, single-brand entry needs nothing",
+      R.needs_display_names({"brand": "Rolex", "model": "Submariner"}), False)
+
+entries = naming_fixtures()
+queries = R.assign_display_names(entries, NoAnswer())
+check("no model answer means no name is written",
+      [k for e in entries for k in e if k.startswith("display")], [])
+check("...and every name is escalated instead", len(queries), 3)
+
+entries = naming_fixtures()
+queries = R.assign_display_names(entries, Inventive())
+check("an invented word is refused",
+      [k for e in entries for k in e if k == "displayModel"], [])
+check("...and that name goes to design",
+      any("introduces" in q for q in queries), True)
+check("an uncertain maker is escalated, not guessed",
+      any("which party makes the watch" in q for q in queries), True)
+
+entries = naming_fixtures()
+queries = R.assign_display_names(entries, Careful())
+by_id = {e["id"]: e for e in entries}
+check("a maker named second is written down", by_id["collab"].get("displayBrand"), "BOLDR")
+check("a maker named first needs no field at all",
+      "displayBrand" in by_id["maker-first"], False)
+check("a clean short title is written down",
+      by_id["long"].get("displayModel"), "Deepsea Challenge Titanium")
+check("...and it fits the column", len(by_id["long"]["displayModel"]) <= R.DISPLAY_LIMIT, True)
+check("nothing is left for design", queries, [])
+
+section("Corrections from the editor's journal are applied verbatim")
+w = [{"id": "a", "brand": "B", "model": "M", "desc": "old"}]
+patch = Path(tempfile.mkdtemp()) / "corrections.json"
+patch.write_text(json.dumps({
+    "a": {"displayModel": "Short title", "desc": "new", "displayBrand": "   "},
+    "ghost": {"desc": "no such entry"},
+}))
+applied, unknown = R.apply_corrections(w, patch)
+check("applied to the entry that exists", applied, 1)
+check("an unknown id is reported, not invented", unknown, ["ghost"])
+check("the description is replaced", w[0]["desc"], "new")
+check("the display name is set", w[0]["displayModel"], "Short title")
+check("a blank field is ignored rather than written", "displayBrand" in w[0], False)
+
+section("Scope — a production cap is not a limited edition")
+check("capped by an order window is out", R.in_scope({"edition": "Capped by the order window"}), False)
+check("an annual cap is out", R.in_scope({"edition": "Up to 250 annually"}), False)
+check("not formally limited is out", R.in_scope({"edition": "Not formally limited — stone-constrained"}), False)
+check("a real edition size is in", R.in_scope({"edition": "100 pieces"}), True)
+check("an unconfirmed size stays in", R.in_scope({"edition": "Unconfirmed"}), True)
+# The rule lives in three places and they must agree, or the site renders a
+# different register from the one the job reports on.
+build_src = (ROOT / "build.py").read_text()
+page_src = (ROOT / "index.html").read_text()
+for pattern in ("not formally limited", "^capped", "annually"):
+    check(f"build.py carries the {pattern!r} rule", pattern in build_src, True)
+    check(f"the page carries the {pattern!r} rule", pattern in page_src, True)
+
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())
 (tmp / "data.json").write_text("{ this is not json")

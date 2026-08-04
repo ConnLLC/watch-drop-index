@@ -5,7 +5,11 @@
 Every limited-run watch of 2026: what it costs, whether you can still get one, and
 where to buy it. Limited editions only — no regular production, no restocks.
 
-252 entries · 94 brands · 60 currently buyable online.
+252 entries researched · 246 on the register · 55 currently buyable online.
+
+Six entries are held back because a production cap is not a limited edition — see
+**Scope** below. They stay in the data and return by themselves if an edition size is
+ever confirmed.
 
 ---
 
@@ -56,8 +60,55 @@ Two pieces are less ordinary than they look:
 - **The corner badge** mounts past 430px of scroll and unmounts below it, rather than
   being shown and hidden, so its entrance replays and its clock re-syncs each time.
 
-Known gap: **there are no responsive rules yet.** The layout is fixed-width by design
-decision (desktop first), and mobile is a scheduled follow-up.
+- **The phone layout is a different ledger, not a squeezed one.** Below 720px each row
+  becomes a double-deck — brand over model on the left, price over release date on the
+  right — the filter bar stops being sticky, and price bands leave entirely. The whole
+  pass keys off `data-mq` attributes and nothing else, so **renaming one silently drops a
+  rule on phones while desktop stays perfect.** The row grid addresses its six children by
+  position (dot, brand+model, Released, Edition, USD, chevron); reordering them rearranges
+  the phone layout. `test/template.test.js` checks every hook is both present and styled.
+
+### Scope — what counts as a limited edition
+
+Lowell's ruling, 2026-08-04: **a production cap is not a limited edition.** An entry whose
+`edition` matches `/not formally limited/i`, `/^capped/i` or `/annually/i` is filtered out
+at the *display* layer — six today. `data.json` keeps them, and every figure on the page
+counts what survives the filter, so the moment a weekly run confirms a real edition size
+the entry reappears on its own. That is the mechanism; don't hand-edit data to force one
+on. Entries whose size is unconfirmed, undisclosed or "special edition" **stay** — their
+Edition column reads `N/A`.
+
+The same three patterns live in `build.py`, in the page's script and in
+`scripts/refresh.py`. The tests assert all three copies agree.
+
+### Ledger names
+
+The register reads like a register: the brand column names the **manufacturer** only, and
+the model column carries a short editorial title (≤38 characters). The full strings are
+never lost — they stay in `data.json`, in the search index and on hover.
+
+Resolution order, highest first: an editor's correction (see below) → `displayBrand` /
+`displayModel` in `data.json` → the maps design baked into `build.py`. A collab shows the
+first-named party unless a `MAKER_OVERRIDE` says otherwise, since the maker is named first
+by convention.
+
+### The editor's journal
+
+`?admin=<token>` opens an editor-only section listing every entry whose ledger name
+differs from the data, with inline editing and a **Copy corrections JSON** export.
+Corrections live in `localStorage` on that device only — nothing on the site changes for
+anyone else until the export is folded into `data.json`:
+
+```
+python3 scripts/refresh.py --corrections ~/Downloads/corrections.json --stages ""
+```
+
+The gate is a shared secret: only the SHA-256 of the token is published, in
+`admin-hash.txt` and in the page. The token itself is Lowell's, lives at
+`~/.watchdrop-admin`, and is never committed. Rotate by writing a new digest to
+`admin-hash.txt` and rebuilding; delete the file and the journal simply cannot be reached.
+Nothing behind the gate writes to the register, so this protects editorial machinery
+rather than data.
 
 ### Running it locally
 
@@ -117,7 +168,11 @@ Each run:
    restricted to a fixed list of credible outlets, then converts the findings into
    entries — refusing any candidate without a source URL, a buy URL, or limited-edition
    status.
-5. **Commits** with a summarising message and a full report in the body.
+5. **Names anything new for the ledger** — a `displayBrand` when a collab's maker is named
+   second, a `displayModel` when the model runs past 38 characters. It will not guess:
+   an uncertain maker or a short title that introduces a word absent from the full name
+   leaves the field unset and goes into the report for design to rule on.
+6. **Commits** with a summarising message and a full report in the body.
 
 ### What it needs
 
@@ -142,6 +197,12 @@ These are enforced in code and covered by `test/refresh_test.py`, which gates th
   run fails red rather than reporting a quiet week.
 - **Entries are never deleted and ids are never rewritten.** Sold-out watches are the
   historical record; the premise of the site is knowing what's gone.
+- **A ledger name is never guessed.** A wrong maker attribution is a factual claim about
+  who built a watch, and an invented model word is worse than a long one. Both leave the
+  field unset — the entry shows its full name, which is plain but true — and the name is
+  listed under *For design* in the report.
+- **An editor's correction is never overwritten.** Once a name is set by hand it outranks
+  everything the job can produce.
 
 ### Running it by hand
 
@@ -179,6 +240,8 @@ Each object in `data.json → watches[]`:
 | `buy` `buyLabel` | Purchase URL and the label rendered on the button. |
 | `source` | Where the information came from. Credited in the expanded view. |
 | `image` `imageCredit` | Photograph URL and the outlet to credit. `null` until resolved. |
+| `displayBrand` | Optional. Overrides the brand shown in the ledger — written only when a collab's maker is named *second*. |
+| `displayModel` | Optional. Overrides the model shown in the ledger. ≤38 characters, and only words that appear in the full name. |
 | `conf` | `high` · `medium` · `low`. Load-bearing — see below. |
 | `verified` | `{date, note}` when a purchase page was actually read. `null` otherwise. |
 | `soldOutOn` `addedOn` | Dates for the audit trail. |
