@@ -58,13 +58,36 @@ def entry(**over) -> dict:
 
 
 class StubModel:
-    """Returns a canned verdict per entry id."""
+    """Returns a canned verdict per entry id.
 
-    def __init__(self, verdicts: dict | None = None, default=None):
+    Mirrors the real Model's interface, budget surface included — a double that
+    silently lacks a method the production code calls turns an interface change
+    into a confusing AttributeError instead of a failed assertion.
+    """
+
+    def __init__(self, verdicts: dict | None = None, default=None, budget_cad: float = 0.0,
+                 exhausted: bool = False):
         self.verdicts, self.default, self.calls = verdicts or {}, default, 0
         self.enabled = True
+        self.budget_cad = budget_cad
+        self.usd = 0.0
+        self.searches = 0
+        self.skipped = 0
+        self.stopped_at = None
+        self._exhausted = exhausted
 
-    def structured(self, prompt, schema, max_tokens=8000):
+    @property
+    def cad(self) -> float:
+        return self.usd * R.USD_TO_CAD
+
+    def exhausted(self) -> bool:
+        return self._exhausted
+
+    def structured(self, prompt, schema, max_tokens=8000, stage="judgement"):
+        if self.exhausted():
+            self.skipped += 1
+            self.stopped_at = self.stopped_at or stage
+            return None
         self.calls += 1
         for wid, v in self.verdicts.items():
             if wid in prompt or (self._brand(wid) and self._brand(wid) in prompt):
@@ -248,7 +271,7 @@ def run_main(watches, model_factory, argv) -> tuple[int, dict]:
 section("Guardrail: blast radius")
 many = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(40)]
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
-code, after = run_main(many, lambda enabled=True: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
+code, after = run_main(many, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
                        ["--stages", "2"])
 check("exits 20 when >15% would flip to Gone", code, 20)
 check("data.json is NOT written", after["meta"]["revision"], 1)
@@ -257,7 +280,7 @@ check("no entry was persisted as Gone", [w for w in after["watches"] if w["statu
 section("Guardrail: silence is a failure")
 R.fetch = lambda url: (None, "HTTP 403")
 code, after = run_main([entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)],
-                       lambda enabled=True: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
+                       lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
 check("exits 21 when no page was readable", code, 21)
 check("data.json is NOT written", after["meta"]["revision"], 1)
 
@@ -265,7 +288,7 @@ section("Guardrail: entries are never deleted, ids never rewritten")
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
 ids_before = [w["id"] for w in watches]
-code, after = run_main(watches, lambda enabled=True: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2"])
 check("exit 0", code, 0)
 check("no entries lost", len(after["watches"]), 20)
@@ -280,20 +303,20 @@ gone_one = {"0000000000": verdict("no", "sold_out", "Sold out", "high")}
 
 
 class OneGone(StubModel):
-    def structured(self, prompt, schema, max_tokens=8000):
+    def structured(self, prompt, schema, max_tokens=8000, stage="judgement"):
         self.calls += 1
         return (verdict("no", "sold_out", "Sold out", "high") if "M0 " in prompt or "M0\n" in prompt
                 else verdict("yes", "add_to_cart", "In stock", "high"))
 
 
-code, after = run_main(watches, lambda enabled=True: OneGone(), ["--stages", "2"])
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: OneGone(), ["--stages", "2"])
 check("exit 0", code, 0)
 check("exactly one entry went Gone", sum(1 for w in after["watches"] if w["status"] == "Sold out"), 1)
 check("the rest kept their tier", sum(1 for w in after["watches"] if w["tier"] == "Buy online now"), 39)
 
 section("--dry-run writes nothing")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
-code, after = run_main(watches, lambda enabled=True: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2", "--dry-run"])
 check("exit 0", code, 0)
 check("data.json untouched on disk", after["meta"]["revision"], 1)
@@ -397,6 +420,122 @@ page_src = (ROOT / "index.html").read_text()
 for pattern in ("not formally limited", "^capped", "annually"):
     check(f"build.py carries the {pattern!r} rule", pattern in build_src, True)
     check(f"the page carries the {pattern!r} rule", pattern in page_src, True)
+
+section("The spend guard measures real usage")
+# Money is the one thing here nobody can eyeball afterwards, so the arithmetic
+# is pinned to the published rates rather than trusted.
+
+
+class Usage:
+    def __init__(self, **kw):
+        self.input_tokens = kw.get("input_tokens", 0)
+        self.output_tokens = kw.get("output_tokens", 0)
+        self.cache_creation_input_tokens = kw.get("cache_creation_input_tokens", 0)
+        self.cache_read_input_tokens = kw.get("cache_read_input_tokens", 0)
+        self.server_tool_use = kw.get("server_tool_use")
+
+
+class Searches:
+    def __init__(self, n):
+        self.web_search_requests = n
+
+
+def meter(budget=5.0):
+    m = R.Model.__new__(R.Model)          # no API client, no key needed
+    m.enabled, m.calls, m.usd, m.searches = True, 0, 0.0, 0
+    m.budget_cad, m.skipped, m.stopped_at, m._worst_call_cad = budget, 0, None, 0.0
+    return m
+
+
+m = meter()
+m._charge(Usage(input_tokens=1_000_000, output_tokens=1_000_000))
+check("a million in and a million out costs $30 on Opus 5", round(m.usd, 6), 30.0)
+check("...converted at the fixed rate", round(m.cad, 4), round(30.0 * R.USD_TO_CAD, 4))
+
+m = meter()
+m._charge(Usage(input_tokens=0, server_tool_use=Searches(5)))
+check("web search bills $10 per 1,000", round(m.usd, 6), 0.05)
+check("...and the searches are counted for the report", m.searches, 5)
+
+m = meter()
+m._charge(Usage(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000))
+check("cache reads and writes are priced, not ignored", round(m.usd, 4), 6.75)
+
+m = meter()
+m._charge(Usage())  # a usage object with nothing on it must not raise
+check("an empty usage block costs nothing and does not raise", m.usd, 0.0)
+
+section("The ceiling is respected, not merely noticed")
+m = meter(budget=1.00)
+check("a fresh meter is not exhausted", m.exhausted(), False)
+# One call of this size costs about 0.175 CAD, so a 1.00 CAD ceiling should buy
+# several and then refuse — the invariant being that it refuses BEFORE going
+# over, not after. Spending the ceiling and then apologising is not a ceiling.
+spent_calls = 0
+while not m.exhausted() and spent_calls < 50:
+    m._charge(Usage(input_tokens=20_000, output_tokens=1_000))
+    spent_calls += 1
+check("several calls fit inside a 1.00 CAD ceiling", spent_calls > 1, True)
+check("it stops before the ceiling is crossed, not after", m.cad <= m.budget_cad, True)
+check("the reserve is a real call's cost, self-calibrated", round(m._worst_call_cad, 4),
+      round(0.175, 4))
+check("_afford records what it refused", (m._afford("availability"), m.skipped, m.stopped_at),
+      (False, 1, "availability"))
+check("a zero budget means no ceiling at all", meter(budget=0).exhausted(), False)
+
+section("A budget stop is safe to commit, and is not a failure")
+# The refused call returns None — the same thing an unreadable page returns — so
+# every decision rule already leaves the entry alone. That is what makes stopping
+# mid-run safe rather than something to roll back.
+e = [entry()]
+snap = copy.deepcopy(e)
+broke = StubModel(default=verdict("no", "sold_out", "Sold out", "high"), exhausted=True)
+summary = run_stage2(e, broke)
+check("nothing moves once the ceiling is hit", e, snap)
+check("...and the run records why", summary["budget_skipped"], 1)
+check("...without pretending it read the page", summary["read"], 0)
+
+watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
+code, after = run_main(
+    watches,
+    lambda enabled=True, budget_cad=0.0: StubModel(
+        default=verdict("yes", "add_to_cart", "In stock"), exhausted=True),
+    ["--stages", "2"])
+check("a fully-skipped run is green, not red", code, 0)
+check("...and every entry is intact", sum(1 for w in after["watches"] if w["tier"] == "Buy online now"), 20)
+
+section("Photographs are free and uncapped, but polite")
+check("the stage takes no model at all", "model" in R.stage_photos.__code__.co_varnames, False)
+
+pending = [entry(id=f"{i:010d}", model=f"M{i}", image=None,
+                 source=f"https://{'alpha' if i % 2 else 'beta'}.example/{i}") for i in range(6)]
+hits: list[tuple[str, float]] = []
+lock_for_test = __import__("threading").Lock()
+
+
+def timed_fetch(url):
+    with lock_for_test:
+        hits.append((R.domain_of(url), R.time.monotonic()))
+    return ("<html><head></head><body>" + "x" * 400 + "</body></html>", "ok")
+
+
+orig_fetch, orig_delay = R.fetch, R.PHOTO_HOST_DELAY
+R.fetch, R.PHOTO_HOST_DELAY = timed_fetch, 0.25
+try:
+    R.stage_photos(pending)
+finally:
+    R.fetch, R.PHOTO_HOST_DELAY = orig_fetch, orig_delay
+
+check("every pending entry is attempted, not a batch of them", len(hits), 6)
+gaps_ok = True
+for host in {h for h, _ in hits}:
+    times = sorted(t for h, t in hits if h == host)
+    for a, b in zip(times, times[1:]):
+        if b - a < 0.2:          # 0.25s spacing, small tolerance for scheduling
+            gaps_ok = False
+check("two requests to one outlet are spaced apart", gaps_ok, True)
+check("but different outlets still run in parallel",
+      max(t for _, t in hits) - min(t for _, t in hits) < 6 * 0.25, True)
 
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())

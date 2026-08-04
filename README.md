@@ -161,9 +161,15 @@ Each run:
    current tier. Positive evidence of a sell-out flips the entry to `Gone`, stamps
    `soldOutOn`, and writes a `verified` note quoting the page. Entries move **up** too:
    a pre-order opening or stock appearing online promotes them.
-3. **Backfills photographs** by reading `og:image` from each entry's source article,
-   36 per run. Sources with no `og:image` and dead URLs are recorded so they aren't
-   probed again every week.
+3. **Backfills photographs** by reading `og:image` from each entry's source article —
+   **every entry that still has none, every run.** This stage makes no model call, so it
+   costs nothing and is never what a budget stop takes away. Politeness is per-outlet:
+   requests to the same site are serialised and spaced 1.5s apart while different sites
+   run in parallel, so a full ~200-entry pass takes a few minutes and no one outlet
+   notices. Sources with no `og:image` and dead URLs are recorded so they aren't probed
+   again every week; the report groups whatever didn't resolve **by outlet**, because a
+   hundred failures at one domain is one fixable cause and a hundred spread thin is just
+   the shape of the web.
 4. **Searches the watch press** for limited editions announced since `meta.updated`,
    restricted to a fixed list of credible outlets, then converts the findings into
    entries — refusing any candidate without a source URL, a buy URL, or limited-edition
@@ -174,10 +180,38 @@ Each run:
    leaves the field unset and goes into the report for design to rule on.
 6. **Commits** with a summarising message and a full report in the body.
 
+Stages run **2 → 4 → 3**, which is the budget's priority order (below): the paid stages
+go first, most valuable first, and the free one goes last. A side benefit is that a watch
+found this week gets its photograph this week rather than next.
+
 ### What it needs
 
 One repository secret: **`ANTHROPIC_API_KEY`** (Settings → Secrets and variables →
 Actions). Nothing else — the job pushes with the built-in `GITHUB_TOKEN`.
+
+### The spend ceiling
+
+A weekly ceiling in Canadian dollars, **changeable without editing code**: set the
+repository *variable* `WEEKLY_BUDGET_CAD` (Settings → Secrets and variables → Actions →
+**Variables**). A variable rather than a secret, so the current value can be read as well
+as changed. Default 5. `USD_TO_CAD` overrides the conversion rate, deliberately a fixed
+number — at this precision a stale rate is fine and an FX API is one more thing that can
+break on a Monday morning.
+
+Every model call is priced from its actual `usage` block at the published per-token rates,
+plus $10 per 1,000 web searches. **Every run reports what it spent**, generous ceiling or
+not — the first few real numbers are worth more than any estimate of what the ceiling
+should be.
+
+Hitting the ceiling is **not a failure**. The run stops calling the model, commits
+everything it finished, and says in the report what it skipped; the job stays green,
+because a red badge every week for working as designed teaches everyone to ignore the
+badge. Stopping half-way is safe because a refused call returns the same "no answer" an
+unreadable page does — so the rules below leave the entry alone, exactly as they would on
+a 403.
+
+The Anthropic console cap is monthly and in USD, which makes it a coarse backstop only.
+This guard is the real control and the only thing that understands "weekly" or "CAD".
 
 ### The rules that matter more than coverage
 
@@ -213,6 +247,7 @@ export ANTHROPIC_API_KEY=...
 python3 test/refresh_test.py                      # decision-logic tests, no key needed
 python3 scripts/refresh.py --dry-run              # full run, writes nothing
 python3 scripts/refresh.py --stages 3 --no-api    # photograph backfill only, no key needed
+python3 scripts/refresh.py --budget 1.00          # tighter ceiling for one run
 python3 scripts/refresh.py                        # the real thing
 ```
 

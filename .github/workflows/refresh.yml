@@ -26,8 +26,12 @@ on:
         type: boolean
         default: false
       photo_batch:
-        description: 'How many photograph sources to probe'
-        default: '36'
+        description: 'Cap the photograph pass (0 = every entry that still has none)'
+        default: '0'
+        required: false
+      budget_cad:
+        description: 'Override this run''s spend ceiling in CAD (blank = the WEEKLY_BUDGET_CAD variable)'
+        default: ''
         required: false
 
 concurrency:
@@ -63,11 +67,18 @@ jobs:
         id: refresh
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Repository VARIABLES, not secrets — Lowell needs to read the current
+          # ceiling as well as change it, without a commit and without asking
+          # either of us. Settings → Secrets and variables → Actions → Variables.
+          # Unset falls back to the defaults in refresh.py (5 CAD, 1.40 CAD/USD).
+          WEEKLY_BUDGET_CAD: ${{ vars.WEEKLY_BUDGET_CAD }}
+          USD_TO_CAD: ${{ vars.USD_TO_CAD }}
         run: |
           set +e
           python3 scripts/refresh.py \
             --stages "${{ inputs.stages || '2,3,4' }}" \
-            --photo-batch "${{ inputs.photo_batch || '36' }}" \
+            --photo-batch "${{ inputs.photo_batch || '0' }}" \
+            ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
           echo "code=$?" >> "$GITHUB_OUTPUT"
 

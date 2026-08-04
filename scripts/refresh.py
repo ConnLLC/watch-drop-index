@@ -7,9 +7,14 @@ this is the machinery behind it. Five stages:
 
   1  LOAD       read and validate data.json; abort loudly without touching anything
   2  AVAILABLE  re-check every entry that claims to be obtainable (rank <= 2)
+  4  NEW        search the week's watch press for limited editions
   3  PHOTOS     backfill og:image for entries that still have none
-  4  NEW         search the week's watch press for limited editions
-  5  COMMIT      update meta, write data.json, emit a report
+  5  COMMIT     update meta, write data.json, emit a report
+
+Stages run 2 → 4 → 3, which is the budget's priority order: the two stages that
+cost money go first, most valuable first, so a tight ceiling truncates the least
+valuable work. Photographs run last because they cost nothing at all — a fetch
+and a parse, no model call — so a budget stop can never take them away.
 
 The governing rule throughout: an unreadable page changes nothing. A 403, a
 timeout, a bot wall and a JavaScript-only page are all silence, not evidence.
@@ -17,11 +22,17 @@ Only positive, quotable evidence moves an entry, and only ever in the direction
 that evidence supports. False confidence is worse than missing coverage — the
 whole site rests on the distinction between "we checked" and "we inferred".
 
+A budget stop borrows that same rule: a call the ceiling refuses returns the
+same "no answer" an unreadable page does, so every decision rule already leaves
+the entry alone. That is what makes stopping half-way through safe to commit.
+
 Usage:
     python3 scripts/refresh.py                      # full run
     python3 scripts/refresh.py --dry-run            # change nothing on disk
     python3 scripts/refresh.py --stages 2,3         # availability + photos only
     python3 scripts/refresh.py --no-api             # fetch layer only, no model calls
+    python3 scripts/refresh.py --budget 2.50        # tighter ceiling for one run
+    python3 scripts/refresh.py --stages 3 --budget 0  # photographs only; costs nothing
 
 Exit codes:
     0   completed; data.json updated (or --dry-run)
@@ -42,6 +53,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -55,10 +67,47 @@ REPORT = ROOT / "refresh-report.md"
 MODEL = os.environ.get("WDI_MODEL", "claude-opus-5")
 EFFORT = os.environ.get("WDI_EFFORT", "low")
 
+# ------------------------------------------------------------- the spend guard
+#
+# A weekly ceiling in Canadian dollars, adjustable WITHOUT editing this file:
+# set the repository variable WEEKLY_BUDGET_CAD (Settings → Secrets and
+# variables → Actions → Variables). A variable, not a secret, so Lowell can read
+# the current value as well as change it.
+#
+# The Anthropic console cap is monthly and in USD, which makes it a coarse
+# backstop only. This guard is the real control and the only thing that
+# understands "weekly" or "CAD".
+#
+# Hitting the ceiling is NOT a failure. The run stops asking the model, commits
+# whatever it finished, and reports what it skipped — the job stays green,
+# because a red badge every week for working as designed teaches everyone to
+# ignore the badge.
+WEEKLY_BUDGET_CAD = float(os.environ.get("WEEKLY_BUDGET_CAD") or 5)
+
+# A fixed rate on purpose. At this precision a stale number is fine and an FX
+# API is one more thing that can break a Monday morning; override with the
+# USD_TO_CAD repository variable if it ever drifts enough to matter.
+USD_TO_CAD = float(os.environ.get("USD_TO_CAD") or 1.40)
+
+# USD per million tokens, from platform.claude.com/docs/en/about-claude/pricing
+# (checked 2026-08-04). Cache writes are the 5-minute rate; nothing here sets
+# cache_control, so those columns should stay at zero — they are counted anyway
+# so that turning caching on later cannot silently under-report.
+PRICES = {
+    "claude-opus-5":   {"input": 5.0,  "cache_write": 6.25, "cache_read": 0.50, "output": 25.0},
+    "claude-opus-4-8": {"input": 5.0,  "cache_write": 6.25, "cache_read": 0.50, "output": 25.0},
+    "claude-sonnet-5": {"input": 2.0,  "cache_write": 2.50, "cache_read": 0.20, "output": 10.0},
+    "claude-haiku-4-5": {"input": 1.0, "cache_write": 1.25, "cache_read": 0.10, "output": 5.0},
+}
+# Web search bills separately from tokens: $10 per 1,000 searches. Web fetch and
+# (alongside either) code execution are free, so the photograph stage costs
+# nothing at all — it never calls the model.
+WEB_SEARCH_USD = 10.0 / 1000
+
 # Guardrails.
 GONE_BLAST_RADIUS = 0.15   # refuse to commit if this share of entries flips to Gone
-PHOTO_BATCH = 36           # coverage converges in a couple of months at this rate
 PHOTO_RETRY_DAYS = 28      # how long before re-probing a source that errored
+PHOTO_HOST_DELAY = 1.5     # seconds between two requests to the SAME outlet
 MAX_NEW_ENTRIES = 25       # a week that yields more than this is a bug, not a boom
 
 # SCOPE (Lowell, 2026-08-04): a production cap is not a limited edition. Entries
@@ -320,18 +369,81 @@ def fetch(url: str) -> tuple[str | None, str]:
 
 class Model:
     """Thin wrapper so --no-api can stub every call out and the fetch layer
-    stays testable without a key."""
+    stays testable without a key. It is also the meter and the gate: every
+    call's real token usage is priced and charged against the weekly ceiling,
+    and once the ceiling is reached the wrapper stops calling.
 
-    def __init__(self, enabled: bool = True):
+    A refused call returns None — exactly what an unreadable page returns — so
+    every existing decision rule already treats it correctly: nothing moves
+    without positive evidence. That is what makes a mid-run budget stop safe to
+    commit rather than something to roll back."""
+
+    def __init__(self, enabled: bool = True, budget_cad: float = WEEKLY_BUDGET_CAD):
         self.enabled = enabled
         self.calls = 0
+        self.usd = 0.0
+        self.searches = 0
+        self.budget_cad = budget_cad
+        self.skipped = 0            # calls the ceiling refused
+        self.stopped_at = None      # which stage ran out
+        self._worst_call_cad = 0.0  # self-calibrating reserve; see _afford()
         self._client = None
         if enabled:
             import anthropic  # imported lazily so --no-api needs no dependency
             self._client = anthropic.Anthropic()
 
-    def structured(self, prompt: str, schema: dict, max_tokens: int = 8000) -> dict | None:
+    # ---- money ------------------------------------------------------------
+    @property
+    def cad(self) -> float:
+        return self.usd * USD_TO_CAD
+
+    def remaining_cad(self) -> float:
+        return max(0.0, self.budget_cad - self.cad)
+
+    def exhausted(self) -> bool:
+        """Would the next call breach the ceiling? The reserve is the most
+        expensive call seen so far, so the guard calibrates itself against this
+        workload rather than an estimate someone guessed a year ago — and the
+        ceiling is respected rather than merely noticed after the fact.
+        Read-only: callers use it to stop fetching pages they cannot judge."""
+        if self.budget_cad <= 0:
+            return False                      # no ceiling configured
+        return self.cad + max(self._worst_call_cad, 0.05) > self.budget_cad
+
+    def _afford(self, stage: str) -> bool:
+        if self.exhausted():
+            self.skipped += 1
+            if self.stopped_at is None:
+                self.stopped_at = stage
+                log(f"    ! weekly ceiling of {self.budget_cad:.2f} CAD reached "
+                    f"({self.cad:.2f} CAD spent). Skipping the rest of the model work; "
+                    f"everything finished so far still commits.")
+            return False
+        return True
+
+    def _charge(self, usage) -> None:
+        """Price one response. Unknown fields default to zero rather than
+        raising — a usage field that moves must never take a run down, and the
+        spend line in the report is where an under-count would show up."""
+        p = PRICES.get(MODEL) or PRICES["claude-opus-5"]
+        get = lambda name: getattr(usage, name, 0) or 0
+        usd = (get("input_tokens") * p["input"]
+               + get("cache_creation_input_tokens") * p["cache_write"]
+               + get("cache_read_input_tokens") * p["cache_read"]
+               + get("output_tokens") * p["output"]) / 1_000_000
+        server = getattr(usage, "server_tool_use", None)
+        searches = getattr(server, "web_search_requests", 0) or 0 if server else 0
+        self.searches += searches
+        usd += searches * WEB_SEARCH_USD
+        self.usd += usd
+        self._worst_call_cad = max(self._worst_call_cad, usd * USD_TO_CAD)
+
+    # ---- calls ------------------------------------------------------------
+    def structured(self, prompt: str, schema: dict, max_tokens: int = 8000,
+                   stage: str = "judgement") -> dict | None:
         if not self.enabled:
+            return None
+        if not self._afford(stage):
             return None
         self.calls += 1
         for attempt in range(3):
@@ -342,6 +454,7 @@ class Model:
                     output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
                     messages=[{"role": "user", "content": prompt}],
                 )
+                self._charge(r.usage)
                 if r.stop_reason == "refusal":
                     return None
                 text = next((b.text for b in r.content if b.type == "text"), None)
@@ -353,8 +466,11 @@ class Model:
                 time.sleep(2 ** attempt * 2)
         return None
 
-    def search(self, prompt: str, domains: list[str], max_tokens: int = 16000) -> str | None:
+    def search(self, prompt: str, domains: list[str], max_tokens: int = 16000,
+               stage: str = "search") -> str | None:
         if not self.enabled:
+            return None
+        if not self._afford(stage):
             return None
         self.calls += 1
         try:
@@ -371,6 +487,10 @@ class Model:
                 messages=[{"role": "user", "content": prompt}],
             ) as stream:
                 msg = stream.get_final_message()
+            # Streaming still carries a full usage block on the final message —
+            # including server_tool_use.web_search_requests, which is the only
+            # place the per-search charge is visible.
+            self._charge(msg.usage)
             if msg.stop_reason == "refusal":
                 return None
             return "\n".join(b.text for b in msg.content if b.type == "text").strip() or None
@@ -453,7 +573,14 @@ watch cannot be bought, and give the exact wording in `quote`.
 
 def check_availability(entry: dict, model: Model) -> dict:
     """Returns a result record. Never mutates the entry."""
-    res = {"id": entry["id"], "changed": False, "note": None, "verdict": None, "read": False}
+    res = {"id": entry["id"], "changed": False, "note": None, "verdict": None,
+           "read": False, "budget": False}
+    # Check the ceiling BEFORE fetching: there is no point pulling someone
+    # else's page for a judgement we cannot afford to make.
+    if model.exhausted():
+        res["budget"] = True
+        res["note"] = "skipped — weekly budget reached"
+        return res
     raw, note = fetch(entry.get("buy", ""))
     if raw is None:
         res["note"] = note
@@ -473,7 +600,7 @@ def check_availability(entry: dict, model: Model) -> dict:
             status=entry["status"], label=entry.get("buyLabel", ""),
             url=entry.get("buy", ""), ld=ld, text=text[:MAX_PAGE_CHARS],
         ),
-        VERDICT_SCHEMA,
+        VERDICT_SCHEMA, stage="availability",
     )
     if not verdict:
         res["note"] = "no verdict"
@@ -498,16 +625,18 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
             except Exception as e:  # noqa: BLE001
                 log(f"    ! {w['brand']} {w['model']}: {type(e).__name__}")
                 results.append({"id": w["id"], "changed": False, "read": False,
-                                "note": "worker error", "verdict": None})
+                                "note": "worker error", "verdict": None, "budget": False})
             if i % 15 == 0:
                 log(f"    ...{i}/{len(targets)}")
 
     by_id = {w["id"]: w for w in watches}
     summary = {"checked": len(targets), "read": 0, "gone": [], "promoted": [],
-               "confirmed": [], "noted": [], "skipped": []}
+               "confirmed": [], "noted": [], "skipped": [], "budget_skipped": 0}
 
     for r in results:
         w = by_id[r["id"]]
+        if r.get("budget"):
+            summary["budget_skipped"] += 1
         if r["read"]:
             summary["read"] += 1
         v = r["verdict"]
@@ -610,14 +739,38 @@ def probe_result_for(note: str) -> str:
     return "blocked"
 
 
-def stage_photos(watches: list[dict], batch: int) -> dict:
-    targets = photo_candidates(watches)[:batch]
+def stage_photos(watches: list[dict], batch: int = 0) -> dict:
+    """Uncapped by default. Reading an og:image tag is a fetch and a parse — no
+    model call, no judgement, no cost — so the per-run cap this used to carry
+    was throttling the only free stage in the job and stretching a one-run pass
+    across seven weeks. `batch` survives as a manual override for testing.
+
+    Politeness is per-OUTLET, not global: eight parallel requests spread over
+    eight sites is fine, eight at one site is not. Requests to the same host are
+    serialised and spaced by PHOTO_HOST_DELAY, so 200 fetches take a few minutes
+    and no single outlet notices."""
+    targets = photo_candidates(watches)
+    if batch:
+        targets = targets[:batch]
     log(f"\n[3] PHOTOGRAPHS — probing {len(targets)} sources "
-        f"({sum(1 for w in watches if w.get('image'))}/{len(watches)} resolved)")
+        f"({sum(1 for w in watches if w.get('image'))}/{len(watches)} resolved)"
+        + (f" [capped at {batch}]" if batch else ""))
     summary = {"resolved": [], "none": [], "blocked": [], "dead": []}
 
+    host_locks: dict[str, threading.Lock] = {}
+    host_last: dict[str, float] = {}
+    registry = threading.Lock()
+
     def probe(w: dict) -> tuple[dict, str | None, str]:
-        raw, note = fetch(w.get("source", ""))
+        host = domain_of(w.get("source", "")) or "?"
+        with registry:
+            lock = host_locks.setdefault(host, threading.Lock())
+        with lock:
+            wait = PHOTO_HOST_DELAY - (time.monotonic() - host_last.get(host, 0.0))
+            if wait > 0:
+                time.sleep(wait)
+            raw, note = fetch(w.get("source", ""))
+            host_last[host] = time.monotonic()
         if raw is None:
             return w, None, note
         img = og_image(raw, w["source"])
@@ -846,7 +999,7 @@ def assign_display_names(entries: list[dict], model: Model) -> list[str]:
     )
     parsed = model.structured(
         NAMING_PROMPT.format(limit=DISPLAY_LIMIT, entries=listing),
-        NAMING_SCHEMA, max_tokens=4000,
+        NAMING_SCHEMA, max_tokens=4000, stage="ledger names",
     )
     by_id = {e["id"]: e for e in todo}
     answers = {a["id"]: a for a in (parsed or {}).get("names", [])}
@@ -902,14 +1055,14 @@ def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
     log(f"\n[4] NEW RELEASES — searching the press since {since}")
     summary = {"added": [], "rejected": [], "notes": None}
 
-    notes = model.search(SEARCH_PROMPT.format(since=since), PRESS_DOMAINS)
+    notes = model.search(SEARCH_PROMPT.format(since=since), PRESS_DOMAINS, stage="new releases")
     if not notes:
         log("    no research returned")
         return summary
     summary["notes"] = notes
 
     parsed = model.structured(EXTRACT_PROMPT.format(notes=notes[:60000]),
-                              EXTRACT_SCHEMA, max_tokens=32000)
+                              EXTRACT_SCHEMA, max_tokens=32000, stage="new releases")
     if not parsed:
         log("    extraction returned nothing")
         return summary
@@ -977,8 +1130,25 @@ def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
 # ------------------------------------------------------------------- report
 
 
-def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str) -> str:
+def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
+                 model: "Model | None" = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
+
+    # Spend goes near the top and is reported on EVERY run, generous ceiling or
+    # not. The first few real numbers are worth more than any estimate of what
+    # the right ceiling should be.
+    if model is not None:
+        L += ["## Spend", "",
+              f"- **{model.cad:.2f} CAD** of a {model.budget_cad:.2f} CAD weekly ceiling "
+              f"(${model.usd:.3f} USD at a fixed {USD_TO_CAD} CAD/USD)",
+              f"- {model.calls} model call(s) · {model.searches} web search(es) "
+              f"· photographs cost nothing (no model call)", ""]
+        if model.stopped_at:
+            L += [f"> **The ceiling was reached during the {model.stopped_at} stage.** "
+                  f"{model.skipped} further call(s) were skipped and everything already "
+                  "finished was committed — this is the guard working, not a failure. "
+                  "Raise the `WEEKLY_BUDGET_CAD` repository variable if the register "
+                  "needs more than this each week.", ""]
 
     if avail:
         L += ["## Availability", "",
@@ -1006,6 +1176,21 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
               f"- Source URL dead / 404 (will not retry): **{len(photos.get('dead', []))}**",
               f"- Source unreachable (retry in {PHOTO_RETRY_DAYS}d): **{len(photos['blocked'])}**",
               f"- Coverage now: **{meta.get('imagesResolved', 0)}/{meta.get('count', 0)}**", ""]
+        # The residue is a documented list, not a mystery. Grouping the failures
+        # by outlet is the point: a hundred scattered misses is the shape of the
+        # web, but a hundred at one domain is one fixable cause.
+        residue = photos["none"] + photos.get("dead", []) + photos["blocked"]
+        if residue:
+            by_host: dict[str, list[str]] = {}
+            for w in residue:
+                by_host.setdefault(domain_of(w.get("source", "")) or "?", []).append(w["id"])
+            worst = sorted(by_host.items(), key=lambda kv: -len(kv[1]))
+            L += [f"### Why {len(residue)} did not resolve, by outlet", "",
+                  "> A single outlet high on this list is one fix, not a permanent gap.", ""]
+            L += [f"- `{host}` — **{len(ids)}**" for host, ids in worst[:15]] + [""]
+            if len(worst) > 15:
+                L += [f"- …and {len(worst) - 15} other outlet(s) with fewer than "
+                      f"{len(worst[15][1]) + 1} each", ""]
 
     if news:
         L += ["## New releases", "", f"- Added: **{len(news['added'])}**", ""]
@@ -1046,7 +1231,10 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
-    ap.add_argument("--photo-batch", type=int, default=PHOTO_BATCH)
+    ap.add_argument("--photo-batch", type=int, default=0,
+                    help="cap the photograph pass (0 = every entry that still has none)")
+    ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
+                    help="weekly ceiling in CAD for model spend (0 = no ceiling)")
     ap.add_argument("--corrections", type=Path, default=None,
                     help="apply Lowell's admin export (Copy corrections JSON) into data.json")
     args = ap.parse_args()
@@ -1073,9 +1261,10 @@ def main() -> int:
     log(f"    {start_count} entries · {len({w['brand'] for w in watches})} brands · "
         f"revision {meta.get('revision')} · updated {meta.get('updated')}")
 
-    model = Model(enabled=not args.no_api)
+    model = Model(enabled=not args.no_api, budget_cad=args.budget)
     if args.no_api:
         log("    (--no-api: fetch layer only, no model calls)")
+    log(f"    budget: {args.budget:.2f} CAD" if args.budget > 0 else "    budget: none set")
 
     # Lowell's hand corrections go in before anything else looks at a name, so a
     # run can never write a display name over an edit he made this morning.
@@ -1084,13 +1273,25 @@ def main() -> int:
         log(f"    corrections applied to {applied} entr{'y' if applied == 1 else 'ies'}"
             + (f" · {len(unknown)} unknown id(s): {', '.join(unknown[:5])}" if unknown else ""))
 
+    # Stage order is the budget's priority order: the two stages that spend
+    # money run first, most valuable first, so a tight ceiling truncates the
+    # least valuable work rather than whatever happened to be last. Photographs
+    # run LAST because they cost nothing — fetch and parse, no model call — so
+    # they are never the thing a budget stop takes away. Running them after the
+    # new-releases search also means this week's additions get their pictures
+    # this week instead of next.
     avail = photos = news = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
-    if 3 in stages:
-        photos = stage_photos(watches, args.photo_batch)
     if 4 in stages:
         news = stage_new_releases(watches, model, meta.get("updated", "2026-01-01"))
+    if 3 in stages:
+        photos = stage_photos(watches, args.photo_batch)
+
+    log(f"\nSPEND — {model.cad:.2f} CAD of {args.budget:.2f} "
+        f"({model.calls} model call{'' if model.calls == 1 else 's'}, "
+        f"{model.searches} web search{'' if model.searches == 1 else 'es'}, "
+        f"${model.usd:.3f} USD at {USD_TO_CAD} CAD/USD)")
 
     # --- Stage 5. Guardrails first, then meta, then disk.
     gone_now = len(avail.get("gone", []))
@@ -1099,14 +1300,19 @@ def main() -> int:
             f"({gone_now / start_count:.0%} of the register, cap is {GONE_BLAST_RADIUS:.0%}).")
         log("That pattern means the fetch layer broke, not that the market cleared.")
         write_report(meta, avail, photos, news, f"BLOCKED — {gone_now} Gone flips exceeds the "
-                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.")
+                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model)
         return 20
 
-    if 2 in stages and avail.get("checked") and avail.get("read", 0) == 0:
-        log(f"\nFAILING: {avail['checked']} availability checks and not one page was readable.")
+    # Silence is a failure — but only silence we actually went looking for.
+    # Entries the ceiling skipped were never fetched, so they are not evidence
+    # of a broken fetch layer; counting them here would turn a tight budget into
+    # a red build every Monday, which is the opposite of what the guard is for.
+    attempted = avail.get("checked", 0) - avail.get("budget_skipped", 0)
+    if 2 in stages and attempted and avail.get("read", 0) == 0:
+        log(f"\nFAILING: {attempted} availability checks and not one page was readable.")
         log("Silence on this scale is a broken fetch layer, not a quiet week.")
         write_report(meta, avail, photos, news, "FAILED — zero pages readable across "
-                                                f"{avail['checked']} checks. Not committed.")
+                                                f"{attempted} checks. Not committed.", model)
         return 21
 
     meta["updated"] = today()
@@ -1118,7 +1324,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.")
+        write_report(meta, avail, photos, news, "No changes.", model)
         return 10
 
     parts = []
@@ -1140,7 +1346,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject)
+    write_report(meta, avail, photos, news, subject, model)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")
