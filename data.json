@@ -6,7 +6,7 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 2,
+    "revision": 3,
     "domain": "watchdropindex.com",
     "imagesResolved": 40
   },
@@ -1375,7 +1375,7 @@
       "price": "$5,270",
       "priceNum": 5270,
       "date": "Spring 2026",
-      "status": "Waitlist",
+      "status": "Available",
       "buy": "https://www.watchbuys.com/store/pc/Sinn-936-S-Black-Chronograph-Fully-Tegimented-Limited-Edition-217p8390.htm",
       "buyLabel": "WatchBuys — product page",
       "source": "https://www.watchbuys.com/store/pc/Sinn-Spring-2026-New-Releases-c214.htm",
@@ -1384,8 +1384,8 @@
         "Buy online"
       ],
       "id": "cbb89aa2fd",
-      "tier": "Waitlist or ballot",
-      "rank": 3,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {

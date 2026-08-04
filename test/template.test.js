@@ -34,19 +34,25 @@ const tierBadge = (w, tier) =>
   w.document.querySelector(`[data-tier="${tier}"] .n`)?.textContent.trim();
 
 (async () => {
-  console.log("\n=== 1. BASELINE (inherited data.json) ===");
+  // Expectations are DERIVED from data.json, never hardcoded. The whole point of
+  // this file is that the page tracks the data; pinning it to one day's snapshot
+  // would make it fail every time the weekly refresh does its job.
+  const tally = (t) => BASE.watches.filter((x) => x.tier === t).length;
+  const N = BASE.watches.length;
+
+  console.log("\n=== 1. THE PAGE MATCHES THE CURRENT data.json ===");
   let w = await load(BASE);
-  check("rows rendered", w.document.querySelectorAll(".item").length, 252);
-  check("masthead: buyable online", txt(w, "#t-buy"), 60);
-  check("masthead: runs tracked", txt(w, "#t-total"), 252);
-  check("masthead: confirmed gone", txt(w, "#t-gone"), 31);
-  check("masthead: brands", txt(w, "#t-brands"), 94);
-  check("masthead: updated", txt(w, "#t-updated"), "2026-08-03");
-  check("colophon: revision", txt(w, "#c-rev"), 1);
-  check("colophon: photos resolved", txt(w, "#c-imgs"), 10);
-  check("filter badge: All", tierBadge(w, "All"), 252);
-  check("filter badge: Buy online now", tierBadge(w, "Buy online now"), 60);
-  check("filter badge: Gone", tierBadge(w, "Gone"), 31);
+  check("rows rendered", w.document.querySelectorAll(".item").length, N);
+  check("masthead: buyable online", txt(w, "#t-buy"), tally("Buy online now"));
+  check("masthead: runs tracked", txt(w, "#t-total"), N);
+  check("masthead: confirmed gone", txt(w, "#t-gone"), tally("Gone"));
+  check("masthead: brands", txt(w, "#t-brands"), new Set(BASE.watches.map((x) => x.brand)).size);
+  check("masthead: updated", txt(w, "#t-updated"), BASE.meta.updated);
+  check("colophon: revision", txt(w, "#c-rev"), BASE.meta.revision);
+  check("colophon: photos resolved", txt(w, "#c-imgs"), BASE.watches.filter((x) => x.image).length);
+  check("filter badge: All", tierBadge(w, "All"), N);
+  check("filter badge: Buy online now", tierBadge(w, "Buy online now"), tally("Buy online now"));
+  check("filter badge: Gone", tierBadge(w, "Gone"), tally("Gone"));
 
   console.log("\n=== 2. SIMULATED WEEKLY REFRESH — data.json only, index.html untouched ===");
   // 4 new watches from a brand-new brand; 2 existing 'Buy online now' entries flip to Gone.
@@ -63,21 +69,22 @@ const tierBadge = (w, tier) =>
       status: "Available", soldOutOn: null, verified: null });
   }
   next.meta.updated = "2026-08-10";
-  next.meta.revision = 2;
+  next.meta.revision = BASE.meta.revision + 1;
   next.meta.count = next.watches.length;
 
   w = await load(next);
-  check("rows rendered", w.document.querySelectorAll(".item").length, 256);
-  check("masthead: buyable online", txt(w, "#t-buy"), 62);   // 60 - 2 + 4
-  check("masthead: runs tracked", txt(w, "#t-total"), 256);
-  check("masthead: confirmed gone", txt(w, "#t-gone"), 33);  // 31 + 2
-  check("masthead: brands", txt(w, "#t-brands"), 98);        // 94 + 4 new brands
+  check("rows rendered", w.document.querySelectorAll(".item").length, N + 4);
+  check("masthead: buyable online", txt(w, "#t-buy"), tally("Buy online now") - 2 + 4);
+  check("masthead: runs tracked", txt(w, "#t-total"), N + 4);
+  check("masthead: confirmed gone", txt(w, "#t-gone"), tally("Gone") + 2);
+  check("masthead: brands", txt(w, "#t-brands"),
+        new Set(BASE.watches.map((x) => x.brand)).size + 4);
   check("masthead: updated", txt(w, "#t-updated"), "2026-08-10");
-  check("colophon: revision", txt(w, "#c-rev"), 2);
-  check("colophon: total", txt(w, "#c-total"), 256);
-  check("filter badge: All", tierBadge(w, "All"), 256);
-  check("filter badge: Buy online now", tierBadge(w, "Buy online now"), 62);
-  check("filter badge: Gone", tierBadge(w, "Gone"), 33);
+  check("colophon: revision", txt(w, "#c-rev"), BASE.meta.revision + 1);
+  check("colophon: total", txt(w, "#c-total"), N + 4);
+  check("filter badge: All", tierBadge(w, "All"), N + 4);
+  check("filter badge: Buy online now", tierBadge(w, "Buy online now"), tally("Buy online now") - 2 + 4);
+  check("filter badge: Gone", tierBadge(w, "Gone"), tally("Gone") + 2);
 
   console.log("\n=== 3. DEEP LINK  /#<id> ===");
   const target = BASE.watches.find(x => x.image);           // one with a photograph

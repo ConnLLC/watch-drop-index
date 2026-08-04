@@ -142,6 +142,27 @@ for bad, why in [
     run_stage2(e, StubModel(default=bad))
     check(f"never Gone on {why}", e, snap)
 
+section("Out of stock is not the same as sold out")
+# The first real run flipped a Sinn LE whose retailer page said "Temporarily Sold
+# Out" into 'Waitlist or ballot', while a Nodus entry with near-identical wording
+# went to 'Gone'. Same evidence, two different answers — and 'Waitlist or ballot'
+# means the brand runs a ballot, which a retailer stock message never implies.
+# Only a finished run moves a tier now; everything else is recorded and left alone.
+for sig, label in [("temporarily_unavailable", "temporarily out of stock"),
+                   ("waitlist_only", "a notify-me list")]:
+    e = [entry()]
+    run_stage2(e, StubModel(default=verdict("no", sig, "Temporarily Sold Out", "high")))
+    check(f"{label}: tier unchanged", e[0]["tier"], "Buy online now")
+    check(f"{label}: status unchanged", e[0]["status"], "Available")
+    check(f"{label}: not stamped sold out", e[0]["soldOutOn"], None)
+    check(f"{label}: but the page is quoted for the reader",
+          e[0]["verified"]["note"], 'Purchase page reads: "Temporarily Sold Out"')
+
+e = [entry()]
+snap = copy.deepcopy(e)
+run_stage2(e, StubModel(default=verdict("no", "temporarily_unavailable", "", "high")))
+check("no quote means not even a note", e, snap)
+
 section("Entries can move up as well as down")
 e = [entry(status="Upcoming", rank=1, tier="Drop upcoming", buyLabel="Announced", tags=[])]
 run_stage2(e, StubModel(default=verdict("yes", "preorder_open", "Pre-order now", "high")))

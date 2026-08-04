@@ -142,9 +142,11 @@ OUTLETS = {
 PRESS_DOMAINS = [
     "monochrome-watches.com", "watchesbysjx.com", "wornandwound.com",
     "fratellowatches.com", "timeandtidewatches.com", "ablogtowatch.com",
-    "hodinkee.com", "revolutionwatch.com", "plus9time.com", "g-central.com",
-    "quillandpad.com", "deployant.com", "watchpro.com",
+    "revolutionwatch.com", "plus9time.com", "g-central.com",
+    "quillandpad.com", "deployant.com", "watchpro.com", "oracleoftime.com",
 ]
+# hodinkee.com is deliberately absent: it blocks the model's crawler, and naming it
+# rejects the ENTIRE search with a 400 rather than just skipping that one site.
 
 
 # ---------------------------------------------------------------- utilities
@@ -378,8 +380,8 @@ VERDICT_SCHEMA = {
         },
         "signal": {
             "type": "string",
-            "enum": ["add_to_cart", "preorder_open", "sold_out", "waitlist_only",
-                     "contact_retailer", "not_a_product_page", "unreadable"],
+            "enum": ["add_to_cart", "preorder_open", "sold_out", "temporarily_unavailable",
+                     "waitlist_only", "contact_retailer", "not_a_product_page", "unreadable"],
         },
         "quote": {
             "type": "string",
@@ -401,11 +403,28 @@ PAGE URL: {url}
 Below is the readable text of that page.
 
 Judge only what this page shows. The distinctions that matter:
-- "Sold out", "out of stock", "no longer available" => obtainable: no
-- An active add-to-cart / buy button, or a live price with stock => obtainable: yes
-- "Notify me", "join the waitlist", "register interest" => obtainable: no, signal waitlist_only
-- "Contact us", "enquire", "find a boutique" => obtainable: unclear, signal contact_retailer
-  (that is a distribution model, NOT evidence the watch is gone)
+
+- An active add-to-cart / buy button, or a live price with stock => obtainable: yes,
+  signal add_to_cart (or preorder_open if it is an order window rather than stock)
+
+- signal sold_out — the run is finished and will not return. Use this when the page
+  says the edition is sold out, fully allocated, no longer available, or that all
+  pieces are accounted for. A plain "Out of stock" on a limited edition's only listed
+  purchase channel also counts: a capped run does not get restocked.
+
+- signal temporarily_unavailable — the page says you cannot buy it RIGHT NOW but
+  frames that as temporary: "temporarily sold out", "back in stock soon",
+  "currently unavailable", "out of stock at this retailer" alongside other channels.
+  The difference from sold_out is what the page says about permanence, not how you
+  feel about the odds.
+
+- signal waitlist_only — the brand's stated way in is a ballot, lottery or
+  application. A "notify me when available" mailing list is NOT this; that is
+  temporarily_unavailable.
+
+- "Contact us", "enquire", "find a boutique" => obtainable: unclear, signal
+  contact_retailer. That is a distribution model, NOT evidence the watch is gone.
+
 - A category page, a 404, a homepage, a cookie wall, or a page that does not
   identify this watch => obtainable: unclear, signal not_a_product_page
 - Text that looks like a bot challenge or is too sparse to read => unclear, unreadable
@@ -473,7 +492,7 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
 
     by_id = {w["id"]: w for w in watches}
     summary = {"checked": len(targets), "read": 0, "gone": [], "promoted": [],
-               "confirmed": [], "skipped": []}
+               "confirmed": [], "noted": [], "skipped": []}
 
     for r in results:
         w = by_id[r["id"]]
@@ -487,17 +506,30 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
         quote = (v.get("quote") or "").strip()[:200]
         signal, conf = v["signal"], v["confidence"]
 
-        # --- Gone. The only downgrade this job is permitted to make, and only
-        # on positive, high-confidence, quotable evidence.
-        if v["obtainable"] == "no" and conf == "high" and signal in ("sold_out", "waitlist_only") and quote:
-            if signal == "waitlist_only":
-                w["status"], w["buyLabel"] = "Waitlist", w.get("buyLabel") or "Join the waitlist"
-            else:
-                w["status"] = "Sold out"
-                w["soldOutOn"] = today()
+        # --- Gone. The only downgrade this job is permitted to make, and only on
+        # positive, high-confidence, quotable evidence that the run is finished.
+        #
+        # `sold_out` is the ONLY signal that moves a tier downward. A retailer
+        # being temporarily out of stock is a fact about stock, not about how the
+        # brand distributes the watch, and the tiers describe distribution. A
+        # "notify me" list is likewise not a ballot. Both of those get a verified
+        # note quoting the page and keep their tier — the reader sees "Buy online
+        # now" next to "Stock checked today, page reads 'Temporarily Sold Out'"
+        # and can judge for themselves, which is the honest presentation and the
+        # one that keeps demand and distribution from blurring together.
+        if v["obtainable"] == "no" and conf == "high" and signal == "sold_out" and quote:
+            w["status"] = "Sold out"
+            w["soldOutOn"] = today()
             apply_tier(w)
             w["verified"] = {"date": today(), "note": f'Purchase page reads: "{quote}"'}
             summary["gone"].append((w, quote))
+            continue
+
+        # --- Can't be bought right now, but the page says nothing permanent.
+        # Record what it said; change nothing else.
+        if signal in ("temporarily_unavailable", "waitlist_only") and quote:
+            w["verified"] = {"date": today(), "note": f'Purchase page reads: "{quote}"'}
+            summary["noted"].append((w, quote))
             continue
 
         # --- Upward moves. A pre-order opening or an AD putting stock online.
@@ -531,7 +563,8 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
 
     log(f"    read {summary['read']}/{summary['checked']} pages · "
         f"{len(summary['gone'])} gone · {len(summary['promoted'])} moved up · "
-        f"{len(summary['confirmed'])} confirmed · {len(summary['skipped'])} left alone")
+        f"{len(summary['confirmed'])} confirmed · {len(summary['noted'])} noted "
+        f"· {len(summary['skipped'])} left alone")
     return summary
 
 
@@ -769,6 +802,8 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
               f"- Flipped to Gone: **{len(avail['gone'])}**",
               f"- Moved up a tier: **{len(avail['promoted'])}**",
               f"- Confirmed still available: **{len(avail['confirmed'])}**",
+              f"- Out of stock but not permanently — noted, tier unchanged: "
+              f"**{len(avail.get('noted', []))}**",
               f"- Left untouched (unreadable or unclear): **{len(avail['skipped'])}**", ""]
         if avail["gone"]:
             L += ["### Flipped to Gone", ""]
