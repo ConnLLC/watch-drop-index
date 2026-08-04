@@ -38,7 +38,11 @@ input[type=search]:focus{border-color:#17130d}
   [data-mq="hgrid"]{display:block !important}
   [data-mq="hleft"]{max-width:none !important}
   [data-mq="hdiv"]{display:none !important}
-  [data-mq="hstats"]{max-width:none !important;margin-top:26px}
+  /* Lowell, 2026-08-04: the stat ledger is desktop-only. HIDDEN, not removed —
+     #t-buy/#t-total/#t-gone/#t-brands/#t-updated are the weekly refresh's
+     hydration contract and must stay in the DOM to be rewritten. Diverges from
+     design's reference until they fold it in; raised on the RELAY thread. */
+  [data-mq="hstats"]{display:none !important}
   [data-mq="lockup"]{font-size:38px !important}
   [data-mq="wide"]{width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:0 !important}
   [data-mq="search"]{width:100% !important;margin:10px 0 0 !important}

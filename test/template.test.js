@@ -226,6 +226,17 @@ const keep = (list) => list
           inDom && media.includes(`[data-mq="${hook}"]`), true);
   }
   check("rows carry the column hook", !!w.document.querySelector(`[data-id] [data-mq="cols"]`), true);
+  // The stat ledger is desktop-only, but hiding it must not cost us the
+  // hydration anchors — they still have to be in the DOM to be rewritten.
+  check("stat ledger is hidden on phones",
+        /\[data-mq="hstats"\]\{display:none !important\}/.test(media), true);
+  check("...but its hydration anchors survive", (() => {
+    const ids = ["#t-buy", "#t-total", "#t-gone", "#t-brands", "#t-updated"];
+    return ids.every((s) => {
+      const n = w.document.querySelector(s);
+      return n && n.closest('[data-mq="hstats"]') && n.textContent.length > 0;
+    });
+  })(), true);
   check("mobile rules override the inline styles",
         (media.match(/!important/g) || []).length >= 20, true);
   check("expanded frame carries the detail hook", (() => {
