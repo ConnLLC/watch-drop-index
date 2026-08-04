@@ -28,15 +28,34 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: index.html must match what build.py produces
+        # Compared with the hydrated figures normalised away. Those are rewritten
+        # from data.json in the browser, so the committed template is *expected* to
+        # carry stale numbers after a data-only refresh commit — that staleness is
+        # the architecture working, not drift. Everything else must match exactly.
         run: |
           cp index.html /tmp/committed.html
           python3 build.py
-          if ! diff -q /tmp/committed.html index.html >/dev/null; then
-            echo "::error::index.html is out of sync with build.py — run 'python3 build.py' and commit the result."
-            diff /tmp/committed.html index.html | head -40
-            exit 1
-          fi
-          echo "index.html matches build.py output."
+          python3 - <<'PY'
+          import re, sys
+
+          def normalise(s):
+              s = re.sub(r'(id="t-(?:buy|total|gone|brands|updated)"[^>]*>)[^<]*', r'\1#', s)
+              s = re.sub(r'(id="c-(?:rev|imgs|total)"[^>]*>)[^<]*', r'\1#', s)
+              s = re.sub(r'(<span class="n">)[^<]*', r'\1#', s)
+              return s
+
+          a = normalise(open('/tmp/committed.html').read())
+          b = normalise(open('index.html').read())
+          if a == b:
+              print("index.html matches build.py output (ignoring hydrated figures).")
+              sys.exit(0)
+          print("::error::index.html is out of sync with build.py — run 'python3 build.py' and commit the result.")
+          import difflib
+          for line in list(difflib.unified_diff(a.splitlines(), b.splitlines(),
+                                                'committed', 'rebuilt', lineterm=''))[:40]:
+              print(line)
+          sys.exit(1)
+          PY
 
       - name: Template renders and hydrates correctly
         run: npm test

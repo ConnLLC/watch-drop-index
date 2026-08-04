@@ -383,12 +383,15 @@ def cal_list(entries, with_where=False):
                    f'<div class="det">{det}{link}</div></div></li>')
     return "\n".join(out)
 
+# Every tier gets a button whether or not it currently has entries. The counts are
+# rewritten from data.json at load, so a tier emptying out must not make its filter
+# disappear — that would change the page's structure on a data-only commit, which is
+# precisely what this architecture promises never to happen.
 tier_f = f'<button class="f on" data-tier="All">All<span class="n">{len(items)}</span></button>'
 for t in TIERS:
-    if counts.get(t):
-        cls = "f live" if t == "Buy online now" else "f"
-        tier_f += (f'<button class="{cls}" data-tier="{html.escape(t)}" title="{html.escape(TIER_HELP[t])}">'
-                   f'{html.escape(t)}<span class="n">{counts[t]}</span></button>')
+    cls = "f live" if t == "Buy online now" else "f"
+    tier_f += (f'<button class="{cls}" data-tier="{html.escape(t)}" title="{html.escape(TIER_HELP[t])}">'
+               f'{html.escape(t)}<span class="n">{counts.get(t, 0)}</span></button>')
 cat_f = '<button class="f on" data-cat="All">All segments</button>' + "".join(
     f'<button class="f" data-cat="{html.escape(c)}">{html.escape(c)}</button>' for c in cats)
 bands = ["<$1k", "$1k–5k", "$5k–15k", "$15k–50k", "$50k–250k", "$250k+", "No price"]
@@ -396,7 +399,7 @@ band_f = '<button class="f on" data-band="All">Any</button>' + "".join(
     f'<button class="f" data-band="{html.escape(b)}">{html.escape(b)}</button>' for b in bands)
 key_rows = "".join(
     f'<div><b><span class="dot d{TIERS.index(t)}"></span>{html.escape(t)}</b><span>{html.escape(TIER_HELP[t])}</span></div>'
-    for t in TIERS if counts.get(t))
+    for t in TIERS)
 
 dom = meta.get("domain", "")
 HTML = f"""<!DOCTYPE html>
