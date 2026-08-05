@@ -6,9 +6,9 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 14,
+    "revision": 15,
     "domain": "watchdropindex.com",
-    "imagesResolved": 221,
+    "imagesResolved": 220,
     "lastImageSweep": "2026-08-05",
     "spend": {
       "weekStart": "2026-08-03",
@@ -18,7 +18,18 @@
       "weekStart": "2026-08-03",
       "cad": 10,
       "note": "Lowell, 2026-08-05: one-off raise to unblock the buy-link search-and-verify pass. Lapses on its own Monday 2026-08-10 — the standing ceiling in WEEKLY_BUDGET_CAD is unchanged at 5."
-    }
+    },
+    "readability": [
+      {
+        "date": "2026-08-05",
+        "runner": "github-actions",
+        "product": 78,
+        "listing": 43,
+        "brand": 30,
+        "none": 0,
+        "unreadable": 101
+      }
+    ]
   },
   "watches": [
     {
@@ -180,6 +191,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -505,11 +521,6 @@
       "verified": null,
       "image": "https://oracleoftime.com/wp-content/uploads/2026/03/Grand-Seiko-Watches-and-Wonders-2026-Featured.jpg",
       "imageCredit": "Oracle of Time",
-      "imageCheck": {
-        "date": "2026-08-05",
-        "result": "unclear",
-        "note": "fetch failed: ConnectTimeout"
-      },
       "imageSize": [
         1600,
         1066
@@ -2773,7 +2784,12 @@
       "imageSize": [
         1200,
         1200
-      ]
+      ],
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Chopard",
@@ -3121,6 +3137,11 @@
       "buyCheck": {
         "date": "2026-08-04",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "dead",
+        "note": "soft-404: redirected to https://junghans-shop.com"
       }
     },
     {
@@ -3156,6 +3177,11 @@
       "buyCheck": {
         "date": "2026-08-04",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "dead",
+        "note": "soft-404: redirected to https://junghans-shop.com"
       }
     },
     {
@@ -4539,7 +4565,12 @@
       "imageSize": [
         1200,
         1200
-      ]
+      ],
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -4572,6 +4603,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4604,6 +4640,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4636,6 +4677,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4668,6 +4714,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4696,12 +4747,12 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
-      "image": "https://somethingaboutrocks.com/wp-content/uploads/2026/07/f29adfac-f67f-4061-b096-17d6a3e8cefa.jpg?wsr",
-      "imageCredit": "Something About Rocks",
+      "image": null,
+      "imageCredit": null,
       "imageCheck": {
         "date": "2026-08-05",
-        "result": "unclear",
-        "note": "fetch failed: ConnectTimeout"
+        "result": "rotted",
+        "note": "HTTP 202 serving text/html"
       },
       "imageSize": [
         644,
@@ -4711,6 +4762,14 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch but offers no purchase"
+      },
+      "deadImages": [
+        "https://somethingaboutrocks.com/wp-content/uploads/2026/07/f29adfac-f67f-4061-b096-17d6a3e8cefa.jpg?wsr"
+      ],
+      "imageProbe": {
+        "date": "2026-08-05",
+        "result": "blocked",
+        "note": "HTTP 202"
       }
     },
     {
@@ -4743,6 +4802,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4776,6 +4840,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -4809,6 +4878,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -7921,6 +7995,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "imageCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 415"
       }
     },
     {
@@ -7956,6 +8035,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "imageCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 415"
       }
     },
     {
@@ -8125,7 +8209,12 @@
       "imageSize": [
         1200,
         1200
-      ]
+      ],
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -8157,6 +8246,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -8189,6 +8283,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -8953,7 +9052,12 @@
       "imageSize": [
         1200,
         675
-      ]
+      ],
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Swatch × Audemars Piguet",
