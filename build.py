@@ -419,7 +419,15 @@ JS = r"""
     var fig;
     if (d.image) {
       fig = '<figure style="margin:0">' +
-        '<img src="' + esc(d.image) + '" alt="' + esc(d.brand + " " + d.model) + '" loading="lazy" style="width:100%;display:block;border:1px solid #ddd6c8;background:#ece7da">' +
+        /* referrerpolicy="no-referrer" is load-bearing, not a tidy-up. These are
+           hotlinked press photographs, and several outlets serve an image to a
+           direct request but refuse one carrying a foreign Referer — which is
+           exactly what an <img> on this page sends. Opening the same URL in a
+           tab works, so the empty-referer case is allowed; this tells the
+           browser to make that request instead. Costs nothing, invisible, and
+           it is the difference between a photograph and a broken-image box for
+           any outlet with hotlink protection turned on. */
+        '<img src="' + esc(d.image) + '" alt="' + esc(d.brand + " " + d.model) + '" loading="lazy" referrerpolicy="no-referrer" style="width:100%;display:block;border:1px solid #ddd6c8;background:#ece7da">' +
         '<figcaption style="font-size:11px;color:#8a8071;margin-top:7px;letter-spacing:.04em">Photograph · ' + esc(d.imageCredit || "source") + '</figcaption></figure>';
     } else {
       var plate = (d.ref && d.ref !== "—") ? d.ref : String(d.brand || "").toUpperCase();
