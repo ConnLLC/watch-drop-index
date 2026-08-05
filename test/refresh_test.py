@@ -549,6 +549,32 @@ check("the ledger records the WEEK's total, not the run's",
 check("...stamped with the week it belongs to",
       meta_out["spend"]["weekStart"], R.week_anchor())
 
+section("A raised ceiling is scoped to ONE week and lapses by itself")
+# "Raise it to 10 for this week" has to mean this week, or it is just a permanent
+# raise nobody remembers to undo — the same silent drift this codebase keeps
+# catching. The override is stamped with its week and stops applying when that
+# week rolls over, so nobody has to remember anything.
+THIS = R.week_anchor()
+check("an override for THIS week raises the ceiling",
+      R.effective_budget({"ceilingOverride": {"weekStart": THIS, "cad": 10}}, 5.0), (10.0, True))
+check("an override for a PAST week does not — it lapses on its own",
+      R.effective_budget({"ceilingOverride": {"weekStart": "1999-01-04", "cad": 10}}, 5.0),
+      (5.0, False))
+check("no override means the standing ceiling", R.effective_budget({}, 5.0), (5.0, False))
+# Fails safe in every direction: a broken override must never be why a run spends
+# more than it was allowed to.
+check("an unreadable override falls back to the standing ceiling, not the raised one",
+      R.effective_budget({"ceilingOverride": {"weekStart": THIS, "cad": "lots"}}, 5.0), (5.0, False))
+check("a zero or negative override cannot disable the ceiling",
+      (R.effective_budget({"ceilingOverride": {"weekStart": THIS, "cad": 0}}, 5.0),
+       R.effective_budget({"ceilingOverride": {"weekStart": THIS, "cad": -1}}, 5.0)),
+      ((5.0, False), (5.0, False)))
+# And it composes with the ledger: the week's spend still counts against it.
+raised = meter(budget=10.0)
+raised.carried_cad = 4.33
+check("a raised ceiling still counts what the week already spent",
+      round(raised.remaining_cad(), 2), 5.67)
+
 section("A budget stop is safe to commit, and is not a failure")
 # The refused call returns None — the same thing an unreadable page returns — so
 # every decision rule already leaves the entry alone. That is what makes stopping

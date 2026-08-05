@@ -13,6 +13,11 @@
     "spend": {
       "weekStart": "2026-08-03",
       "cad": 4.33
+    },
+    "ceilingOverride": {
+      "weekStart": "2026-08-03",
+      "cad": 10,
+      "note": "Lowell, 2026-08-05: one-off raise to unblock the buy-link search-and-verify pass. Lapses on its own Monday 2026-08-10 — the standing ceiling in WEEKLY_BUDGET_CAD is unchanged at 5."
     }
   },
   "watches": [

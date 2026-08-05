@@ -1083,6 +1083,32 @@ def spend_carried(meta: dict) -> tuple[float, str]:
         return float("inf"), week
 
 
+def effective_budget(meta: dict, default_cad: float) -> tuple[float, bool]:
+    """The ceiling in force, and whether it is a one-week override.
+
+    "Raise it to 10 for this week" has to MEAN this week, or it is just a
+    permanent raise that nobody remembers to undo — which is the same silent
+    drift this codebase keeps catching elsewhere. So an override is stamped with
+    the week it belongs to and simply stops applying when that week rolls over.
+    Nobody has to remember anything.
+
+    Fails SAFE in both directions: an override for another week, or one that will
+    not parse, falls back to the standing ceiling rather than the raised one. A
+    corrupt override must never be the reason a run spends more.
+    """
+    ov = meta.get("ceilingOverride") or {}
+    if ov.get("weekStart") != week_anchor():
+        return default_cad, False
+    try:
+        raised = float(ov.get("cad"))
+    except (TypeError, ValueError):
+        log("    ! ceiling override is unreadable — falling back to the standing ceiling")
+        return default_cad, False
+    if raised <= 0:
+        return default_cad, False
+    return raised, True
+
+
 def record_spend(meta: dict, model: "Model") -> None:
     meta["spend"] = {"weekStart": week_anchor(), "cad": round(model.week_cad, 4)}
 
@@ -2362,13 +2388,17 @@ def main() -> int:
     # The weekly ledger. Without this the ceiling is per-invocation and the word
     # "weekly" is a promise the code does not keep — see Model.week_cad().
     carried, week_start = spend_carried(meta)
-    model = Model(enabled=not args.no_api, budget_cad=args.budget, carried_cad=carried)
+    budget, overridden = effective_budget(meta, args.budget)
+    model = Model(enabled=not args.no_api, budget_cad=budget, carried_cad=carried)
+    if overridden:
+        log(f"    ceiling RAISED to {budget:.2f} CAD for the week of {week_start} "
+            f"(standing ceiling {args.budget:.2f}) — lapses on its own next Monday")
     if carried:
         log(f"    already spent this week (from {week_start}): {carried:.2f} CAD "
-            f"· {max(0.0, args.budget - carried):.2f} CAD left of the ceiling")
+            f"· {max(0.0, budget - carried):.2f} CAD left of the ceiling")
     if args.no_api:
         log("    (--no-api: fetch layer only, no model calls)")
-    log(f"    budget: {args.budget:.2f} CAD" if args.budget > 0 else "    budget: none set")
+    log(f"    budget: {budget:.2f} CAD" if budget > 0 else "    budget: none set")
 
     # Takedowns are honoured BEFORE any stage reads an image. A rule added by
     # hand, by the admin panel or by --takedown takes effect on this run, not
@@ -2429,7 +2459,7 @@ def main() -> int:
     if 9 in stages:
         links = stage_links(watches, payload.get("calendar"))
 
-    log(f"\nSPEND — {model.cad:.2f} CAD of {args.budget:.2f} "
+    log(f"\nSPEND — {model.cad:.2f} CAD of {budget:.2f} "
         f"({model.calls} model call{'' if model.calls == 1 else 's'}, "
         f"{model.searches} web search{'' if model.searches == 1 else 'es'}, "
         f"${model.usd:.3f} USD at {USD_TO_CAD} CAD/USD)")
