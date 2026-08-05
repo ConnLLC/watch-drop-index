@@ -6,13 +6,13 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 8,
+    "revision": 14,
     "domain": "watchdropindex.com",
     "imagesResolved": 221,
     "lastImageSweep": "2026-08-05",
     "spend": {
       "weekStart": "2026-08-03",
-      "cad": 4.33
+      "cad": 6.7894
     },
     "ceilingOverride": {
       "weekStart": "2026-08-03",
@@ -287,7 +287,7 @@
       "priceNum": 1995,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.christopherward.com/int/limited-editions-watches.html",
+      "buy": "https://www.christopherward.com/on/demandware.store/Sites-cwgross-Site/en_GB/Page-Show?cid=c60-clipper-gmt",
       "buyLabel": "Christopher Ward — limited editions",
       "source": "https://luxe.outlookindia.com/watches-jewellery/watches/top-collaborative-timepieces-of-2026-the-most-exciting-watch-partnerships",
       "conf": "medium",
@@ -306,7 +306,17 @@
       "imageSize": [
         1280,
         695
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-05",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "product",
+        "was": "https://www.christopherward.com/int/limited-editions-watches.html"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -580,7 +590,12 @@
       "imageSize": [
         1750,
         986
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "unverified",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Hamilton",
@@ -594,7 +609,7 @@
       "priceNum": 700,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.hamiltonwatch.com/en-us/",
+      "buy": "https://www.exquisitetimepieces.com/hamilton-khaki-field-mechanical-250-h89399930.html",
       "buyLabel": "Hamilton US",
       "source": "https://monochrome-watches.com/hamilton-khaki-field-mechanical-36mm-and-khaki-field-mechanical-250-limited-introducing-price/",
       "conf": "medium",
@@ -613,7 +628,17 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-05",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "product",
+        "was": "https://www.hamiltonwatch.com/en-us/"
+      }
     },
     {
       "brand": "King Seiko",
@@ -703,7 +728,7 @@
       "priceNum": 2400,
       "date": "May 2026",
       "status": "Available",
-      "buy": "https://www.longines.com/en-us/",
+      "buy": "https://www.cortinawatch.com/en/longines/hydroconquest/l3-779-4-09-9/",
       "buyLabel": "Longines US",
       "source": "https://monochrome-watches.com/longines-hydroconquest-commonwealth-games-2026-limited-edition-39mm-42mm-review-price/",
       "conf": "high",
@@ -722,7 +747,17 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-05",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "product",
+        "was": "https://www.longines.com/en-us/"
+      }
     },
     {
       "brand": "Longines",
@@ -755,7 +790,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "none",
+        "note": "no candidate URL was offered"
+      }
     },
     {
       "brand": "Louis Erard",
@@ -1182,7 +1222,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "none",
+        "note": "no candidate URL was offered"
+      }
     },
     {
       "brand": "Seiko 5 Sports",
@@ -1728,7 +1773,6 @@
       "priceNum": 455,
       "date": "Announced Feb 2026 · delivery Oct 2026",
       "status": "Pre-order",
-      "buy": "https://sega.jp/",
       "buyLabel": "SEGA Store (Japan) — pre-order open",
       "source": "https://hypebeast.com/2026/2/seiko-sega-65th-anniversary-collaboration-watch-release-info",
       "conf": "high",
@@ -1744,7 +1788,13 @@
       "soldOutOn": null,
       "verified": null,
       "image": "https://image-cdn.hypb.st/https%3A%2F%2Fhypebeast.com%2Fimage%2F2026%2F02%2F12%2Fseiko-sega-65th-anniversary-collaboration-watch-release-info-tw.jpg?w=1080&cbr=1&q=90&fit=max",
-      "imageCredit": "Hypebeast"
+      "imageCredit": "Hypebeast",
+      "buySearch": {
+        "date": "2026-08-05",
+        "result": "none",
+        "note": "the only candidate offered was this entry's own source article"
+      },
+      "buy": "https://sega.jp/"
     },
     {
       "brand": "Sinn",

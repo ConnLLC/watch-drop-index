@@ -29,8 +29,8 @@ on:
   workflow_dispatch:
     inputs:
       stages:
-        description: 'Stages (2=availability, 3=photos, 4=new releases, 6=calendar, 7=image rot, 8=buy links, 9=source+cal links)'
-        default: '2,4,7,3,6,8,9'
+        description: 'Stages (2=availability, 10=search+verify buy links, 3=photos, 4=new releases, 6=calendar, 7=image rot, 8=buy links, 9=source+cal links)'
+        default: '2,10,4,7,3,6,8,9'
         required: false
       dry_run:
         description: 'Run everything but write nothing'
@@ -39,6 +39,10 @@ on:
       photo_batch:
         description: 'Cap the photograph pass (0 = every entry that still has none)'
         default: '0'
+        required: false
+      search_limit:
+        description: 'Cap stage 10 to the N worst entries (blank = every one due a search)'
+        default: ''
         required: false
       budget_cad:
         description: 'Override this run''s spend ceiling in CAD (blank = the WEEKLY_BUDGET_CAD variable)'
@@ -87,7 +91,8 @@ jobs:
         run: |
           set +e
           python3 scripts/refresh.py \
-            --stages "${{ inputs.stages || '2,4,7,3,6,8,9' }}" \
+            --stages "${{ inputs.stages || '2,10,4,7,3,6,8,9' }}" \
+            ${{ inputs.search_limit && format('--search-limit {0}', inputs.search_limit) || '' }} \
             --photo-batch "${{ inputs.photo_batch || '0' }}" \
             ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}

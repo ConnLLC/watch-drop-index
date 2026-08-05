@@ -7,14 +7,18 @@ this is the machinery behind it. Five stages:
 
   1  LOAD       read and validate data.json; abort loudly without touching anything
   2  AVAILABLE  re-check every entry that claims to be obtainable (rank <= 2)
+ 10  FIND       search for a real product page where the stored link is not one
   4  NEW        search the week's watch press for limited editions
   3  PHOTOS     backfill og:image for entries that still have none
   5  COMMIT     update meta, write data.json, emit a report
 
-Stages run 2 → 4 → 3, which is the budget's priority order: the two stages that
-cost money go first, most valuable first, so a tight ceiling truncates the least
-valuable work. Photographs run last because they cost nothing at all — a fetch
-and a parse, no model call — so a budget stop can never take them away.
+Stages run 2 → 10 → 4 → 3, which is the budget's priority order: the three
+stages that cost money go first, most valuable first, so a tight ceiling
+truncates the least valuable work. Availability leads because it corrects what
+the site says today; the search-and-verify pass repairs claims already being
+made; the press search adds ones not being made yet. Photographs run last
+because they cost nothing at all — a fetch and a parse, no model call — so a
+budget stop can never take them away.
 
 The governing rule throughout: an unreadable page changes nothing. A 403, a
 timeout, a bot wall and a JavaScript-only page are all silence, not evidence.
@@ -113,6 +117,60 @@ GONE_BLAST_RADIUS = 0.15   # refuse to commit if this share of entries flips to 
 PHOTO_RETRY_DAYS = 28      # how long before re-probing a source that errored
 PHOTO_HOST_DELAY = 1.5     # seconds between two requests to the SAME outlet
 MAX_NEW_ENTRIES = 25       # a week that yields more than this is a bug, not a boom
+
+# Stage 10's two residue clocks. Both exist because "there is no product page"
+# is a claim about TODAY, not a property of the watch: a retailer lists it next
+# month and a permanent flag would freeze that entry out of ever being upgraded
+# — the register wrong in the one direction it can least afford, quietly and
+# with nothing to notice it. So a residue records its date and expires.
+#
+# The two causes get different clocks because they are different facts. A bot
+# wall is a transient condition and worth retrying on the same clock the
+# photograph stage already uses for exactly that phenomenon. A searched-for
+# product page that does not exist is a fact about the market, and re-searching
+# it weekly is paying repeatedly for an answer we already own.
+SEARCH_RESIDUE_DAYS = 90            # searched, and no product page exists
+SEARCH_RETRY_DAYS = PHOTO_RETRY_DAYS  # searched, but could not verify what we found
+MAX_SEARCH_CANDIDATES = 4  # candidate URLs verified per entry before giving up
+
+# Resale, auction and marketplace hosts. A listing on one of these WOULD pass
+# verification — it names the watch and it has a cart — and writing it would
+# quietly change what the register claims. "Buy online now" on this site means
+# the watch can be bought new from the maker or a retailer it authorised; a
+# grey-market or pre-owned listing is a different fact at a different price,
+# and dressing it as the first is the aggregator behaviour the site exists to
+# beat. Excluded before verification, never after, so the reason stays legible.
+#
+# Editorial outlets are refused for the SAME reason and it is not a theoretical
+# one: on the first live run this stage wrote a Hypebeast article as the buy
+# link for the Seiko × SEGA chronograph. The article named the watch and the
+# page carried purchase markup — a publisher's own shop, an embedded offer —
+# so it passed verification cleanly. Evidence cannot separate a magazine from a
+# retailer here, because on the way the page is built they look the same. The
+# register already has a field for editorial coverage and it is `source`; `buy`
+# is where a reader goes to acquire the watch, and an article is never that.
+EDITORIAL_HOSTS = {
+    "monochrome-watches.com", "watchesbysjx.com", "timeandtidewatches.com",
+    "ablogtowatch.com", "wornandwound.com", "fratellowatches.com", "hodinkee.com",
+    "revolutionwatch.com", "plus9time.com", "g-central.com", "watchilove.com",
+    "thehourmarkers.com", "professionalwatches.com", "watchpro.com",
+    "quillandpad.com", "deployant.com", "watchtime.com", "oracleoftime.com",
+    "gearpatrol.com", "hypebeast.com", "hiconsumption.com", "luxe.outlookindia.com",
+    "twobrokewatchsnobs.com", "masterhorologer.com", "somethingaboutrocks.com",
+    "notebookcheck.net", "nxtmag.tech", "sfwatchlover.substack.com",
+    "esquire.com", "gq.com", "robbreport.com", "highsnobiety.com", "uncrate.com",
+    "cnn.com", "forbes.com", "wired.com", "engadget.com", "theverge.com",
+}
+
+BUY_BLOCKED_HOSTS = {
+    "ebay.com", "ebay.co.uk", "ebay.de", "chrono24.com", "chrono24.co.uk",
+    "amazon.com", "amazon.co.uk", "amazon.ca", "amazon.de", "amazon.co.jp",
+    "stockx.com", "grailed.com", "etsy.com", "poshmark.com", "mercari.com",
+    "catawiki.com", "sothebys.com", "christies.com", "phillips.com",
+    "bobswatches.com", "watchfinder.com", "watchfinder.co.uk", "jomashop.com",
+    "aliexpress.com", "walmart.com", "watchuseek.com", "reddit.com",
+    "facebook.com", "instagram.com", "x.com", "twitter.com", "youtube.com",
+} | EDITORIAL_HOSTS
 
 # SCOPE (Lowell, 2026-08-04): a production cap is not a limited edition. Entries
 # matching these do not render — the same three patterns are in build.py and in
@@ -726,24 +784,37 @@ class Model:
                 time.sleep(2 ** attempt * 2)
         return None
 
-    def search(self, prompt: str, domains: list[str], max_tokens: int = 16000,
-               stage: str = "search") -> str | None:
+    def search(self, prompt: str, domains: list[str] | None, max_tokens: int = 16000,
+               stage: str = "search", max_uses: int = 18,
+               effort: str = "high") -> str | None:
+        """`domains` restricts the search; None means the whole web, which is
+        only ever appropriate where something downstream VERIFIES the result —
+        stage 4 takes the model's word for what it read, so it stays fenced to
+        the press list, while stage 10 fetches and classifies every URL itself
+        before writing one.
+
+        max_uses and effort are per-stage because the searches are not the same
+        size: one press sweep across a week of announcements is worth 18 lookups
+        at high effort, and finding one watch's product page is not. Both
+        default to stage 4's original values so its cost is unchanged."""
         if not self.enabled:
             return None
         if not self._afford(stage):
             return None
         self.calls += 1
+        tool: dict[str, Any] = {
+            "type": "web_search_20260209",
+            "name": "web_search",
+            "max_uses": max_uses,
+        }
+        if domains:
+            tool["allowed_domains"] = domains
         try:
             with self._client.messages.stream(
                 model=MODEL,
                 max_tokens=max_tokens,
-                output_config={"effort": "high"},
-                tools=[{
-                    "type": "web_search_20260209",
-                    "name": "web_search",
-                    "max_uses": 18,
-                    "allowed_domains": domains,
-                }],
+                output_config={"effort": effort},
+                tools=[tool],
                 messages=[{"role": "user", "content": prompt}],
             ) as stream:
                 msg = stream.get_final_message()
@@ -1113,6 +1184,51 @@ def record_spend(meta: dict, model: "Model") -> None:
     meta["spend"] = {"weekStart": week_anchor(), "cad": round(model.week_cad, 4)}
 
 
+READABILITY_HISTORY = 26   # half a year of weekly runs; a daily sweep rolls faster
+
+
+def runner_name() -> str:
+    """WHERE a run happened, because the readability figure is partly a property
+    of that and not only of the web. Deliberately coarse: this lands in a public
+    file, so it is the class of runner and never a hostname."""
+    return "github-actions" if os.environ.get("GITHUB_ACTIONS") == "true" else "local"
+
+
+def record_readability(meta: dict, buy: dict) -> dict:
+    """Log what share of buy links this run could read AT ALL, stamped with the
+    runner.
+
+    The same sweep returned 84 unreadable from a laptop and 86 from GitHub
+    Actions, with `brand` falling as `unreadable` grew — the unreadable bucket
+    is where a bot wall lands, so the ceiling on what verification can ever
+    reach is partly a property of where we run from. Quoting the number without
+    naming the runner states more than we know.
+
+    Recording it every run is what turns two data points into a series: if it
+    drifts, the bucket is noise rather than a boundary, and that changes what
+    the number is good for. If it sits still, it is a real boundary and worth
+    trusting."""
+    kinds = buy.get("kinds") or {}
+    row = {"date": today(), "runner": runner_name(),
+           "product": int(kinds.get("product", 0)), "listing": int(kinds.get("listing", 0)),
+           "brand": int(kinds.get("brand", 0)), "none": int(kinds.get("none", 0)),
+           "unreadable": len(buy.get("unreadable") or [])}
+    history = [r for r in (meta.get("readability") or []) if isinstance(r, dict)]
+    history.append(row)
+    meta["readability"] = history[-READABILITY_HISTORY:]
+    return row
+
+
+def previous_readability(meta: dict, row: dict) -> dict | None:
+    """The last run FROM THE SAME RUNNER. Comparing a laptop figure with an
+    Actions one is the exact mistake this whole record exists to stop, so drift
+    is only ever reported within one vantage point."""
+    for old in reversed((meta.get("readability") or [])[:-1]):
+        if isinstance(old, dict) and old.get("runner") == row.get("runner"):
+            return old
+    return None
+
+
 def is_retracted(entry: dict) -> bool:
     """Entries are never deleted — a mistaken one is part of the audit trail and a
     sold-out one is the historical record. `retracted` stops it rendering."""
@@ -1471,6 +1587,257 @@ def apply_buy_demotions(summary: dict) -> int:
     return moved
 
 
+# --------------------------------------------- stage 10: search and verify
+"""
+Stage 8 can only judge the link we already have. This one goes and looks for a
+better one.
+
+It is the pass most able to do damage, and the design is shaped around that: a
+wrong product link sends a reader to buy the WRONG WATCH, which is materially
+worse than the vague link it replaced. So the model's answer is never trusted —
+it is treated as a list of ADDRESSES TO CHECK. Every candidate is fetched and
+classified here, by the same evidence rules stage 8 applies to the existing
+link, and only a page that names this watch AND sells it is ever written.
+
+Four rules this stage does not bend:
+
+  VERIFY BEFORE WRITING. An unverified URL is never stored, however confident
+  the prose around it sounded. classify_buy() is the gate, not the model.
+
+  NEVER MANUFACTURE A LINK WHERE BUYING IS NOT POSSIBLE. Only entries that
+  already claim to be obtainable online are eligible — Available and Pre-order.
+  An allocation piece stays an allocation piece; `buyKind: brand` is the honest
+  answer for a watch you cannot buy on the internet, and inventing a "buy" link
+  for one would be the site telling a reader something untrue.
+
+  NOTHING BYPASSES rank_for(). A verified product page sets the evidence and
+  re-derives through apply_tier(), exactly as stage 8 does. There is no path in
+  this file that writes rank 0 directly.
+
+  A BUDGET STOP RECORDS NOTHING. This matters more here than anywhere else: a
+  refused call looks identical to a search that found nothing, and writing a
+  residue for it would tell next week's run "we checked this, there is nothing
+  there" about an entry we never actually looked at — and the residue clock
+  would then hide it for 90 days. Entries after the stop are left completely
+  untouched and reported as skipped.
+"""
+
+SEARCH_VERIFY_PROMPT = """Find the page where this specific watch can be BOUGHT NEW online, today.
+
+  Brand:     {brand}
+  Model:     {model}
+  Reference: {ref}
+  Edition:   {edition}
+  Announced: {date}
+  Currently listed as: {price}
+
+Look for the manufacturer's own product page first, then an authorised retailer's
+product page for this exact reference.
+
+WHAT DOES NOT COUNT, and please do not offer it:
+  - a category, collection or "all watches" page that does not name this exact watch
+  - a news article, review, hands-on or press release
+  - a resale, auction, pre-owned or grey-market listing
+  - a page for a different reference in the same family
+
+If no page sells this watch new — because it is a boutique-only piece, or the
+edition is gone, or it was never sold online at all — SAY SO PLAINLY and give no
+URL. That is a useful and completely acceptable answer, and it is much better
+than a near-miss. Do not offer a link you are not confident sells this exact
+watch.
+
+Reply in two or three sentences, listing any candidate URLs in full."""
+
+
+def search_due(entry: dict) -> bool:
+    """Has this entry's last search expired? Two clocks, because the two causes
+    are different facts — see SEARCH_RESIDUE_DAYS.
+
+    An unrecognised or unparseable residue reads as DUE. That errs towards
+    spending money rather than towards silently freezing an entry out of ever
+    being upgraded, which is the failure this whole mechanism exists to prevent."""
+    residue = entry.get("buySearch") or {}
+    result = residue.get("result")
+    if result == "none":
+        return days_since(residue.get("date")) >= SEARCH_RESIDUE_DAYS
+    if result == "unverified":
+        return days_since(residue.get("date")) >= SEARCH_RETRY_DAYS
+    return True
+
+
+def search_targets(watches: list[dict]) -> list[dict]:
+    """Worst first: the entries still telling readers "Buy online now" on
+    evidence we do not have lead, because they are a live correctness problem
+    rather than a missing improvement. The demoted ones follow."""
+    out = [w for w in watches
+           # Only where buying online is a thing this watch does at all.
+           if w.get("status") in ("Available", "Pre-order")
+           and w.get("buyKind") != "product"
+           # A human who owns the buy link owns it. Filtered here rather than
+           # left to guarded_set so we never spend a search on a write we
+           # already know will be refused.
+           and not is_manual(w, "buy")
+           and search_due(w)]
+    out.sort(key=lambda w: (w.get("rank", 9), w.get("brand", ""), w.get("model", "")))
+    return out
+
+
+def candidate_urls(notes: str) -> list[str]:
+    """Pull the addresses out of the prose. Deliberately a regex and not a
+    second model call: extraction is free, and the URLs are about to be fetched
+    and judged on their own merits anyway."""
+    found = re.findall(r'https?://[^\s<>"\'\)\]]+', notes or "")
+    seen, out = set(), []
+    for url in found:
+        url = url.rstrip(".,;:!?")
+        key = _norm_url(url)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(url)
+    return out
+
+
+def on_brand_domain(entry: dict, url: str) -> bool:
+    """Is this URL on the maker's own site? Matched on the distinctive words of
+    the brand name against the host, which is crude but sufficient: hosts are
+    short and brands are named after themselves."""
+    host = re.sub(r"[^a-z0-9]", "", domain_of(url))
+    if not host:
+        return False
+    tokens = _distinctive(entry.get("brand", ""))
+    return any(len(t) >= 4 and t in host for t in tokens)
+
+
+def rank_candidates(entry: dict, urls: list[str]) -> list[str]:
+    """The maker's own site first.
+
+    Verification cannot tell an authorised dealer from a grey-market one — both
+    name the watch and both have a cart — and this register's credibility rests
+    on provenance. So where the brand sells the watch itself, that is the link
+    a reader should get, and a retailer is the fallback rather than whichever
+    address the search happened to list first. Stable otherwise: the search's
+    own ordering is kept within each group."""
+    return ([u for u in urls if on_brand_domain(entry, u)]
+            + [u for u in urls if not on_brand_domain(entry, u)])
+
+
+def verify_buy_url(entry: dict, url: str) -> tuple[str | None, str]:
+    """Classify a CANDIDATE without touching the entry — the entry keeps its
+    current link until something better has actually been proven."""
+    return classify_buy({**entry, "buy": url})
+
+
+def stage_search_verify(watches: list[dict], model: Model,
+                        limit: int | None = None) -> dict:
+    targets = search_targets(watches)
+    deferred = sum(1 for w in watches
+                   if w.get("status") in ("Available", "Pre-order")
+                   and w.get("buyKind") != "product" and not search_due(w))
+    if limit:
+        targets = targets[:limit]
+    log(f"\n[10] SEARCH AND VERIFY — {len(targets)} entries with no product page"
+        + (f" · {deferred} still inside their re-check window" if deferred else ""))
+
+    summary = {"queued": len(targets), "deferred": deferred, "fixed": [], "none": [],
+               "unverified": [], "skipped_budget": [], "silent": [], "label_stalled": [],
+               "rejected": collections.Counter(), "checked": 0}
+    limiter = HostLimiter(PHOTO_HOST_DELAY)
+
+    for i, w in enumerate(targets, 1):
+        if model.exhausted():
+            # Everything from here on is untouched and unrecorded. See the
+            # header: a residue written now would be a lie with a 90-day clock.
+            summary["skipped_budget"] = targets[i - 1:]
+            log(f"    ceiling reached — {len(summary['skipped_budget'])} entries left "
+                "unsearched and unrecorded")
+            break
+
+        notes = model.search(
+            SEARCH_VERIFY_PROMPT.format(
+                brand=w.get("brand", ""), model=w.get("model", ""),
+                ref=w.get("ref") or "not published", edition=w.get("edition", ""),
+                date=w.get("date", ""), price=w.get("price", "")),
+            None,                       # the whole web: everything here is verified below
+            max_tokens=2000, stage="search-and-verify", max_uses=5, effort="low")
+        if notes is None:
+            # A refused or failed call is silence, and silence never writes.
+            if model.stopped_at:
+                summary["skipped_budget"] = targets[i - 1:]
+                log(f"    ceiling reached — {len(summary['skipped_budget'])} entries left "
+                    "unsearched and unrecorded")
+                break
+            summary["silent"].append(w)
+            continue
+
+        kind = None
+        why = "no candidate URL was offered"
+        found_url = None
+        saw_unreadable = False
+        tried = blocked = 0
+        for url in rank_candidates(w, candidate_urls(notes)):
+            host = domain_of(url)
+            # The article this watch was researched from is never the place to
+            # buy it. Exact, free, and it catches editorial outlets the host
+            # list has never heard of.
+            if _norm_url(url) == _norm_url(w.get("source") or ""):
+                summary["rejected"]["(its own source article)"] += 1
+                blocked += 1
+                continue
+            if host in BUY_BLOCKED_HOSTS:
+                summary["rejected"][host] += 1
+                blocked += 1
+                continue
+            if tried >= MAX_SEARCH_CANDIDATES:
+                break
+            tried += 1
+            summary["checked"] += 1
+            kind, why = limiter.run(url, lambda: verify_buy_url(w, url))
+            if kind == "product":
+                found_url = url
+                break
+            if kind is None:
+                saw_unreadable = True
+
+        if not tried and blocked:
+            why = (f"only resale or marketplace listings were offered ({blocked}) — "
+                   "not a page this register will point a reader at")
+
+        if found_url:
+            was_url, was_tier = w.get("buy"), w.get("tier")
+            if not guarded_set(w, "buy", found_url, "verified product page"):
+                continue                       # a human owns it; the proposal is filed
+            w["buyKind"] = "product"
+            w["buyCheck"] = {"date": today(), "note": why}
+            w["buySearch"] = {"date": today(), "result": "product", "was": was_url}
+            apply_tier(w)                      # never a direct rank write
+            summary["fixed"].append((w, was_tier, was_url))
+            # rank_for() also reads buyLabel, and that is editorial copy this
+            # stage has no business rewriting. So an entry whose label still
+            # reads "Find a boutique" stays at Retailer enquiry even now that it
+            # points at a cart. That is the right way round — the machine does
+            # not get to invent link copy — but it leaves a row saying two
+            # different things, so it is a question for a person rather than a
+            # silence.
+            if w.get("rank") != 0:
+                summary["label_stalled"].append(w)
+        else:
+            # The two causes, split in the DATA and not only in the report, so
+            # next week's run does not pay again to rediscover the same nothing
+            # — and so the number is reproducible rather than re-measured.
+            result = "unverified" if saw_unreadable else "none"
+            w["buySearch"] = {"date": today(), "result": result, "note": why}
+            summary[result].append((w, why))
+
+        if i % 10 == 0:
+            log(f"    ...{i}/{len(targets)} · fixed {len(summary['fixed'])}")
+
+    log(f"    fixed {len(summary['fixed'])} · no product page {len(summary['none'])} "
+        f"· could not verify {len(summary['unverified'])}"
+        + (f" · no answer from the search {len(summary['silent'])}" if summary["silent"] else ""))
+    return summary
+
+
 # ------------------------------------------------- stage 7: rotted image URLs
 """
 The photograph stage only ever looks at entries with NO image, so an image URL
@@ -1601,6 +1968,82 @@ Nothing here spends: fetch and parse, no model call.
 """
 
 
+def shared_sources(watches: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Which source URLs are doing duty for more than one watch?
+
+    Pure arithmetic over data.json — no fetch, no model call, no budget. It came
+    out of the Christopher Ward finding: two entries citing one URL, spotted only
+    because the page finally 404'd. A category page cannot substantiate a
+    specific watch any more than it can sell one, and while this check cannot
+    PROVE a source is category-shaped, one URL cited by four watches almost
+    certainly is.
+
+    Reported, never acted on. Provenance is a judgement call and the machine
+    does not get to make it — and a legitimately shared source does exist (one
+    article covering a two-piece set), which is exactly why this is a list for a
+    person rather than a rule."""
+    by_url: dict[str, list[dict]] = {}
+    for w in watches:
+        url = w.get("source") or ""
+        if url.startswith("http"):
+            by_url.setdefault(_norm_url(url), []).append(w)
+    shared = [(url, group) for url, group in by_url.items() if len(group) > 1]
+    # Ranked by shape before size: a roundup article covering thirteen watches is
+    # perfectly good provenance, and a bare homepage covering two is not, so
+    # sorting by count alone would bury the actual problem under the legitimate
+    # cases. See source_shape().
+    order = {"root": 0, "index": 1, "article": 2}
+    return sorted(shared, key=lambda kv: (order[source_shape(kv[0])], -len(kv[1]), kv[0]))
+
+
+# Paths that name a SECTION rather than a story. Deliberately conservative: each
+# is a phrase a site uses for a rolling list, and a rolling list cannot say
+# anything about one watch — whatever it shows today, it showed something else
+# last month and will show something else again.
+#
+# Two rules, because the same word means different things in different places.
+# `/category/…` is a facet wherever it appears, so anything under it is a
+# listing. `/news/` or `/blog/` is only a listing when it IS the page — every
+# site on earth files its articles under /blog/<slug>, and calling those
+# category pages would condemn most of the register's provenance on a naming
+# convention.
+_FACET_SEGMENT = re.compile(
+    r"^(category|categories|collections?|tag|tags|topics?|archives?)$", re.I)
+_INDEX_LAST = re.compile(
+    r"^(news|blog|press|releases|shop|store)$|"
+    # The whole final segment, not a phrase buried in a slug: an article ending
+    # "…-including-4-limited-editions" is a story about a moment, while a
+    # segment that IS "limited-editions" is a shelf.
+    r"^(limited|special)[-_]editions?([-_]watches)?(\.html?)?$|"
+    r"^new[-_]releases(\.html?)?$",
+    re.I)
+
+
+def source_shape(url: str) -> str:
+    """A free, structural guess at whether a URL could substantiate ONE watch.
+
+    It proves nothing on its own — only fetching and reading the page could, and
+    that is judgement work rather than a check. What it does is separate the
+    shapes: `root` is a bare homepage, `index` is a section or category listing,
+    `article` is everything else. A shared `article` is usually a legitimate
+    roundup; a shared `root` never is.
+
+    It is deliberately biased towards calling a page an article. A shop's own
+    category URL that looks like a slug (`/store/pc/Sinn-Spring-2026-New-
+    Releases-c214.htm`) reads as `article` here and there is no honest way to
+    tell from the string alone. Under-claiming leaves it on the list for a
+    person to judge; over-claiming would put a confident wrong label on good
+    provenance, which is the more expensive mistake."""
+    if _is_bare_root(url):
+        return "root"
+    segments = [s for s in urllib.parse.urlsplit(url).path.split("/") if s]
+    if not segments:
+        return "root"
+    if any(_FACET_SEGMENT.match(s) for s in segments):
+        return "index"
+    return "index" if _INDEX_LAST.match(segments[-1]) else "article"
+
+
 def stage_links(watches: list[dict], calendar: dict | None = None) -> dict:
     sources = [w for w in watches if (w.get("source") or "").startswith("http")]
     cal_items = []
@@ -1640,9 +2083,14 @@ def stage_links(watches: list[dict], calendar: dict | None = None) -> dict:
         if result == "dead":
             summary["cal_dead"].append((key, item, detail))
 
+    summary["shared"] = shared_sources(watches)
+
     log(f"    sources still good {summary['ok']} · DEAD {len(summary['dead'])} "
         f"· no answer {len(summary['unclear'])}"
         + (f" · calendar links dead {len(summary['cal_dead'])}" if summary["cal_dead"] else ""))
+    if summary["shared"]:
+        log(f"    {len(summary['shared'])} source URL(s) cited by more than one entry "
+            f"— {sum(len(g) for _, g in summary['shared'])} entries involved")
     return summary
 
 
@@ -2112,7 +2560,7 @@ def summary_n(rot: dict) -> int:
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
                  model: "Model | None" = None, cal: dict | None = None,
                  rot: dict | None = None, buy: dict | None = None,
-                 links: dict | None = None) -> str:
+                 links: dict | None = None, find: dict | None = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
 
     # Spend goes near the top and is reported on EVERY run, generous ceiling or
@@ -2254,6 +2702,114 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
             L += [f"- {w['brand']} {w['model']} — {why} · {w['buy']}" for w, why in buy["unreadable"]]
             L += ["", "</details>", ""]
 
+    if buy:
+        # The readability series. Reported with the runner attached every single
+        # time, because the figure moved 84 → 86 between a laptop and GitHub
+        # Actions and it will move again — it is partly a property of the
+        # vantage point, and stating it bare claims more than we know.
+        row = (meta.get("readability") or [{}])[-1]
+        prev = previous_readability(meta, row)
+        L += ["### How much of the register is readable at all — "
+              f"**{row.get('unreadable', 0)} unreadable from {row.get('runner', '?')}**", "",
+              "> Never quote that number without the runner. The same sweep returned 84 "
+              "unreadable from a laptop and 86 from GitHub Actions, with `brand` falling as "
+              "`unreadable` grew: a bot wall lands in this bucket, so the ceiling on what "
+              "verification can ever reach is partly a property of where we run from.", ""]
+        if prev:
+            drift = row.get("unreadable", 0) - prev.get("unreadable", 0)
+            L += [f"- Previous run from `{row.get('runner')}` ({prev.get('date')}): "
+                  f"**{prev.get('unreadable', 0)}** unreadable — "
+                  + ("unchanged, which makes it look like a real boundary rather than noise"
+                     if drift == 0 else
+                     f"**{drift:+d}**. Drift is itself a finding: a bucket that moves week to "
+                     "week is noise, not a boundary, and that changes what the number is "
+                     "good for."), ""]
+        else:
+            L += [f"- First recorded run from `{row.get('runner')}`. One point is not a "
+                  "series — the drift question needs the next one.", ""]
+
+    if find:
+        L += ["## Search and verify", "",
+              "> The pass that can do damage, so nothing here is taken on trust: the model "
+              "returns ADDRESSES TO CHECK, and every one is fetched and classified by the "
+              "same evidence rules stage 8 applies to the existing link. Only a page that "
+              "names this watch and sells it is ever written.", "",
+              f"- Queued (claims to be obtainable online, no product page): **{find['queued']}**",
+              f"- **Fixed — a verified product page is now stored: {len(find['fixed'])}**",
+              f"- No product page exists, as far as a search can establish: **{len(find['none'])}**",
+              f"- Could not verify one that may exist (unreadable candidates): "
+              f"**{len(find['unverified'])}**",
+              f"- Candidate pages fetched and judged: **{find['checked']}**", ""]
+        if find.get("deferred"):
+            L += [f"- Not re-searched, still inside their re-check window: "
+                  f"**{find['deferred']}** — `none` re-checks after {SEARCH_RESIDUE_DAYS} days, "
+                  f"`unverified` after {SEARCH_RETRY_DAYS}. Nothing is flagged permanently: "
+                  "a retailer listing a watch next month must be able to reach the register.",
+                  ""]
+        if find.get("skipped_budget"):
+            L += [f"> **The ceiling stopped this stage with {len(find['skipped_budget'])} "
+                  "entries still queued.** They were not searched and — this is the part that "
+                  "matters — nothing was recorded against them. A residue written for an "
+                  "entry we never looked at would claim we had checked it, and would then "
+                  "hide it behind its own clock.", ""]
+        if find["fixed"]:
+            third_party = [w for w, _, _ in find["fixed"] if not on_brand_domain(w, w["buy"])]
+            L += ["### Fixed — these now point at a page a reader can actually buy from", ""]
+            L += [f"- **{w['brand']} {w['model']}** — {was_tier} → {w['tier']} · "
+                  f"was `{was_url}` · now {w['buy']}" for w, was_tier, was_url in find["fixed"]] + [""]
+            if third_party:
+                # Said out loud rather than left to whoever reads the URLs. The
+                # maker's own domain is tried first, so these are the cases
+                # where it had nothing to sell — but verification cannot tell an
+                # authorised dealer from a grey-market one, and it cannot tell
+                # which country's reader the link suits either.
+                L += [f"**{len(third_party)} of these point at a third-party retailer**, not "
+                      "the maker's own site. The brand's domain is always tried first, so "
+                      "the brand had no page selling it. Worth an eye: nothing here can "
+                      "establish that a retailer is authorised, or that it ships to the "
+                      "reader who clicks.", ""]
+                L += [f"- **{w['brand']} {w['model']}** — `{domain_of(w['buy'])}`"
+                      for w in third_party] + [""]
+        if find.get("label_stalled"):
+            L += [f"### {len(find['label_stalled'])} now point at a cart but still read as "
+                  "something else", "",
+                  "> The tier also derives from `buyLabel`, which is editorial copy this "
+                  "stage does not rewrite — inventing link text is not the machine's call. "
+                  "So these have a verified product page and a label that still says "
+                  "otherwise, and the row says two things at once. Changing the label "
+                  "promotes them; that is a person's decision, and it is a one-word edit in "
+                  "the admin panel.", ""]
+            L += [f"- **{w['brand']} {w['model']}** ({w['tier']}) — label reads "
+                  f"\"{w.get('buyLabel', '')}\" · {w['buy']}"
+                  for w in find["label_stalled"][:40]] + [""]
+        if find["none"]:
+            L += [f"### {len(find['none'])} searched, and no page sells them new", "",
+                  "> This is a finding, not a failure — a boutique-only piece or a finished "
+                  "edition genuinely has no product page, and `buyKind: brand` is the honest "
+                  "answer. Their tiers are NOT demoted on this evidence: not finding a page "
+                  "is weaker than reading one, and demoting for our own reach would punish "
+                  "entries for a bot wall.", ""]
+            L += [f"- **{w['brand']} {w['model']}** ({w['tier']}) — {why}"
+                  for w, why in find["none"][:40]] + [""]
+        if find["unverified"]:
+            L += [f"### {len(find['unverified'])} could not be verified — a page may well exist",
+                  "",
+                  "> Different fact from the list above, and reported separately for that "
+                  f"reason. Re-checked after {SEARCH_RETRY_DAYS} days rather than "
+                  f"{SEARCH_RESIDUE_DAYS}: a bot wall is a transient condition.", ""]
+            L += [f"- **{w['brand']} {w['model']}** — {why}"
+                  for w, why in find["unverified"][:40]] + [""]
+        if find["rejected"]:
+            L += ["### Candidates refused before verification", "",
+                  "> Resale, auction and marketplace listings pass verification — they name "
+                  "the watch and they have a cart — so they are excluded by host, not by "
+                  "evidence. \"Buy online now\" here means new from the maker or a retailer "
+                  "it authorised.", ""]
+            L += [f"- `{host}`: {n}" for host, n in find["rejected"].most_common()] + [""]
+        if find.get("silent"):
+            L += [f"- {len(find['silent'])} search(es) returned nothing at all and were "
+                  "recorded as nothing — silence never writes a residue.", ""]
+
     if news:
         L += ["## New releases", "", f"- Added: **{len(news['added'])}**", ""]
         if news["added"]:
@@ -2303,6 +2859,37 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                 L += ["Dead sources by outlet — a single domain dominating this list is a "
                       "fixable cause; spread thin is just the web:", ""]
                 L += [f"- {outlet}: {n}" for outlet, n in links["by_outlet"].most_common()] + [""]
+        if links.get("shared"):
+            groups = links["shared"]
+            involved = sum(len(g) for _, g in groups)
+            shapes = collections.Counter(source_shape(u) for u, _ in groups)
+            L += [f"### {len(groups)} source URL(s) cited by more than one entry "
+                  f"— {involved} entries", "",
+                  "> Free structural check: no fetch, no model, no budget. It came out of "
+                  "the Christopher Ward finding — two entries citing one URL, caught only "
+                  "because the page finally 404'd. A category page cannot substantiate a "
+                  "specific watch any more than it can sell one, and while a checker can "
+                  "tell you a URL answers, it can never tell you it substantiates anything.",
+                  "",
+                  "> **Sharing a source is not by itself a defect.** A roundup article "
+                  "genuinely covering thirteen announcements is good provenance for all "
+                  "thirteen. What cannot be is a page that shows a different set of watches "
+                  "next month. So these are ranked by SHAPE first and count second — worst "
+                  "shape at the top — and none of it is acted on: this is a list for a "
+                  "person, and every judgement on it is still theirs.", "",
+                  f"- **{shapes.get('root', 0)}** are a bare domain root — a homepage cited "
+                  "as the source for a specific watch",
+                  f"- **{shapes.get('index', 0)}** look like a section or category listing "
+                  "(`/category/`, `/collections/`, `…limited-editions`)",
+                  f"- **{shapes.get('article', 0)}** look like an article, which is what a "
+                  "shared source usually ought to be", ""]
+            for url, group in groups[:25]:
+                L += [f"- `{source_shape(url)}` · **{len(group)}×** {url}"]
+                L += [f"    - {w['brand']} {w['model']} ({w.get('conf', '?')} confidence)"
+                      for w in group]
+            if len(groups) > 25:
+                L += [f"- …and {len(groups) - 25} more"]
+            L += [""]
         if links["cal_dead"]:
             L += ["### Dead calendar links — curated, so these need a human", ""]
             L += [f"- ({key}) **{item.get('what', '?')}** — {why} · {item.get('url')}"
@@ -2343,7 +2930,8 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Weekly refresh for the Watch Drop Index.")
-    ap.add_argument("--stages", default="2,3,4,6,7,8,9", help="comma-separated stage numbers")
+    ap.add_argument("--stages", default="2,3,4,6,7,8,9,10",
+                    help="comma-separated stage numbers")
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
@@ -2351,6 +2939,8 @@ def main() -> int:
                     help="cap the photograph pass (0 = every entry that still has none)")
     ap.add_argument("--image-batch", type=int, default=IMAGE_CHECK_BATCH,
                     help="cap the rot check for testing (0 = all, and that is the default)")
+    ap.add_argument("--search-limit", type=int, default=None,
+                    help="cap stage 10 to the N worst entries (default: every one due)")
     ap.add_argument("--demote-unearned", action="store_true",
                     help="drop 'Buy online now' entries that have no product page to buy from")
     ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
@@ -2429,9 +3019,20 @@ def main() -> int:
     # they are never the thing a budget stop takes away. Running them after the
     # new-releases search also means this week's additions get their pictures
     # this week instead of next.
-    avail = photos = news = cal = rot = buy = links = {}
+    avail = photos = news = cal = rot = buy = links = find = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
+    # Second of the paid stages, and second in value: it repairs claims the site
+    # is making TODAY, where the press search adds ones it is not making yet.
+    # After availability on purpose — there is no sense hunting for a purchase
+    # page for a watch this run has just established is gone.
+    #
+    # It reads the buyKind stage 8 stored, rather than re-classifying first: the
+    # free daily sweep runs stage 8 every morning, so that evidence is at most a
+    # day old, and re-fetching ~250 pages to re-learn it would cost every outlet
+    # a second sweep for nothing.
+    if 10 in stages:
+        find = stage_search_verify(watches, model, args.search_limit)
     if 4 in stages:
         news = stage_new_releases(watches, model, meta.get("updated", "2026-01-01"))
     # Rot check BEFORE the photograph pass, so an image cleared this run is
@@ -2471,7 +3072,8 @@ def main() -> int:
             f"({gone_now / start_count:.0%} of the register, cap is {GONE_BLAST_RADIUS:.0%}).")
         log("That pattern means the fetch layer broke, not that the market cleared.")
         write_report(meta, avail, photos, news, f"BLOCKED — {gone_now} Gone flips exceeds the "
-                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal, rot, buy)
+                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.",
+                     model, cal, rot, buy, find=find)
         return 20
 
     # Silence is a failure — but only silence we actually went looking for.
@@ -2483,7 +3085,8 @@ def main() -> int:
         log(f"\nFAILING: {attempted} availability checks and not one page was readable.")
         log("Silence on this scale is a broken fetch layer, not a quiet week.")
         write_report(meta, avail, photos, news, "FAILED — zero pages readable across "
-                                                f"{attempted} checks. Not committed.", model, cal, rot, buy)
+                                                f"{attempted} checks. Not committed.",
+                     model, cal, rot, buy, find=find)
         return 21
 
     meta["updated"] = today()
@@ -2498,6 +3101,10 @@ def main() -> int:
     # sweep that a --stages flag skipped.
     if rot:
         meta["lastImageSweep"] = today()
+    # Only when stage 8 actually ran, and stamped with the runner: an unreadable
+    # count from a --stages run that skipped the sweep would be a zero pretending
+    # to be a measurement.
+    read_row = record_readability(meta, buy) if buy else None
     # Written on EVERY run, including free ones: that is what rolls the week over
     # on a Monday whether or not anything paid has run yet.
     record_spend(meta, model)
@@ -2506,7 +3113,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.", model, cal, rot, buy, links)
+        write_report(meta, avail, photos, news, "No changes.", model, cal, rot, buy, links, find)
         return 10
 
     parts = []
@@ -2520,6 +3127,8 @@ def main() -> int:
         parts.append(f"{len(photos['resolved'])} photos resolved")
     if avail.get("confirmed"):
         parts.append(f"{len(avail['confirmed'])} stock checks")
+    if find.get("fixed"):
+        parts.append(f"{len(find['fixed'])} buy links verified")
     if cal.get("expired"):
         parts.append(f"{len(cal['expired'])} calendar entries expired")
     if rot.get("rotted"):
@@ -2538,7 +3147,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject, model, cal, rot, buy, links)
+    write_report(meta, avail, photos, news, subject, model, cal, rot, buy, links, find)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")

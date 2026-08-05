@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import collections
 import copy
+import datetime as dt
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -1189,6 +1191,340 @@ cal = {"drops": [{"what": "A drop", "url": "https://example.com/dead-drop"}],
 s9c = run_stage9([], {"https://example.com/dead-drop": ("dead", "HTTP 404")}, cal)
 check("a dead calendar link is flagged for a human", len(s9c["cal_dead"]), 1)
 check("...and the curated item is NOT edited or removed", len(cal["drops"]), 1)
+
+section("Search and verify — the pass that can send a reader to the wrong watch")
+# Everything here is one rule wearing different clothes: the model's answer is a
+# list of addresses to CHECK, never a fact. A wrong product link is materially
+# worse than the vague link it replaces, because the reader acts on it.
+
+section("  which entries are eligible at all")
+avail_bad = entry(id="0000000030", status="Available", rank=0, buyKind=None)
+avail_demoted = entry(id="0000000031", status="Available", rank=2, tier="Retailer enquiry",
+                      buyKind="brand")
+good = entry(id="0000000032", status="Available", rank=0, buyKind="product")
+alloc = entry(id="0000000033", status="Allocation", rank=4, tier="AD or boutique",
+              buyKind="brand")
+gone_e = entry(id="0000000034", status="Sold out", rank=6, tier="Gone", buyKind="brand",
+               soldOutOn="2026-02-01")
+owned = entry(id="0000000035", status="Available", rank=2, tier="Retailer enquiry",
+              buyKind="brand", manual={"buy": {"on": "2026-08-01"}})
+pool = [good, alloc, gone_e, avail_demoted, owned, avail_bad]
+targets = R.search_targets(pool)
+check("an unearned 'Buy online now' is queued", avail_bad in targets, True)
+check("a demoted entry is queued", avail_demoted in targets, True)
+check("an entry with a real product page is left alone", good in targets, False)
+check("an ALLOCATION piece is never searched — buying it online is not possible",
+      alloc in targets, False)
+check("a sold-out entry is never searched", gone_e in targets, False)
+check("a buy link a human owns is not searched, so no money is spent on a refused write",
+      owned in targets, False)
+check("worst first: the live correctness problem leads",
+      [w["id"] for w in targets], [avail_bad["id"], avail_demoted["id"]])
+
+section("  the residue expires — 'no product page' is a claim about today")
+check("never searched is due", R.search_due(entry()), True)
+check("searched and nothing found is NOT re-searched the next week",
+      R.search_due(entry(buySearch={"date": R.today(), "result": "none"})), False)
+check(f"...but it IS re-searched after {R.SEARCH_RESIDUE_DAYS} days — a retailer that "
+      "lists it next month must be able to reach the register",
+      R.search_due(entry(buySearch={"date": "2026-01-01", "result": "none"})), True)
+check("could-not-verify waits too", R.search_due(
+    entry(buySearch={"date": R.today(), "result": "unverified"})), False)
+check("...but on a SHORTER clock, because a bot wall is transient",
+      R.SEARCH_RETRY_DAYS < R.SEARCH_RESIDUE_DAYS, True)
+_recent = (dt.date.today() - dt.timedelta(days=R.SEARCH_RETRY_DAYS + 1)).isoformat()
+check("...and it comes back round while the other is still waiting",
+      (R.search_due(entry(buySearch={"date": _recent, "result": "unverified"})),
+       R.search_due(entry(buySearch={"date": _recent, "result": "none"}))), (True, False))
+check("an undated or unrecognised residue reads as DUE, never as a permanent flag",
+      (R.search_due(entry(buySearch={"result": "none"})),
+       R.search_due(entry(buySearch={"date": R.today(), "result": "banana"}))), (True, True))
+
+
+class SearchModel:
+    """Stands in for the paid half: canned prose per entry id, and a ceiling
+    that can be made to bite at a chosen point."""
+
+    def __init__(self, answers, stop_after=None):
+        self.answers, self.stop_after = answers, stop_after
+        self.asked, self.stopped_at, self.enabled = [], None, True
+
+    def exhausted(self):
+        return self.stop_after is not None and len(self.asked) >= self.stop_after
+
+    def search(self, prompt, domains, **kw):
+        if self.exhausted():
+            self.stopped_at = "search-and-verify"
+            return None
+        for wid, text in self.answers.items():
+            if wid in prompt:
+                self.asked.append(wid)
+                return text
+        self.asked.append("?")
+        return None
+
+
+def run_find(watches, answers, pages, stop_after=None, limit=None):
+    """`pages` maps a candidate URL to the HTML that URL serves.
+
+    Each fixture's reference is set to its id so the stub can tell which entry a
+    prompt is about — the real prompt carries the reference, not the id, because
+    the id means nothing to a search engine."""
+    for x in watches:
+        x["ref"] = x["id"]
+    orig = R.fetch
+    R.fetch = lambda url: (pages.get(url, (None, "HTTP 403"))[0],
+                           pages.get(url, (None, "HTTP 403"))[1])
+    try:
+        return R.stage_search_verify(watches, SearchModel(answers, stop_after), limit)
+    finally:
+        R.fetch = orig
+
+
+BODY = "x" * 400
+SELLS = (f'<html><body>Testbrand Fixture One {BODY}'
+         '<button name="add">Add to Cart</button></body></html>', "ok")
+REVIEW = (f"<html><body>Testbrand Fixture One — our hands-on review. {BODY}</body></html>", "ok")
+WRONG = (f"<html><body>Welcome to the shop, browse all watches {BODY}"
+         '<button name="add">Add to Cart</button></body></html>', "ok")
+
+section("  verify before writing — nothing is taken on the model's word")
+w = entry(id="0000000040", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "Try https://brand.example/shop/fixture-one"},
+               {"https://brand.example/shop/fixture-one": SELLS})
+check("a verified product page is written", w["buy"], "https://brand.example/shop/fixture-one")
+check("...and the evidence class with it", w["buyKind"], "product")
+check("...and the tier is re-derived through rank_for, not assigned",
+      (w["rank"], w["tier"]), (0, "Buy online now"))
+check("...and the old link is kept, so a wrong replacement is auditable",
+      w["buySearch"]["was"], "https://brand.example/")
+check("...and it is reported as fixed", len(s10["fixed"]), 1)
+
+w = entry(id="0000000041", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "Have a look at https://press.example/review"},
+               {"https://press.example/review": REVIEW})
+check("a page that names the watch but sells nothing is NOT written",
+      w["buy"], "https://brand.example/")
+check("...and the entry records that a search happened", w["buySearch"]["result"], "none")
+check("...and the tier does not move on it", w["rank"], 2)
+
+w = entry(id="0000000042", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "Probably https://other.example/some-watch"},
+               {"https://other.example/some-watch": WRONG})
+check("a cart on a page that never names THIS watch is not a product page",
+      w["buy"], "https://brand.example/")
+
+section("  the two causes are different facts, split in the DATA")
+w = entry(id="0000000043", rank=0, buyKind=None, buy="https://brand.example/",
+          buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "Maybe https://walled.example/p"}, {})   # every fetch 403s
+check("an unreadable candidate is 'could not verify', not 'does not exist'",
+      w["buySearch"]["result"], "unverified")
+check("...and it is reported apart from the ones that genuinely do not exist",
+      (len(s10["unverified"]), len(s10["none"])), (1, 0))
+check("...and an unreadable page still moves nothing", (w["buy"], w["rank"]),
+      ("https://brand.example/", 0))
+
+w = entry(id="0000000044", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "No page sells this watch new."}, {})
+check("a search that finds nothing at all records 'none'", w["buySearch"]["result"], "none")
+
+section("  resale and marketplace listings are refused BEFORE verification")
+# They would pass it: they name the watch and they have a cart. Excluding them by
+# evidence is impossible, so they are excluded by host.
+w = entry(id="0000000045", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "It is on https://www.ebay.com/itm/12345 right now"},
+               {"https://www.ebay.com/itm/12345": SELLS})
+check("an eBay listing is never written as the buy link", w["buy"], "https://brand.example/")
+check("...and it is not even fetched", s10["checked"], 0)
+check("...and the refusal is counted by host, so the reason stays legible",
+      s10["rejected"]["ebay.com"], 1)
+check("...and the entry is recorded as having no page that sells it new",
+      w["buySearch"]["result"], "none")
+
+section("  the maker's own site is tried before a retailer's")
+# Verification cannot tell an authorised dealer from a grey-market one — both
+# name the watch and both have a cart. Where the brand sells it itself, that is
+# the link a reader should get.
+be = entry(brand="Breitling")
+check("the brand's own domain is recognised",
+      R.on_brand_domain(be, "https://www.breitling.com/gb-en/watches/x"), True)
+check("a retailer's is not",
+      R.on_brand_domain(be, "https://www.exquisitetimepieces.com/breitling-x.html"), False)
+check("the brand's site is checked first whatever order the search listed",
+      R.rank_candidates(be, ["https://shop.example/breitling-x", "https://breitling.com/p"]),
+      ["https://breitling.com/p", "https://shop.example/breitling-x"])
+check("...and the search's own order survives within each group",
+      R.rank_candidates(be, ["https://a.example/x", "https://b.example/y"]),
+      ["https://a.example/x", "https://b.example/y"])
+
+w = entry(id="0000000051", brand="Testbrand", rank=2, tier="Retailer enquiry",
+          buyKind="brand", buy="https://testbrand.example/", buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "https://shop.example/p and https://testbrand.example/shop/one"},
+               {"https://shop.example/p": SELLS,
+                "https://testbrand.example/shop/one": SELLS})
+check("so the maker's page wins even when the retailer's also sells it",
+      w["buy"], "https://testbrand.example/shop/one")
+check("...and only one page had to be fetched", s10["checked"], 1)
+
+section("  an article is never a place to buy — the defect the first live run caused")
+# Not theoretical. The first real run wrote a Hypebeast article as the buy link
+# for the Seiko × SEGA chronograph: it named the watch, and the page carried
+# purchase markup from the publisher's own shop, so it passed verification
+# cleanly. Evidence cannot separate a magazine from a retailer — they are built
+# the same way — so editorial hosts are refused by name.
+w = entry(id="0000000052", rank=0, buyKind=None, buy="https://sega.example/",
+          buyLabel="Add to cart")
+s10 = run_find([w], {w["id"]: "Covered at https://hypebeast.com/2026/2/seiko-sega-watch"},
+               {"https://hypebeast.com/2026/2/seiko-sega-watch": SELLS})
+check("a magazine is not a buy link, however much cart markup it carries",
+      w["buy"], "https://sega.example/")
+check("...and it is never even fetched", s10["checked"], 0)
+check("...and the entry records that nothing sells it", w["buySearch"]["result"], "none")
+for host in ("monochrome-watches.com", "hodinkee.com", "gearpatrol.com", "watchtime.com"):
+    check(f"{host} is refused as a buy link", host in R.BUY_BLOCKED_HOSTS, True)
+check("the watch press the register searches is the same press it will not buy from",
+      set(R.PRESS_DOMAINS) <= R.BUY_BLOCKED_HOSTS, True)
+check("a retailer is NOT blocked — that would leave nothing to find",
+      "exquisitetimepieces.com" in R.BUY_BLOCKED_HOSTS, False)
+
+w = entry(id="0000000053", rank=0, buyKind=None, buy="https://brand.example/",
+          buyLabel="Add to cart", source="https://unknown-blog.example/the-story")
+s10 = run_find([w], {w["id"]: "See https://unknown-blog.example/the-story"},
+               {"https://unknown-blog.example/the-story": SELLS})
+check("the entry's OWN source article is refused, whatever host it is on",
+      w["buy"], "https://brand.example/")
+check("...which catches outlets no list has heard of",
+      s10["rejected"]["(its own source article)"], 1)
+
+section("  a budget stop records NOTHING — the failure mode with a 90-day clock")
+first = entry(id="0000000046", rank=0, buyKind=None, buy="https://brand.example/",
+              buyLabel="Add to cart")
+second = entry(id="0000000047", rank=0, buyKind=None, buy="https://brand.example/",
+               buyLabel="Add to cart")
+s10 = run_find([first, second],
+               {first["id"]: "Try https://brand.example/shop/fixture-one",
+                second["id"]: "Try https://brand.example/shop/fixture-one"},
+               {"https://brand.example/shop/fixture-one": SELLS}, stop_after=1)
+check("work finished before the ceiling still commits", first["buyKind"], "product")
+check("an entry the ceiling never reached is NOT stamped as searched",
+      "buySearch" in second, False)
+check("...and it is reported as skipped rather than as a finding",
+      [x["id"] for x in s10["skipped_budget"]], [second["id"]])
+
+lonely = entry(id="0000000048", rank=0, buyKind=None, buy="https://brand.example/",
+               buyLabel="Add to cart")
+s10 = run_find([lonely], {}, {})        # the call fails: silence, not a ceiling
+check("a search that returns nothing writes no residue either", "buySearch" in lonely, False)
+check("...and is reported as silence", len(s10["silent"]), 1)
+
+section("  a verified page still cannot rewrite editorial copy")
+w = entry(id="0000000049", rank=2, tier="Retailer enquiry", buyKind="brand",
+          buy="https://brand.example/", buyLabel="Find a boutique", tags=[])
+s10 = run_find([w], {w["id"]: "Try https://brand.example/shop/fixture-one"},
+               {"https://brand.example/shop/fixture-one": SELLS})
+check("the product page is written", w["buyKind"], "product")
+check("...but the tier does not move, because buyLabel still says otherwise",
+      w["rank"], 2)
+check("...and the contradiction is raised rather than silently rewritten",
+      [x["id"] for x in s10["label_stalled"]], [w["id"]])
+
+section("  entries inside their re-check window cost nothing")
+fresh = entry(id="0000000050", rank=2, tier="Retailer enquiry", buyKind="brand",
+              buySearch={"date": R.today(), "result": "none"})
+s10 = run_find([fresh], {fresh["id"]: "https://brand.example/shop/fixture-one"},
+               {"https://brand.example/shop/fixture-one": SELLS})
+check("a fresh residue is not re-searched", s10["queued"], 0)
+check("...and it is counted, so the saving is visible rather than invisible",
+      s10["deferred"], 1)
+
+section("  candidate extraction is free — no second model call")
+check("URLs are pulled from the prose",
+      R.candidate_urls("See https://a.example/p and https://b.example/q."),
+      ["https://a.example/p", "https://b.example/q"])
+check("trailing punctuation is not part of the address",
+      R.candidate_urls("Buy at https://a.example/p."), ["https://a.example/p"])
+check("the same address twice is one candidate",
+      R.candidate_urls("https://a.example/p and https://www.a.example/p"),
+      ["https://a.example/p"])
+
+section("Shared source URLs — the free half of the provenance question")
+# The Christopher Ward finding: two entries citing one URL, caught only because
+# the page finally 404'd. A category page cannot substantiate a specific watch.
+a = entry(id="0000000060", source="https://brand.example/limited-editions.html")
+b = entry(id="0000000061", source="https://www.brand.example/limited-editions.html?x=1")
+c = entry(id="0000000062", source="https://press.example/one-article")
+shared = R.shared_sources([a, b, c])
+check("one URL doing duty for two watches is found", len(shared), 1)
+check("...with both entries named", sorted(w["id"] for w in shared[0][1]),
+      [a["id"], b["id"]])
+check("a www prefix or a tracking query does not hide it", len(shared[0][1]), 2)
+check("a source cited once is not a finding", any(c in g for _, g in shared), False)
+check("the check costs nothing — no fetch, no model",
+      ("fetch" in R.shared_sources.__code__.co_names,
+       "model" in R.shared_sources.__code__.co_varnames), (False, False))
+check("it rides along with the free link sweep",
+      len(run_stage9([a, b, c], {})["shared"]), 1)
+
+section("  ...ranked by shape, because sharing a source is not itself a defect")
+# A roundup covering thirteen announcements is good provenance for all thirteen.
+# A homepage covering two is not. Sorting by count alone buries the second under
+# the first.
+for url, want, why in [
+    ("https://yema.com/", "root", "a bare homepage"),
+    ("https://yema.com", "root", "a homepage without the slash"),
+    ("https://monochrome-watches.com/category/nivada-grenchen/", "index", "a category facet"),
+    ("https://windupwatchshop.com/collections/limited-editions", "index", "a shop collection"),
+    ("https://junghans.de/en/special-editions/", "index", "a section named for a shelf"),
+    ("https://christopherward.com/int/limited-editions-watches.html", "index",
+     "the Christopher Ward page that started this"),
+    ("https://gronefeld.com/news", "index", "a news index"),
+    ("https://plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements", "article",
+     "an article filed under /blog/ — the shape most of the web uses"),
+    ("https://seikowatches.com/us-en/news/2026/pr/20260106_145years", "article",
+     "a press release filed under /news/"),
+    ("https://g-central.com/14-new-g-shock-releases-for-april-2026-including-4-limited-editions/",
+     "article", "a story whose slug happens to end in the phrase"),
+]:
+    check(f"{why} reads as {want}", R.source_shape(url), want)
+ranked = R.shared_sources([
+    entry(id="000000006a", source="https://press.example/a-roundup-of-thirteen"),
+    entry(id="000000006b", source="https://press.example/a-roundup-of-thirteen"),
+    entry(id="000000006c", source="https://press.example/a-roundup-of-thirteen"),
+    entry(id="000000006d", source="https://brand.example/"),
+    entry(id="000000006e", source="https://brand.example/"),
+])
+check("the worst shape leads even when it is the smaller group",
+      [R.source_shape(u) for u, _ in ranked], ["root", "article"])
+
+section("The unreadable figure is recorded WITH its runner")
+meta_r: dict = {}
+os.environ.pop("GITHUB_ACTIONS", None)
+row1 = R.record_readability(meta_r, {"kinds": collections.Counter({"product": 84}),
+                                     "unreadable": [1] * 84})
+check("the run is stamped with where it ran", row1["runner"], "local")
+check("...and never with a hostname — this file is public",
+      any(c in row1["runner"] for c in "._"), False)
+os.environ["GITHUB_ACTIONS"] = "true"
+row2 = R.record_readability(meta_r, {"kinds": collections.Counter({"product": 84}),
+                                     "unreadable": [1] * 86})
+check("a second vantage point is recorded separately", row2["runner"], "github-actions")
+check("comparing across runners is exactly the mistake this prevents",
+      R.previous_readability(meta_r, row2), None)
+row3 = R.record_readability(meta_r, {"kinds": collections.Counter({"product": 83}),
+                                     "unreadable": [1] * 86})
+check("drift is measured against the same vantage point only",
+      R.previous_readability(meta_r, row3)["unreadable"], 86)
+os.environ.pop("GITHUB_ACTIONS", None)
+for _ in range(40):
+    R.record_readability(meta_r, {"kinds": collections.Counter(), "unreadable": []})
+check("the series is bounded rather than growing for ever",
+      len(meta_r["readability"]), R.READABILITY_HISTORY)
 
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())

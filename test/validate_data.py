@@ -67,6 +67,19 @@ def validate(payload: dict) -> list[str]:
         for f in REQUIRED:
             if not x.get(f):
                 errs.append(f"{x['id']}: missing {f}")
+        # The search residue is a dated claim, and the date is the whole point:
+        # it is what makes "no product page exists" expire instead of freezing
+        # an entry out of ever being upgraded. A residue with no date, or with a
+        # result nothing recognises, is a flag that never lifts.
+        residue = x.get("buySearch")
+        if residue is not None:
+            if not isinstance(residue, dict):
+                errs.append(f"{x['id']}: buySearch is not an object")
+            elif residue.get("result") not in ("product", "none", "unverified"):
+                errs.append(f"{x['id']}: buySearch.result {residue.get('result')!r} "
+                            "is not a recognised outcome")
+            elif not residue.get("date"):
+                errs.append(f"{x['id']}: buySearch has no date, so it would never expire")
 
     # A takedown that has been recorded but not honoured is worse than one that
     # was never recorded, because the list makes it look handled.
