@@ -1,6 +1,17 @@
 name: weekly refresh
 
-# The masthead says "refreshed weekly". This is what makes that true.
+# THE PAID HALF. The free stages moved to daily.yml on 2026-08-05; this job keeps
+# the two that cost money — stage 2 (availability checks) and stage 4 (the
+# new-release search) — plus the free ones, because a watch found by stage 4
+# should get its photograph, its buy-link classification and its tier in the same
+# run rather than waiting for tomorrow's sweep. Running them twice a day costs
+# nothing and the daily job is idempotent.
+#
+# The cadence here is still uniform across 252 entries, and that is known to be
+# wrong in both directions at once: a rank-0 buyable entry's order window can
+# close in hours, while a Patek allocation piece has not been buyable since
+# announcement and will not become so. A proposal tiered by volatility is owed
+# once this job produces its first real cost number.
 #
 # Because Pages deploys from the main branch, the commit this job makes IS the
 # deploy — there is no separate publish step. Note that a push authenticated with
@@ -18,8 +29,8 @@ on:
   workflow_dispatch:
     inputs:
       stages:
-        description: 'Stages to run (2=availability, 3=photos, 4=new releases, 6=calendar, 7=image rot)'
-        default: '2,3,4,6,7'
+        description: 'Stages (2=availability, 3=photos, 4=new releases, 6=calendar, 7=image rot, 8=buy links)'
+        default: '2,4,7,3,6,8'
         required: false
       dry_run:
         description: 'Run everything but write nothing'
@@ -76,7 +87,7 @@ jobs:
         run: |
           set +e
           python3 scripts/refresh.py \
-            --stages "${{ inputs.stages || '2,3,4,6,7' }}" \
+            --stages "${{ inputs.stages || '2,4,7,3,6,8' }}" \
             --photo-batch "${{ inputs.photo_batch || '0' }}" \
             ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
@@ -84,38 +95,11 @@ jobs:
 
       - name: Validate the result before it can reach the site
         if: steps.refresh.outputs.code == '0'
-        run: |
-          python3 - <<'PY'
-          import json, sys, collections
-          d = json.load(open('data.json'))
-          w = d['watches']
-          TIERS = ["Buy online now","Drop upcoming","Retailer enquiry","Waitlist or ballot",
-                   "AD or boutique","In person only","Gone"]
-          errs = []
-          if d['meta']['count'] != len(w):
-              errs.append(f"meta.count {d['meta']['count']} != {len(w)} entries")
-          if d['meta']['brands'] != len({x['brand'] for x in w}):
-              errs.append("meta.brands is stale")
-          if d['meta']['imagesResolved'] != sum(1 for x in w if x.get('image')):
-              errs.append("meta.imagesResolved is stale")
-          ids = [x['id'] for x in w]
-          if len(ids) != len(set(ids)):
-              errs.append("duplicate ids")
-          for x in w:
-              if TIERS[x['rank']] != x['tier']:
-                  errs.append(f"{x['id']}: rank {x['rank']} does not match tier {x['tier']!r}")
-              if x['status'] == 'Sold out' and not x.get('soldOutOn'):
-                  errs.append(f"{x['id']}: Sold out with no soldOutOn")
-              for f in ('id','brand','model','buy','source','conf','addedOn'):
-                  if not x.get(f):
-                      errs.append(f"{x['id']}: missing {f}")
-          if errs:
-              print("data.json failed validation:")
-              for e in errs[:40]: print("  -", e)
-              sys.exit(1)
-          print(f"data.json valid — {len(w)} entries, {d['meta']['brands']} brands, "
-                f"revision {d['meta']['revision']}, {d['meta']['imagesResolved']} photographs")
-          PY
+        # Was an inline heredoc; extracted to test/validate_data.py when the
+        # daily sweep arrived, so both jobs gate on the same rules. Two copies
+        # of a validator drift, and the copy that drifts is the one that quietly
+        # stops catching things.
+        run: python3 test/validate_data.py
 
       - name: Commit and deploy
         if: steps.refresh.outputs.code == '0' && inputs.dry_run != true
@@ -139,6 +123,12 @@ jobs:
           # `head -c` can slice a multi-byte character in half.
           { cat refresh-subject.txt; echo; head -n 120 refresh-report.md; } > "$RUNNER_TEMP/commit-msg.txt"
           git commit -F "$RUNNER_TEMP/commit-msg.txt"
+          # The daily sweep may have pushed between this job's checkout and here.
+          # The concurrency group stops them running at once, but it does not
+          # stop one starting after the other finished. Both only ever rewrite
+          # data.json, so rebasing is safe and losing a run to a race would be
+          # silent — which is the failure worth avoiding.
+          git pull --rebase --autostash
           git push
 
       - name: Job summary

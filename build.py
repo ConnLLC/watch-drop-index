@@ -139,6 +139,42 @@ input[type=search]:focus{border-color:#17130d}
   [data-mq="row2"]{grid-template-columns:1fr !important;gap:2px !important}
   [data-mq="badge"]{font-size:16px !important;right:14px !important;bottom:14px !important;padding:12px 38px 12px 14px !important}
 }
+
+/* ---- the tablet band ---------------------------------------------------
+   Lowell, on an iPad, 2026-08-05: the search field wraps onto a line of its
+   own. It does, and the cause is arithmetic rather than taste. The filter row
+   is "Availability:" (a fixed 112px gutter) + five tier buttons + a 260px
+   search box. Around 820px of viewport there is roughly 100px left for a box
+   asking for 260, and because the row is flex-wrap the browser decides where
+   items go from their BASE width — it wraps the search rather than shrinking
+   it, so no amount of flex-shrink alone fixes this.
+
+   Between 721 and 1100 the layout is therefore given the two concessions the
+   phone layout already makes, rather than new ones invented here: the labels
+   go (the buttons say what they filter) and the buttons tighten. That buys
+   enough room for the search to hold the line at a usable size.
+
+   NOT A DESIGN RULING — flagged to design. This is the plain mechanical fix
+   for a defect on a real device, reusing decisions design already made one
+   breakpoint down. If they want a different treatment for tablets, this is
+   theirs to replace.
+
+   Widths below are unverifiable from here: neither Code nor design has a
+   browser at this size, so the numbers are reasoned from the type metrics, not
+   measured. Lowell's iPad is the only instrument that can confirm it. */
+@media (min-width:721px) and (max-width:1100px){
+  [data-mq="flabel"]{display:none !important}
+  [data-mq="fbar"] button{padding:5px 9px !important;font-size:11.5px !important}
+  /* The basis is what matters: a wrapping flex row decides placement from the
+     BASE width, not the shrunk one, which is why the 260px box jumps to its own
+     line instead of narrowing. 170 leaves comfortable slack against the width
+     estimate above — the point is that it cannot wrap, not that it is exactly
+     as wide as it could be. margin-left:auto is kept so it stays right-aligned
+     as on desktop; growing it to fill instead would need that margin removed
+     and would strand the field mid-row at the top of the band. */
+  [data-mq="search"]{width:auto !important;flex:0 1 170px;min-width:140px;margin-left:auto !important}
+  [data-mq="sort"]{width:auto !important;flex:0 1 130px;min-width:110px}
+}
 """
 
 JS = r"""

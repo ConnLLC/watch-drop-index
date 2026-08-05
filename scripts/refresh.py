@@ -1111,10 +1111,16 @@ a broken picture. A 25-entry sample of the live data on 2026-08-04 found one
 already dead (Spinnaker, 404), which puts the real number somewhere around 9 of
 224. Not theoretical.
 
-Rotating subset, not the whole register: link rot is slow, and re-checking 224
-images every week would spend requests on other people's servers to learn
-nothing. Oldest-checked first, IMAGE_CHECK_BATCH per run, so everything cycles
-through in about six weeks and rot is caught within one cycle of appearing.
+EVERY image, every run. This stage used to check a rotating subset of 40 on the
+reasoning that rot is slow and requests are worth saving. That was wrong twice
+over. A HEAD request costs no model call, no tokens and no budget, so there was
+never anything to save — and sampling 40 of 224 meant a photograph could rot and
+stay broken on the page for six weeks while the checker reported all clear. The
+throttle was the expensive thing, not the requests. `batch` survives as a manual
+override for testing and nothing else.
+
+Ordering still matters even at full sweep: oldest-checked first, so if a run is
+ever cut short the entries that go unchecked are the ones checked most recently.
 
 The loop this has to avoid: clearing a dead image would send the entry back to
 the photograph stage, which would re-read the same source article, find the same
@@ -1123,15 +1129,17 @@ dead og:image, and write it straight back. So a URL proven dead is remembered in
 photograph is honest; an entry with a broken one is not.
 """
 
-IMAGE_CHECK_BATCH = 40     # per run; ~224 images cycle through in about 6 weeks
+IMAGE_CHECK_BATCH = 0      # 0 = every resolved photograph, every run. See above.
 MAX_DEAD_REMEMBERED = 4    # enough to break the loop without growing forever
 
 
 def image_check_candidates(watches: list[dict], batch: int) -> list[dict]:
     have = [w for w in watches if w.get("image")]
-    # Never-checked first (days_since returns a huge number for a missing
-    # stamp), then oldest. That makes the rotation self-levelling: a newly
-    # resolved photograph joins the back of the queue on its own.
+    # Ordering only bites when someone passes a batch for testing: at the default
+    # full sweep every entry is checked regardless. Note that a healthy entry no
+    # longer carries a stamp at all (see the loop below), so this now sorts
+    # "everything that is not currently failing" as equal — which is correct,
+    # because among healthy entries there is nothing to prioritise.
     have.sort(key=lambda w: -days_since((w.get("imageCheck") or {}).get("date")))
     return have[:batch] if batch else have
 
@@ -1150,10 +1158,28 @@ def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         for w, result, detail in pool.map(probe, targets):
-            w["imageCheck"] = {"date": today(), "result": result, "note": detail}
             if result == "ok":
+                # A pass is recorded on the RUN, not on the entry. Two reasons,
+                # and the second is the important one.
+                #
+                # Mechanically: once this became a full daily sweep, stamping
+                # every healthy entry rewrote 224 lines of data.json every day
+                # for no information — a diff that large and that meaningless
+                # hides the one line that did change, and the git history is
+                # this register's audit trail.
+                #
+                # Editorially: this checker can prove a URL is dead. It can
+                # never prove one is healthy for a reader — it is not their
+                # browser, their network or their region. A per-entry "checked
+                # and fine on this date" invites exactly the over-reading that
+                # a clean sweep does not license, and it would sit one column
+                # away from `verified`, which IS an evidenced claim. Keeping
+                # only the failures makes the file say what we actually know.
+                w.pop("imageCheck", None)
                 summary["ok"] += 1
-            elif result == "unclear":
+                continue
+            w["imageCheck"] = {"date": today(), "result": result, "note": detail}
+            if result == "unclear":
                 # Silence. The photograph stays; we simply learned nothing.
                 summary["unclear"].append((w, detail))
             else:
@@ -1803,7 +1829,7 @@ def main() -> int:
     ap.add_argument("--photo-batch", type=int, default=0,
                     help="cap the photograph pass (0 = every entry that still has none)")
     ap.add_argument("--image-batch", type=int, default=IMAGE_CHECK_BATCH,
-                    help="how many resolved photographs to re-check for rot (0 = all)")
+                    help="cap the rot check for testing (0 = all, and that is the default)")
     ap.add_argument("--demote-unearned", action="store_true",
                     help="drop 'Buy online now' entries that have no product page to buy from")
     ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
@@ -1909,6 +1935,14 @@ def main() -> int:
     meta["count"] = len(watches)
     meta["brands"] = len({w["brand"] for w in watches})
     meta["imagesResolved"] = sum(1 for w in watches if w.get("image"))
+    # Where a clean sweep is recorded now that healthy entries carry no stamp of
+    # their own. One date for the run, which is all a clean sweep actually
+    # establishes — read it as "nothing was found broken on this date", never as
+    # "every photograph works", which no checker outside a reader's browser can
+    # say. Only stamped when the stage actually ran, so it can never claim a
+    # sweep that a --stages flag skipped.
+    if rot:
+        meta["lastImageSweep"] = today()
     meta["revision"] = int(meta.get("revision", 0)) + 1
 
     changed = json.dumps(payload, sort_keys=True) != before

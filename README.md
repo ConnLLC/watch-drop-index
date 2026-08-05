@@ -142,13 +142,47 @@ each watch sold out — which for a site about availability is content, not just
 
 ---
 
-## The weekly refresh
+## The refresh — two schedules, split by cost
 
-`.github/workflows/refresh.yml` runs `scripts/refresh.py` at 09:00 UTC each Monday, and
-on demand via **Actions → weekly refresh → Run workflow**. It runs in CI rather than as
-a scheduled chat session so the API key lives in Actions secrets, the job runs whether or
-not anyone is logged in anywhere, failures surface as red runs instead of silence, and
-every change is an attributable, revertible commit.
+Both workflows run `scripts/refresh.py`; they differ only in which stages they ask for and
+whether they are allowed to spend.
+
+| | `daily.yml` — daily sweep | `refresh.yml` — weekly refresh |
+|---|---|---|
+| When | 09:00 UTC, every day | 09:00 UTC, Mondays |
+| Stages | 7, 3, 6, 8 | 2, 4, then 7, 3, 6, 8 |
+| Cost | **zero, structurally** | model calls, capped by `WEEKLY_BUDGET_CAD` |
+
+**The split exists because a single cadence was wrong in both directions.** Link checks,
+photograph resolution and calendar expiry are fetch-and-parse — no model call, no tokens,
+no budget — so running them weekly made them seven times slower than necessary for no
+saving whatever. The calendar makes the case on its own: a drop that expires on a Thursday
+would sit on the site advertising itself until the following Monday. A broken photograph
+is now visible for one day instead of seven.
+
+The daily job **cannot** spend. That is enforced two ways rather than trusted: it passes
+`--no-api`, and no `ANTHROPIC_API_KEY` is given to it. One is a switch, the other is an
+absence.
+
+The weekly job runs the free stages too, so a watch found by the new-release search gets
+its photograph, its buy-link classification and its tier in the same run instead of waiting
+for tomorrow. Both jobs share a `concurrency` group and rebase before pushing, since both
+rewrite `data.json`.
+
+**The real ceiling is politeness, not money.** Seven times the frequency is seven times the
+load on other people's servers, and three outlets already refuse this client. `HostLimiter`
+serialises and spaces requests per outlet, so no one site sees a burst — but if the
+`blocked` counts in the run report start climbing, this cadence is the first thing to
+reconsider, whatever it costs. A register that gets itself blocked verifies nothing at all.
+
+**Still owed:** a paid-stage cadence tiered by volatility rather than uniform across 252
+entries. A rank-0 buyable entry's order window can close in hours; a rank-4 allocation
+piece has not been buyable since announcement and will not become so. Waiting on the first
+real cost figure from a guarded run.
+
+It all runs in CI rather than as a scheduled chat session so the API key lives in Actions
+secrets, the job runs whether or not anyone is logged in anywhere, failures surface as red
+runs instead of silence, and every change is an attributable, revertible commit.
 
 Because Pages deploys from `main`, **the commit is the deploy**.
 

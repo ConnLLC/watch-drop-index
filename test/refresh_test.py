@@ -693,13 +693,39 @@ s = rot_stage(ws, {good["image"]: ("ok", "image/jpeg"),
                    dead["image"]: ("rotted", "HTTP 404"),
                    blocked["image"]: ("unclear", "HTTP 403")})
 check("a good photograph is kept", good["image"], "https://img.example/good.jpg")
-check("...and stamped so the rotation moves on", good["imageCheck"]["result"], "ok")
+# A pass leaves NO stamp on the entry, deliberately. At a full daily sweep a
+# per-entry "checked and fine today" rewrites every line of data.json daily for
+# no information, and it asserts something this checker cannot know: it can
+# prove a URL is dead, never that one renders for a reader. The run records the
+# sweep; the entry records only what is wrong with it.
+check("...and carries no stamp saying it passed", "imageCheck" in good, False)
+stale = entry(id="0000000004", image="https://img.example/good.jpg",
+              imageCheck={"date": "2026-01-01", "result": "rotted", "note": "HTTP 404"})
+rot_stage([stale], {stale["image"]: ("ok", "image/jpeg")})
+check("...and a recovered image loses its old failure stamp", "imageCheck" in stale, False)
 check("a rotted one is cleared", dead["image"], None)
 check("...and its credit goes with it", dead["imageCredit"], None)
 check("...and the dead URL is remembered", dead["deadImages"], ["https://img.example/dead.jpg"])
 check("a 403 keeps its photograph", blocked["image"], "https://img.example/403.jpg")
 check("...and is reported as no answer, not as rot", len(s["unclear"]), 1)
 check("the stage costs nothing", "model" in R.stage_image_rot.__code__.co_varnames, False)
+
+# NO SAMPLING. This stage used to check a rotating 40 of 224 on the reasoning
+# that requests are worth saving — but a HEAD costs no model call, no tokens and
+# no budget, so there was nothing to save, and a photograph could stay broken on
+# the page for six weeks while the checker reported all clear. Pinned as a test
+# because the instruction to throttle it has been issued twice and withdrawn
+# twice: if a cap on a free stage reappears, it should fail here.
+check("the default is every photograph, not a sample", R.IMAGE_CHECK_BATCH, 0)
+check("...and the stage's own default agrees",
+      R.stage_image_rot.__defaults__[0], 0)
+# Asserted on the candidate list rather than by running the stage: 120 URLs on
+# one host are serialised by HostLimiter at PHOTO_HOST_DELAY apiece, so actually
+# sweeping them here would make the suite take minutes to prove arithmetic.
+many = [entry(id=f"{i:010d}", image=f"https://img.example/{i}.jpg") for i in range(120)]
+check("a 120-entry register queues all 120", len(R.image_check_candidates(many, 0)), 120)
+check("...and a batch is still honoured for testing",
+      len(R.image_check_candidates(many, 5)), 5)
 
 # THE LOOP THIS HAS TO AVOID: clearing a dead image sends the entry back to the
 # photograph stage, which re-reads the same article, finds the same dead

@@ -1,0 +1,134 @@
+name: daily sweep
+
+# THE FREE HALF OF THE REFRESH, RUN EVERY DAY.
+#
+# Splitting the schedule was Lowell's question — why weekly? — and the honest
+# answer was that there had never been a reason. A single cadence across every
+# stage was inherited from the paid stages, and it made the free ones seven times
+# slower than they needed to be for no saving at all.
+#
+# Nothing in this workflow can spend money. Every stage below is fetch-and-parse:
+# no model call, no tokens, no budget. That is enforced structurally rather than
+# by intention — `--no-api` means the job cannot make a model call even if a
+# future stage is added to the list by mistake, and no ANTHROPIC_API_KEY is
+# passed to it, so there is nothing to spend with. Both, deliberately: one is a
+# switch someone could flip, the other is an absence.
+#
+# What running daily actually buys:
+#   - The calendar cannot advertise a passed date. Date-driven rot has to be
+#     handled on the date; on a Monday-only schedule a drop that expires on a
+#     Thursday stays on the site advertising itself until the following week.
+#   - A broken photograph is visible to every reader for one day instead of
+#     seven. Lowell found one himself, which is how we learned that mattered.
+#   - A dead buy link stops being a claim we are making a day after it dies.
+#
+# The politeness ceiling is the real constraint, not the money. Seven times the
+# frequency is seven times the load on other people's servers, and three outlets
+# already refuse this client. HostLimiter serialises and spaces requests per
+# outlet, so a full sweep is minutes of wall-clock and no single site sees a
+# burst — but if outlets start blocking us, the whole exercise inverts and we
+# verify nothing at all. Watch the "blocked" counts in the run report; if they
+# climb, this cadence is the first thing to reconsider, whatever it costs.
+
+on:
+  schedule:
+    - cron: '0 9 * * *'     # 09:00 UTC daily. Drifts an hour with BST; harmless.
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: 'Free stages only (3=photos, 6=calendar, 7=image rot, 8=buy links)'
+        default: '7,3,6,8'
+        required: false
+      dry_run:
+        description: 'Run everything but write nothing'
+        type: boolean
+        default: false
+
+# Shares the weekly job's concurrency group on purpose: both commit data.json,
+# and two runs racing would mean one of them pushing over the other's work.
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --quiet anthropic requests
+
+      - name: Decision-logic tests
+        # Gates the run rather than reporting on it. If the rules that decide
+        # when an entry may move are broken, we must not touch data.json at all.
+        run: python3 test/refresh_test.py
+
+      - name: Run the free stages
+        id: sweep
+        # NO ANTHROPIC_API_KEY. Its absence is the second half of the guarantee
+        # that this workflow cannot spend; --no-api is the first.
+        #
+        # Stage order: rot check BEFORE photographs, so an image cleared this run
+        # is re-resolved in the same run rather than tomorrow.
+        run: |
+          set +e
+          python3 scripts/refresh.py \
+            --stages "${{ inputs.stages || '7,3,6,8' }}" \
+            --no-api \
+            ${{ inputs.dry_run == true && '--dry-run' || '' }}
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Validate the result before it can reach the site
+        if: steps.sweep.outputs.code == '0'
+        run: python3 test/validate_data.py
+
+      - name: Commit and deploy
+        if: steps.sweep.outputs.code == '0' && inputs.dry_run != true
+        run: |
+          if git diff --quiet -- data.json; then
+            echo "data.json unchanged; nothing to commit."
+            exit 0
+          fi
+          if ! git diff --quiet -- ':!data.json'; then
+            echo "::error::the sweep modified something other than data.json"
+            git diff --stat
+            exit 1
+          fi
+          git config user.name  "watch-drop-index bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          { cat refresh-subject.txt; echo; head -n 120 refresh-report.md; } > "$RUNNER_TEMP/commit-msg.txt"
+          git commit -F "$RUNNER_TEMP/commit-msg.txt"
+          # The weekly job may have pushed since checkout. Rebase rather than
+          # fail: both jobs only ever rewrite data.json, and losing a day's sweep
+          # to a race would be silent.
+          git pull --rebase --autostash
+          git push
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f refresh-report.md ]; then cat refresh-report.md >> "$GITHUB_STEP_SUMMARY"; fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_exit code ${{ steps.sweep.outputs.code }}_" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail the run if the fetch layer went silent
+        if: steps.sweep.outputs.code == '21'
+        run: |
+          echo "::error::Zero pages were readable. That is a broken fetch layer,"
+          echo "or an outlet blocking us, not a quiet day. data.json was not changed."
+          exit 1
+
+      - name: Fail on an unexpected exit
+        if: steps.sweep.outputs.code != '0' && steps.sweep.outputs.code != '10' && steps.sweep.outputs.code != '21'
+        run: exit 1
