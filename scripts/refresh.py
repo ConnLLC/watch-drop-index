@@ -271,9 +271,22 @@ def rank_for(status: str, buy_label: str, tags: list[str], buy_kind: str | None 
 
 
 def apply_tier(entry: dict) -> None:
-    entry["rank"] = rank_for(entry["status"], entry.get("buyLabel", ""),
-                             entry.get("tags", []), entry.get("buyKind"))
-    entry["tier"] = TIERS[entry["rank"]]
+    """Re-derive tier and rank — unless a human has taken ownership of them.
+
+    rank and tier are two spellings of one fact, so they are guarded together: a
+    human who pins the tier and then gets the rank re-derived underneath them ends
+    up with a row that renders one thing and filters as another, which is worse
+    than either outcome on its own."""
+    rank = rank_for(entry["status"], entry.get("buyLabel", ""),
+                    entry.get("tags", []), entry.get("buyKind"))
+    if is_manual(entry, "tier") or is_manual(entry, "rank"):
+        if entry.get("rank") != rank:
+            PROPOSALS.append({"id": entry.get("id"), "field": "tier",
+                              "from": entry.get("tier"), "to": TIERS[rank],
+                              "why": "derived from status, label and buy evidence"})
+        return
+    entry["rank"] = rank
+    entry["tier"] = TIERS[rank]
 
 
 def in_scope(entry: dict) -> bool:
@@ -770,7 +783,11 @@ def check_availability(entry: dict, model: Model) -> dict:
 
 
 def stage_availability(watches: list[dict], model: Model, limit: int | None) -> dict:
-    targets = [w for w in watches if w["rank"] <= 2]
+    # Retracted entries are skipped here rather than filtered at the display
+    # layer alone: this is the stage that spends money, and paying to re-check
+    # the availability of a watch nobody can see is the one waste with a bill
+    # attached.
+    targets = [w for w in watches if w["rank"] <= 2 and not is_retracted(w)]
     if limit:
         targets = targets[:limit]
     log(f"\n[2] AVAILABILITY — {len(targets)} entries with rank <= 2")
@@ -819,7 +836,13 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
         # and can judge for themselves, which is the honest presentation and the
         # one that keeps demand and distribution from blurring together.
         if v["obtainable"] == "no" and conf == "high" and signal == "sold_out" and quote:
-            w["status"] = "Sold out"
+            if not guarded_set(w, "status", "Sold out", f'page reads: "{quote}"'):
+                # A human owns this entry's status. Record what the page said —
+                # `verified` is evidence, not an editorial claim, so it is always
+                # safe to write — and leave the status alone.
+                w["verified"] = {"date": today(), "note": f'Purchase page reads: "{quote}"'}
+                summary["skipped"].append((w, "status is a manual field"))
+                continue
             w["soldOutOn"] = today()
             apply_tier(w)
             w["verified"] = {"date": today(), "note": f'Purchase page reads: "{quote}"'}
@@ -837,11 +860,12 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
         if v["obtainable"] == "yes" and signal in ("add_to_cart", "preorder_open") and conf == "high":
             was = w["tier"]
             if w["rank"] in (1, 2):
-                w["status"] = "Pre-order" if signal == "preorder_open" else "Available"
-                tags = w.setdefault("tags", [])
-                if "Buy online" not in tags:
-                    tags.append("Buy online")
-                apply_tier(w)
+                new_status = "Pre-order" if signal == "preorder_open" else "Available"
+                if guarded_set(w, "status", new_status, f'page reads: "{quote}"'):
+                    tags = w.setdefault("tags", [])
+                    if "Buy online" not in tags:
+                        tags.append("Buy online")
+                    apply_tier(w)
             w["verified"] = {"date": today(), "note": f'Purchase page reads: "{quote}"' if quote
                              else "Purchase page showed an active buy option."}
             if w["tier"] != was:
@@ -869,6 +893,84 @@ def stage_availability(watches: list[dict], model: Model, limit: int | None) -> 
     return summary
 
 
+# ------------------------------------------- manual fields: a human edit wins
+"""
+If Lowell hand-corrects a price on Sunday, Monday's run must not stomp it.
+
+This is the same shape of bug as the demotion one already fixed here: two rules
+disagree about a field, and the one that runs on a timer wins every time — so the
+human's edit survives right up until the moment nobody is watching. The rule:
+
+    Automation may PROPOSE a change to a manual field. It may never COMMIT one.
+
+`entry["manual"]` lists the fields a human owns. Everything not in that list
+behaves exactly as before. A refused write is recorded and surfaced in the run
+report rather than dropped, because the fact worth knowing is not "the edit was
+protected" but "automation and a human now disagree about this price" — which is
+one click from being resolved and impossible to notice if it is swallowed.
+
+Identical in principle to the rule already standing for the curated editorial
+sections: a model may propose a change to a claim a human made, never commit one.
+One principle, two places.
+"""
+
+# The fields a human can own. Deliberately not "any key": imageProbe, imageCheck
+# and deadImages are bookkeeping the stages need in order to stay correct, and
+# letting a human freeze them would break the loop-avoidance they exist for.
+MANUAL_FIELDS = frozenset({
+    "brand", "model", "displayBrand", "displayModel", "ref", "cat", "desc", "specs",
+    "edition", "price", "priceNum", "date", "status", "tier", "rank", "buy",
+    "buyLabel", "buyKind", "source", "image", "imageCredit", "conf", "tags",
+})
+
+# Proposals a run wanted to make and was not allowed to. Module-level because the
+# alternative is threading a collector through every stage signature for a list
+# that is empty on almost every run. Appends are atomic under the GIL, which is
+# all the thread pools here require.
+PROPOSALS: list[dict] = []
+
+
+def is_manual(entry: dict, field: str) -> bool:
+    return field in (entry.get("manual") or [])
+
+
+def guarded_set(entry: dict, field: str, value, why: str = "") -> bool:
+    """Write `field` unless a human owns it. Returns True if the write happened."""
+    if is_manual(entry, field):
+        if entry.get(field) != value:
+            PROPOSALS.append({"id": entry.get("id"), "field": field,
+                              "from": entry.get(field), "to": value, "why": why})
+        return False
+    entry[field] = value
+    return True
+
+
+def mark_manual(entry: dict, fields: list[str]) -> None:
+    """Record that a human now owns these fields."""
+    owned = set(entry.get("manual") or []) | {f for f in fields if f in MANUAL_FIELDS}
+    entry["manual"] = sorted(owned)
+    entry["editedOn"] = today()
+    entry["editedBy"] = "admin"
+
+
+def release_manual(entry: dict, fields: list[str] | None = None) -> None:
+    """Hand fields back to automation. None releases everything."""
+    if fields is None:
+        entry.pop("manual", None)
+        return
+    owned = set(entry.get("manual") or []) - set(fields)
+    if owned:
+        entry["manual"] = sorted(owned)
+    else:
+        entry.pop("manual", None)
+
+
+def is_retracted(entry: dict) -> bool:
+    """Entries are never deleted — a mistaken one is part of the audit trail and a
+    sold-out one is the historical record. `retracted` stops it rendering."""
+    return bool(entry.get("retracted"))
+
+
 # ---------------------------------------------------------- stage 3: photos
 
 
@@ -876,6 +978,13 @@ def photo_candidates(watches: list[dict]) -> list[dict]:
     out = []
     for w in watches:
         if w.get("image"):
+            continue
+        # A human who cleared a manual image is asking for automatic resolution
+        # again, so `manual` containing "image" with no image is not a block —
+        # but a human who set one and had it die (the rot check FLAGS rather than
+        # clears a manual image, see stage 7) must not have a replacement chosen
+        # for them. That case never reaches here, because the image is still set.
+        if is_retracted(w):
             continue
         probe = w.get("imageProbe")
         if probe:
@@ -1071,7 +1180,12 @@ def stage_buy_links(watches: list[dict], only_rank: int | None = None) -> dict:
                 continue
             if w.get("buyKind") and w["buyKind"] != kind:
                 summary["changed"].append((w, w["buyKind"], kind))
-            w["buyKind"] = kind
+            if not guarded_set(w, "buyKind", kind, why):
+                # A human classified this link. Record the evidence anyway — it
+                # is what they will want to look at when deciding whether to
+                # release the field — but do not act on it.
+                w["buyCheck"] = {"date": today(), "note": why, "manual": True}
+                continue
             w["buyCheck"] = {"date": today(), "note": why}
             summary["kinds"][kind] += 1
             # The claim has to be earned: "Buy online now" means a page where the
@@ -1098,9 +1212,16 @@ def apply_buy_demotions(summary: dict) -> int:
     Re-derives through apply_tier rather than assigning a tier directly, so the
     stored rank is always something rank_for() would produce. Anything else
     drifts the moment another stage re-derives it."""
+    # Counted from what actually moved, not from how many were queued: apply_tier
+    # refuses and files a proposal when a human owns the tier, so counting the
+    # queue would have the run report claiming demotions that never happened.
+    moved = 0
     for w, _kind in summary["demote"]:
+        before = w.get("rank")
         apply_tier(w)
-    return len(summary["demote"])
+        if w.get("rank") != before:
+            moved += 1
+    return moved
 
 
 # ------------------------------------------------- stage 7: rotted image URLs
@@ -1148,7 +1269,7 @@ def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict
     targets = image_check_candidates(watches, batch)
     total = sum(1 for w in watches if w.get("image"))
     log(f"\n[7] IMAGE ROT — re-checking {len(targets)} of {total} resolved photographs")
-    summary = {"rotted": [], "ok": 0, "unclear": []}
+    summary = {"rotted": [], "ok": 0, "unclear": [], "flagged": []}
     limiter = HostLimiter(PHOTO_HOST_DELAY)
 
     def probe(w: dict) -> tuple[dict, str, str]:
@@ -1158,6 +1279,17 @@ def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         for w, result, detail in pool.map(probe, targets):
+            if result != "ok" and is_manual(w, "image"):
+                # A HUMAN CHOSE THIS PICTURE. The machine reports the problem; it
+                # does not overrule the choice. Clearing it would send the entry
+                # back to automatic resolution and quietly replace a deliberate
+                # editorial decision with an og:image scrape — which is exactly
+                # the "weaker rule wins on a timer" failure this codebase keeps
+                # having. Flagged, loudly, and left alone.
+                w["imageCheck"] = {"date": today(), "result": result, "note": detail,
+                                   "manual": True}
+                summary["flagged"].append((w, detail))
+                continue
             if result == "ok":
                 # A pass is recorded on the RUN, not on the entry. Two reasons,
                 # and the second is the important one.
@@ -1194,7 +1326,9 @@ def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict
                 summary["rotted"].append((w, detail))
 
     log(f"    still good {summary['ok']} · rotted and cleared {len(summary['rotted'])} "
-        f"· no answer {len(summary['unclear'])}")
+        f"· no answer {len(summary['unclear'])}"
+        + (f" · MANUAL AND BROKEN, needs a human {len(summary['flagged'])}"
+           if summary["flagged"] else ""))
     return summary
 
 
@@ -1657,7 +1791,8 @@ def stage_calendar(cal: dict, watches: list[dict]) -> dict:
 
 
 def summary_n(rot: dict) -> int:
-    return rot["ok"] + len(rot["rotted"]) + len(rot["unclear"])
+    return (rot["ok"] + len(rot["rotted"]) + len(rot["unclear"])
+            + len(rot.get("flagged") or []))
 
 
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
@@ -1812,6 +1947,32 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                   "> Post these on the WATCHDROP RELAY thread. Until they are ruled on, "
                   "the entries show their full brand and model.", ""]
             L += [f"- {q}" for q in news["design"]] + [""]
+
+    # Proposals last, because they are the section a person has to act on: every
+    # one is a place where this run and a human disagree about a fact. Refusing
+    # the write is only half the rule — a guard that hides the disagreement just
+    # moves the silent failure somewhere quieter.
+    if PROPOSALS:
+        L += [f"## {len(PROPOSALS)} proposed changes to fields a human owns", "",
+              "> Automation may propose a change to a manual field and may never commit "
+              "one, so none of these were applied. Each is either evidence the entry needs "
+              "correcting, or evidence the field should be released back to automation. "
+              "Both are decisions for a person.", ""]
+        for p in PROPOSALS[:60]:
+            L += [f"- `{p['id']}` **{p['field']}**: `{p['from']!r}` → `{p['to']!r}`"
+                  + (f" — {p['why']}" if p.get("why") else "")]
+        if len(PROPOSALS) > 60:
+            L += [f"- …and {len(PROPOSALS) - 60} more"]
+        L += [""]
+
+    if rot and rot.get("flagged"):
+        L += [f"### {len(rot['flagged'])} hand-picked photographs are broken", "",
+              "> These were chosen by a person, so the rot check reports them rather than "
+              "clearing them — replacing a deliberate choice with an og:image scrape is not "
+              "the machine's call. They are rendering broken to readers until someone picks "
+              "a new one or releases the field.", ""]
+        L += [f"- **{w['brand']} {w['model']}** — {why} · {w.get('image')}"
+              for w, why in rot["flagged"]] + [""]
 
     REPORT.write_text("\n".join(L))
     return "\n".join(L)

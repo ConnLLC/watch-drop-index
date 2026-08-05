@@ -271,7 +271,11 @@ JS = r"""
   };
 
   var state = { q: "", tier: "All", cat: "All", band: "All", sort: "tier", open: {},
-                payload: null, showBadge: false, admin: false, editId: null, descEditId: null };
+                payload: null, showBadge: false, admin: false, editId: null, descEditId: null,
+                /* Admin write path. `gh` holds the file as it was READ from the
+                   GitHub API — its sha is the optimistic lock, so it is never
+                   updated except by a successful load or a successful write. */
+                gh: null, adminEdit: null, adminForm: {}, adminMsg: null };
   var DATA = [];
 
   /* Build flag, shipped ON: the formatted date sits in a beveled aperture that
@@ -289,6 +293,572 @@ JS = r"""
      wrote, then design's map. */
   function shownBrand(d) { var ov = ovAll()[d.id] || {}; return ov.displayBrand || d.displayBrand || maker(d.brand); }
   function shownModel(d) { var ov = ovAll()[d.id] || {}; return ov.displayModel || d.displayModel || shortModel(d.model); }
+
+  /* ---- admin: writing to the register ------------------------------------ */
+  /* Three capabilities — edit an entry, set or clear its photograph, add one —
+     and all three are the same operation underneath: a JSON edit plus a commit.
+     So they are built on the gate that already exists rather than on a new
+     surface, and on the one write path GitHub gives a static site.
+
+     THE CREDENTIAL. This page is static and public, so any secret the page needs
+     is a published secret — there is no server to keep one behind. Lowell
+     therefore PASTES a fine-grained PAT to start an editing session and it lives
+     in sessionStorage for exactly that tab: never localStorage, never the repo,
+     never the HTML, never a build artifact, never a URL, never an error message,
+     never a log line. It dies when the tab closes. The blast radius if it leaks
+     is one public hobby repo, which is proportionate; anything that widened it
+     would not be. Scope it fine-grained → this repository only → Contents: Read
+     and write → nothing else → 90 days. See README.
+
+     With no token the panel is READ-ONLY and says so. It does not silently
+     no-op: a save button that looks armed and does nothing is worse than one
+     that is visibly disabled, because the edit appears to have been made. */
+  var GH_REPO = "ConnLLC/watch-drop-index";
+  var GH_PATH = "data.json";
+  var GH_TOKEN_KEY = "wdi-gh-pat";
+
+  /* The fields a person may edit here. Deliberately not "every key": imageProbe,
+     imageCheck, deadImages and buyCheck are bookkeeping the refresh stages need
+     in order to stay correct, and freezing one by hand would break the
+     loop-avoidance it exists for. Mirrors MANUAL_FIELDS in scripts/refresh.py. */
+  var ADMIN_FIELDS = ["brand", "model", "ref", "cat", "edition", "price", "date",
+                      "status", "buy", "buyLabel", "source", "conf", "desc", "specs"];
+  /* An entry with no price is fine — "Unconfirmed" is a legitimate value and the
+     register is built to carry it. An entry with no SOURCE is not: without
+     provenance it cannot have an honest confidence rating, which is the one
+     thing separating this from an aggregator. */
+  var ADMIN_REQUIRED = ["brand", "model", "source", "buy", "conf"];
+
+  function ghToken() {
+    try { return sessionStorage.getItem(GH_TOKEN_KEY) || ""; } catch (e) { return ""; }
+  }
+  function ghSetToken(t) {
+    try {
+      if (t) sessionStorage.setItem(GH_TOKEN_KEY, t);
+      else sessionStorage.removeItem(GH_TOKEN_KEY);
+    } catch (e) {}
+  }
+
+  /* btoa() throws on anything outside Latin-1 and this register is full of
+     accented brand names, so the JSON goes through TextEncoder first. Getting
+     this wrong fails on exactly the entries most worth editing. */
+  function b64encode(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64decode(b64) {
+    var bin = atob(b64.replace(/\s/g, "")), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function ghHeaders() {
+    return { Authorization: "Bearer " + ghToken(), Accept: "application/vnd.github+json" };
+  }
+
+  /* Errors are deliberately rewritten rather than passed through. A GitHub error
+     body can echo the request, and the request carries the token. */
+  function ghError(res) {
+    if (res.status === 401 || res.status === 403) {
+      return "GitHub refused the token (" + res.status + "). It may be expired, or "
+           + "scoped without Contents: Read and write on this repository.";
+    }
+    if (res.status === 404) {
+      return "GitHub returned 404. A fine-grained token without access to this "
+           + "repository looks identical to the repository not existing.";
+    }
+    if (res.status === 409) return "Conflict — the file moved underneath this edit.";
+    return "GitHub returned " + res.status + ".";
+  }
+
+  function ghLoad() {
+    return fetch("https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_PATH
+                 + "?ref=main&t=" + Date.now(), { headers: ghHeaders(), cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error(ghError(res));
+        return res.json();
+      })
+      .then(function (j) { return { sha: j.sha, payload: JSON.parse(b64decode(j.content)) }; });
+  }
+
+  /* OPTIMISTIC LOCKING, AND IT IS NOT OPTIONAL.
+     The daily and weekly jobs commit to this same file on a schedule. Without
+     this check a save built on a copy loaded ten minutes ago would silently
+     erase whatever a run wrote in between — or a run would erase the edit. So:
+     re-read the file immediately before writing, and if its sha has moved,
+     REFUSE. Do not merge, do not retry, do not last-write-wins. Reload and show
+     what changed, and let the person decide. */
+  function ghSave(mutate, message) {
+    var head;
+    return ghLoad().then(function (fresh) {
+      head = fresh;
+      if (state.gh && state.gh.sha && state.gh.sha !== fresh.sha) {
+        var e = new Error("stale");
+        e.stale = true;
+        e.changed = ghWhatChanged(state.gh.payload, fresh.payload);
+        e.fresh = fresh;
+        throw e;
+      }
+      var next = mutate(JSON.parse(JSON.stringify(fresh.payload)));
+      if (!next) throw new Error("Nothing to save.");
+      return fetch("https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_PATH, {
+        method: "PUT",
+        headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders()),
+        body: JSON.stringify({
+          message: message,
+          content: b64encode(JSON.stringify(next, null, 2) + "\n"),
+          sha: fresh.sha,
+          branch: "main",
+        }),
+      }).then(function (res) {
+        if (!res.ok) throw new Error(ghError(res));
+        return res.json();
+      }).then(function (j) {
+        state.gh = { sha: j.content.sha, payload: JSON.parse(JSON.stringify(next)) };
+        return j.commit && j.commit.html_url;
+      });
+    });
+  }
+
+  /* What a run changed while an edit was open. Shown on a refused save so the
+     answer to "why did that not go through" is a list of facts rather than a
+     retry. */
+  function ghWhatChanged(was, now) {
+    var byId = {}, out = [];
+    (was.watches || []).forEach(function (w) { byId[w.id] = w; });
+    (now.watches || []).forEach(function (w) {
+      var b = byId[w.id];
+      if (!b) return out.push(w.brand + " " + w.model + " — added");
+      ADMIN_FIELDS.concat(["image"]).forEach(function (f) {
+        if (JSON.stringify(b[f]) !== JSON.stringify(w[f])) {
+          out.push(w.brand + " " + w.model + " — " + f + ": " + JSON.stringify(b[f])
+                   + " → " + JSON.stringify(w[f]));
+        }
+      });
+    });
+    return out;
+  }
+
+  /* The id scheme, reproduced exactly: md5("brand|model" lowercased), first ten
+     hex characters. Immutable once assigned — rewriting one orphans that watch's
+     verification history — so a hand-added entry MUST land on the same id the
+     refresh job would compute, or the two disagree about which watch this is.
+     Web Crypto has no MD5, hence the implementation. Verified against the live
+     register in test/template.test.js: all 252 ids reproduced. */
+  function md5(s) {
+    function rl(n, c) { return (n << c) | (n >>> (32 - c)); }
+    function au(x, y) {
+      var l = (x & 0xFFFF) + (y & 0xFFFF);
+      return (((x >> 16) + (y >> 16) + (l >> 16)) << 16) | (l & 0xFFFF);
+    }
+    function cmn(q, a, b, x, s, t) { return au(rl(au(au(a, q), au(x, t)), s), b); }
+    function ff(a,b,c,d,x,s,t){ return cmn((b & c) | (~b & d), a, b, x, s, t); }
+    function gg(a,b,c,d,x,s,t){ return cmn((b & d) | (c & ~d), a, b, x, s, t); }
+    function hh(a,b,c,d,x,s,t){ return cmn(b ^ c ^ d, a, b, x, s, t); }
+    function ii(a,b,c,d,x,s,t){ return cmn(c ^ (b | ~d), a, b, x, s, t); }
+    var bytes = new TextEncoder().encode(s);          /* UTF-8, like Python's */
+    var n = bytes.length, words = [], i;
+    for (i = 0; i < n; i++) words[i >> 2] = (words[i >> 2] || 0) | (bytes[i] << ((i % 4) * 8));
+    words[n >> 2] = (words[n >> 2] || 0) | (0x80 << ((n % 4) * 8));
+    var len = (((n + 8) >> 6) + 1) * 16;
+    for (i = 0; i < len; i++) if (words[i] === undefined) words[i] = 0;
+    words[len - 2] = n * 8;
+    var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+    var S = [7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];
+    var T = [-680876936,-389564586,606105819,-1044525330,-176418897,1200080426,
+      -1473231341,-45705983,1770035416,-1958414417,-42063,-1990404162,1804603682,
+      -40341101,-1502002290,1236535329,-165796510,-1069501632,643717713,-373897302,
+      -701558691,38016083,-660478335,-405537848,568446438,-1019803690,-187363961,
+      1163531501,-1444681467,-51403784,1735328473,-1926607734,-378558,-2022574463,
+      1839030562,-35309556,-1530992060,1272893353,-155497632,-1094730640,681279174,
+      -358537222,-722521979,76029189,-640364487,-421815835,530742520,-995338651,
+      -198630844,1126891415,-1416354905,-57434055,1700485571,-1894986606,-1051523,
+      -2054922799,1873313359,-30611744,-1560198380,1309151649,-145523070,-1120210379,
+      718787259,-343485551];
+    for (i = 0; i < len; i += 16) {
+      var oa = a, ob = b, oc = c, od = d, j, f;
+      for (j = 0; j < 64; j++) {
+        var g = j < 16 ? j : j < 32 ? (5 * j + 1) % 16 : j < 48 ? (3 * j + 5) % 16 : (7 * j) % 16;
+        f = j < 16 ? ff : j < 32 ? gg : j < 48 ? hh : ii;
+        /* The mixing function must see a, b, c and d as they are NOW; rotating
+           first feeds it b where it wants c and produces a plausible-looking
+           digest that is wrong for every input. Rotate after. Sixty-four
+           rotations of a four-cycle is the identity, so the accumulate below
+           still lines up with a, b, c, d. */
+        var mixed = f(a, b, c, d, words[i + g], S[(j >> 4) * 4 + (j % 4)], T[j]);
+        a = d; d = c; c = b; b = mixed;
+      }
+      a = au(a, oa); b = au(b, ob); c = au(c, oc); d = au(d, od);
+    }
+    var hex = "";
+    [a, b, c, d].forEach(function (v) {
+      for (var k = 0; k < 4; k++) {
+        hex += ("0" + ((v >> (k * 8)) & 255).toString(16)).slice(-2);
+      }
+    });
+    return hex;
+  }
+  function makeId(brand, model) { return md5((brand + "|" + model).toLowerCase()).slice(0, 10); }
+
+  /* ---- admin: the panel -------------------------------------------------- */
+  var IN = "padding:7px 10px;border:1px solid #b9ae97;background:#fbf9f4;font-size:13px;"
+         + "font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;outline:none";
+  var BTN = "border:1px solid #17130d;background:#17130d;color:#f4f1ea;padding:7px 14px;"
+          + "font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.1em;"
+          + "text-transform:uppercase;cursor:pointer";
+  var BTN_OFF = "border:1px solid #c9c0ad;background:none;color:#a09786;padding:7px 14px;"
+              + "font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.1em;"
+              + "text-transform:uppercase;cursor:not-allowed";
+  var GHOST = "border:1px solid #17130d;background:none;color:#17130d;padding:7px 14px;"
+            + "font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.1em;"
+            + "text-transform:uppercase;cursor:pointer";
+
+  function adminNote(msg, tone) {
+    state.adminMsg = msg ? { text: msg, tone: tone || "info" } : null;
+    renderAdmin();
+  }
+
+  function adminEntry(id) {
+    var src = (state.gh && state.gh.payload.watches) || state.payload.watches || [];
+    for (var i = 0; i < src.length; i++) if (src[i].id === id) return src[i];
+    return null;
+  }
+
+  /* The diff a person sees before anything is committed. No blind saves: every
+     save names exactly what it will change, and the commit that results is one
+     click from being reverted, which is the whole benefit of the data living in
+     git rather than a database. */
+  function adminDiff() {
+    var form = state.adminForm || {}, base = state.adminEdit === "new" ? {} : (adminEntry(state.adminEdit) || {});
+    var out = [];
+    Object.keys(form).forEach(function (f) {
+      var was = base[f] === undefined || base[f] === null ? "" : String(base[f]);
+      if (String(form[f]) !== was) out.push({ field: f, from: was, to: String(form[f]) });
+    });
+    return out;
+  }
+
+  function renderAdmin() {
+    var sec = el("#adminPanel");
+    if (!sec) return;
+    if (!state.admin) { sec.style.display = "none"; return; }
+    sec.style.display = "";
+    var tok = ghToken(), diff = adminDiff();
+
+    var head = '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px">';
+    if (tok) {
+      head += '<span style="font-size:12px;color:#1e5c38;font-weight:600">Editing session open</span>' +
+        '<span style="font-size:12px;color:#8a8071">' + (state.gh ? "register loaded · sha " + esc(state.gh.sha.slice(0, 7)) : "loading…") + '</span>' +
+        '<button id="ghEnd" style="' + GHOST + '">End session</button>';
+    } else {
+      /* type=password so it is not shoulder-read or captured by a screenshot,
+         autocomplete off so no browser offers to remember it, and it is never
+         reflected back into the DOM after it is stored. */
+      head += '<input id="ghTok" type="password" autocomplete="off" spellcheck="false" ' +
+        'placeholder="Paste a fine-grained GitHub token" style="' + IN + ';width:320px">' +
+        '<button id="ghStart" style="' + BTN + '">Start editing</button>' +
+        '<span style="font-size:12px;color:#8a8071">Read-only until a token is pasted. ' +
+        'This tab only — it is never stored, logged or committed.</span>';
+    }
+    head += '</div>';
+
+    var msg = "";
+    if (state.adminMsg) {
+      var tone = state.adminMsg.tone === "bad" ? "#8a2b2b" : state.adminMsg.tone === "good" ? "#1e5c38" : "#8a8071";
+      msg = '<p style="margin:0 0 14px;font-size:13px;line-height:1.5;color:' + tone + ';white-space:pre-wrap">' +
+        esc(state.adminMsg.text) + '</p>';
+    }
+
+    var body = "";
+    if (state.adminEdit) {
+      var isNew = state.adminEdit === "new";
+      var base = isNew ? {} : (adminEntry(state.adminEdit) || {});
+      var owned = base.manual || [];
+      body += '<div style="border-top:2px solid #17130d;padding-top:12px">' +
+        '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;margin-bottom:10px">' +
+        (isNew ? "New entry" : "Editing " + esc(base.brand + " — " + base.model) + " · " + esc(base.id)) + '</div>';
+      body += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
+      ADMIN_FIELDS.forEach(function (f) {
+        var v = state.adminForm[f] !== undefined ? state.adminForm[f]
+              : (base[f] === undefined || base[f] === null ? "" : base[f]);
+        var mine = owned.indexOf(f) >= 0;
+        body += '<label style="display:block;font-size:11px;color:#8a8071">' +
+          '<span style="letter-spacing:.1em;text-transform:uppercase;font-weight:700">' + esc(f) +
+          (ADMIN_REQUIRED.indexOf(f) >= 0 ? ' <span style="color:#8a2b2b">required</span>' : '') +
+          (mine ? ' <span style="color:#8a5a2b">yours</span>' : '') + '</span>' +
+          '<input data-afield="' + esc(f) + '" value="' + esc(String(v)) + '" style="' + IN + ';width:100%;box-sizing:border-box;margin-top:3px"></label>';
+      });
+      body += '</div>';
+
+      if (!isNew) {
+        body += '<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+          '<span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a8071;font-weight:700">Photograph</span>' +
+          '<input id="aImg" value="' + esc(base.image || "") + '" placeholder="https://…" style="' + IN + ';flex:1;min-width:280px">' +
+          '<button id="aImgSet" style="' + GHOST + '">Test &amp; set</button>' +
+          '<button id="aImgClear" style="' + GHOST + '">Clear &amp; re-resolve</button></div>';
+        /* Never delete. A mistaken entry is part of the audit trail and a
+           sold-out one is the historical record; `retracted` stops it rendering
+           without destroying either. */
+        body += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+          '<button id="aRetract" style="' + GHOST + '">' + (base.retracted ? "Un-retract" : "Retract (hide, never delete)") + '</button>';
+        if (owned.length) {
+          body += '<button id="aRelease" style="' + GHOST + '">Release ' + owned.length +
+            ' field' + (owned.length === 1 ? "" : "s") + ' back to automation</button>' +
+            '<span style="font-size:12px;color:#8a8071">Yours: ' + esc(owned.join(", ")) + '</span>';
+        }
+        body += '</div>';
+      }
+
+      body += '<div style="margin-top:14px;border-top:1px solid #ddd6c8;padding-top:10px">';
+      if (diff.length) {
+        body += '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;margin-bottom:6px">' +
+          diff.length + ' change' + (diff.length === 1 ? "" : "s") + ' to commit</div>';
+        body += diff.map(function (c) {
+          return '<div style="font-size:12.5px;color:#17130d;margin-bottom:3px"><b>' + esc(c.field) + '</b> ' +
+            '<span style="color:#8a8071">' + esc(c.from || "(empty)") + '</span> → ' + esc(c.to) + '</div>';
+        }).join("");
+      } else {
+        body += '<div style="font-size:12.5px;color:#8a8071">No changes yet.</div>';
+      }
+      body += '<div style="margin-top:10px;display:flex;gap:8px">' +
+        '<button id="aSave" style="' + (tok && diff.length ? BTN : BTN_OFF) + '"' +
+        (tok && diff.length ? "" : " disabled") + '>' +
+        (tok ? "Preview said that — commit it" : "Read-only: no token") + '</button>' +
+        '<button id="aCancel" style="' + GHOST + '">Cancel</button></div></div></div>';
+    } else {
+      body += '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button id="aNew" style="' + GHOST + '">Add an entry</button>' +
+        '<span style="font-size:12.5px;color:#8a8071">Open any row and use <b>Edit in the register</b> to change one.</span></div>';
+    }
+    el("#adminBody").innerHTML = head + msg + body;
+  }
+
+  function adminAction(node) {
+    var id = node.id;
+
+    if (id === "ghStart") {
+      var v = (el("#ghTok").value || "").trim();
+      if (!v) return adminNote("Paste a token first.", "bad");
+      ghSetToken(v);
+      el("#ghTok").value = "";           /* out of the DOM immediately */
+      adminNote("Loading the register from GitHub…");
+      return ghLoad().then(function (fresh) {
+        state.gh = fresh;
+        adminNote("Editing session open. " + fresh.payload.watches.length + " entries loaded.", "good");
+      }).catch(function (err) {
+        ghSetToken("");                  /* a token that cannot read is not a session */
+        state.gh = null;
+        adminNote(String(err.message || err), "bad");
+      });
+    }
+    if (id === "ghEnd") {
+      ghSetToken("");
+      state.gh = null;
+      state.adminEdit = null;
+      state.adminForm = {};
+      return adminNote("Session ended. The token is gone from this tab.", "info");
+    }
+    if (id === "aNew") { state.adminEdit = "new"; state.adminForm = {}; return adminNote(null); }
+    if (id === "aCancel") { state.adminEdit = null; state.adminForm = {}; return adminNote(null); }
+    if (node.hasAttribute && node.hasAttribute("data-aedit")) {
+      state.adminEdit = node.getAttribute("data-aedit");
+      state.adminForm = {};
+      renderAdmin();
+      var p = el("#adminPanel");
+      if (p && p.scrollIntoView) p.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    if (id === "aImgSet") {
+      var url = (el("#aImg").value || "").trim();
+      if (!url) return adminNote("Nothing to set.", "bad");
+      adminNote("Testing the image in this browser…");
+      /* The truth test runs BEFORE the write, never after. The admin panel must
+         not become the one path that can introduce a broken photograph. */
+      return imageWorks(url).then(function (ok) {
+        if (!ok) {
+          return adminNote("REFUSED — that URL did not render as an image in this "
+                           + "browser. It may be a 404, a hotlink block, or not an "
+                           + "image at all. Nothing was written.", "bad");
+        }
+        var eid = state.adminEdit, host = "";
+        try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {}
+        return adminCommit(function (p) {
+          var w = p.watches.filter(function (x) { return x.id === eid; })[0];
+          if (!w) throw new Error("That entry is no longer in the file.");
+          w.image = url;
+          w.imageCredit = w.imageCredit || host;
+          markManual(w, ["image", "imageCredit"]);
+          return p;
+        }, "Set the photograph for " + eid + " by hand\n\nManual edit through the admin "
+         + "panel. The URL was rendered in a real browser before being written, and "
+         + "`image` is now a manual field: the photograph pass will not re-resolve it, "
+         + "and the rot check will flag it rather than clear it if it breaks.");
+      });
+    }
+
+    if (id === "aImgClear") {
+      var cid = state.adminEdit;
+      return adminCommit(function (p) {
+        var w = p.watches.filter(function (x) { return x.id === cid; })[0];
+        if (!w) throw new Error("That entry is no longer in the file.");
+        w.image = null;
+        w.imageCredit = null;
+        /* Clearing is a request to hand the photograph BACK to automation, so
+           the manual claim on it is released rather than kept. */
+        w.manual = (w.manual || []).filter(function (f) { return f !== "image" && f !== "imageCredit"; });
+        if (!w.manual.length) delete w.manual;
+        delete w.imageProbe;
+        return p;
+      }, "Clear the photograph for " + cid + " and return it to automatic resolution");
+    }
+
+    if (id === "aRetract") {
+      var rid = state.adminEdit;
+      return adminCommit(function (p) {
+        var w = p.watches.filter(function (x) { return x.id === rid; })[0];
+        if (!w) throw new Error("That entry is no longer in the file.");
+        w.retracted = !w.retracted;
+        if (!w.retracted) delete w.retracted;
+        w.editedOn = todayISO();
+        w.editedBy = "admin";
+        return p;
+      }, "Retract " + rid + " from the register\n\nHidden, not deleted. A mistaken entry "
+       + "is part of the audit trail and a sold-out one is the historical record, so "
+       + "nothing is ever removed from data.json.");
+    }
+
+    if (id === "aRelease") {
+      var lid = state.adminEdit;
+      return adminCommit(function (p) {
+        var w = p.watches.filter(function (x) { return x.id === lid; })[0];
+        if (!w) throw new Error("That entry is no longer in the file.");
+        delete w.manual;
+        return p;
+      }, "Release " + lid + " back to automation\n\nEvery field on this entry is "
+       + "automation's again; the next run may change any of them.");
+    }
+
+    if (id === "aSave") {
+      var form = state.adminForm || {}, isNew = state.adminEdit === "new", eid2 = state.adminEdit;
+      var missing = ADMIN_REQUIRED.filter(function (f) {
+        var v = form[f] !== undefined ? form[f] : (isNew ? "" : (adminEntry(eid2) || {})[f]);
+        return !String(v || "").trim();
+      });
+      if (missing.length) {
+        return adminNote("Refused before committing — missing " + missing.join(", ") +
+                         ". A missing price is fine; a missing source is not, because an "
+                         + "entry with no provenance cannot carry an honest confidence "
+                         + "rating.", "bad");
+      }
+      var fields = Object.keys(form);
+      if (isNew) {
+        var nid = makeId(form.brand, form.model);
+        return adminCommit(function (p) {
+          if (p.watches.some(function (x) { return x.id === nid; })) {
+            /* Refuse on collision rather than overwrite: the id is derived from
+               brand and model, so a collision means this watch is already in the
+               register under another reading of its name. */
+            throw new Error("An entry with id " + nid + " already exists — that brand and "
+                            + "model are already in the register. Nothing was written.");
+          }
+          var w = { id: nid, image: null, imageCredit: null, verified: null,
+                    soldOutOn: null, addedOn: todayISO(), tags: [], priceNum: null };
+          ADMIN_FIELDS.forEach(function (f) { if (form[f] !== undefined) w[f] = form[f]; });
+          w.rank = 2; w.tier = "Retailer enquiry";
+          /* conf is chosen by the person, never defaulted high — a hand-added
+             entry starts out claiming exactly as much as they said it does. */
+          markManual(w, fields);
+          p.watches.push(w);
+          p.meta.count = p.watches.length;
+          p.meta.brands = uniqueBrands(p.watches);
+          return p;
+        }, "Add " + form.brand + " " + form.model + " by hand\n\nEntered through the admin "
+         + "panel. Its id is the same one the refresh job's scheme produces, so the two "
+         + "agree about which watch this is. Tier starts at Retailer enquiry and is "
+         + "earned upward by evidence, not asserted here.");
+      }
+      return adminCommit(function (p) {
+        var w = p.watches.filter(function (x) { return x.id === eid2; })[0];
+        if (!w) throw new Error("That entry is no longer in the file.");
+        fields.forEach(function (f) { w[f] = form[f]; });
+        if (form.price !== undefined) {
+          var n = parseFloat(String(form.price).replace(/[^0-9.]/g, ""));
+          w.priceNum = isNaN(n) ? null : n;
+        }
+        markManual(w, fields);
+        p.meta.brands = uniqueBrands(p.watches);
+        return p;
+      }, "Correct " + fields.join(", ") + " on " + eid2 + " by hand\n\nManual edit through "
+       + "the admin panel. These fields are now owned by a person: the refresh job may "
+       + "propose a change to any of them and will never commit one.");
+    }
+  }
+
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function uniqueBrands(list) {
+    var s = {};
+    list.forEach(function (w) { s[w.brand] = 1; });
+    return Object.keys(s).length;
+  }
+  /* Mirrors mark_manual() in scripts/refresh.py, including its refusal to let a
+     human own bookkeeping fields. */
+  function markManual(w, fields) {
+    var owned = {};
+    (w.manual || []).forEach(function (f) { owned[f] = 1; });
+    fields.forEach(function (f) { if (ADMIN_FIELDS.concat(["image", "imageCredit"]).indexOf(f) >= 0) owned[f] = 1; });
+    w.manual = Object.keys(owned).sort();
+    w.editedOn = todayISO();
+    w.editedBy = "admin";
+  }
+
+  /* Everything the panel commits goes through here, so the optimistic lock, the
+     manual-field marking, the commit message and the surfaced commit URL are
+     impossible to skip by adding another button later. */
+  function adminCommit(mutate, message) {
+    if (!ghToken()) return adminNote("No token — this session is read-only.", "bad");
+    adminNote("Saving…");
+    ghSave(mutate, message).then(function (url) {
+      state.adminEdit = null;
+      state.adminForm = {};
+      adminNote("Committed. " + (url || "") + "\nOne click from being reverted, which is "
+                + "the point of the data living in git.", "good");
+      /* Re-read the register so the page shows what was just written rather
+         than what it was showing before. */
+      return fetch("data.json", { cache: "no-store" }).then(function (r) { return r.json(); })
+        .then(function (p) { state.payload = p; });
+    }).catch(function (err) {
+      if (err && err.stale) {
+        state.gh = err.fresh;
+        adminNote("REFUSED — data.json changed since this edit was opened, so saving "
+                  + "would have erased a scheduled run's work.\n\nWhat changed:\n"
+                  + (err.changed.length ? err.changed.slice(0, 12).join("\n") : "(no field this panel tracks)")
+                  + "\n\nThe register has been reloaded. Re-apply the edit and save again.", "bad");
+        return;
+      }
+      adminNote(String(err && err.message || err), "bad");
+    });
+  }
+
+  /* THE IMAGE TRUTH TEST, and this is the one place the browser is a BETTER
+     instrument than the refresh job. CORS stops us reading a status code for a
+     third-party image, but we do not need one: loading it as an Image and asking
+     whether it decoded is precisely what a reader's browser does, from a real
+     page, with a real referer. A pass here means more than a 200 from CI does.
+     The admin panel must not become the one path that can introduce a broken
+     photograph, so nothing is written until this resolves true. */
+  function imageWorks(url) {
+    return new Promise(function (resolve) {
+      if (!/^https:\/\//.test(url || "")) return resolve(false);
+      var img = new Image(), done = false;
+      var finish = function (ok) { if (!done) { done = true; resolve(ok); } };
+      img.onload = function () { finish(img.naturalWidth > 1 && img.naturalHeight > 1); };
+      img.onerror = function () { finish(false); };
+      setTimeout(function () { finish(false); }, 12000);
+      img.src = url;
+    });
+  }
 
   /* ---- computed symmetric margins --------------------------------------- */
   /* The lower sections are not centred by a max-width — they carry an equal
@@ -530,7 +1100,10 @@ JS = r"""
     } else {
       descBlock = '<p style="font-family:\'Newsreader\',serif;font-size:17.5px;line-height:1.5;color:#17130d;margin:0 0 10px">' + esc(ov.desc || d.desc) + '</p>' +
         (state.admin
-          ? '<p style="margin:-4px 0 10px"><a data-desc-edit="' + esc(d.id) + '" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Edit description</a></p>'
+          ? '<p style="margin:-4px 0 10px;display:flex;gap:14px">' +
+            '<a data-desc-edit="' + esc(d.id) + '" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Edit description</a>' +
+            '<a data-aedit="' + esc(d.id) + '" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Edit in the register' +
+            ((d.manual || []).length ? ' (' + (d.manual || []).length + ' yours)' : '') + '</a></p>'
           : "");
     }
 
@@ -649,6 +1222,7 @@ JS = r"""
     renderChrome(byTier);
     renderArrows();
     renderJournal();
+    renderAdmin();
     hydrate(byTier);
   }
 
@@ -897,6 +1471,27 @@ JS = r"""
        — matched deliberately rather than "improved". */
     window.addEventListener("resize", applyMetrics);
 
+    /* Bound on the document rather than per input, because the panel re-renders
+       its own markup on every keystroke's worth of state change and per-node
+       listeners would be lost with it. Reads into state.adminForm only — the
+       diff and the commit both come from there, so what is previewed is exactly
+       what is written. */
+    document.addEventListener("input", function (e) {
+      var f = e.target.getAttribute && e.target.getAttribute("data-afield");
+      if (!f) return;
+      state.adminForm[f] = e.target.value;
+      /* Re-render the diff without rebuilding the inputs under the cursor. */
+      var d = adminDiff();
+      var box = el("#adminBody");
+      if (box) {
+        var save = box.querySelector("#aSave");
+        if (save) {
+          save.disabled = !(ghToken() && d.length);
+          save.setAttribute("style", ghToken() && d.length ? BTN : BTN_OFF);
+        }
+      }
+    });
+
     el("#q").addEventListener("input", function (e) { state.q = e.target.value; render(); });
     el("#sort").addEventListener("change", function (e) { state.sort = e.target.value; render(); });
     el("#reset").addEventListener("click", function () {
@@ -957,6 +1552,16 @@ JS = r"""
         }
         return;
       }
+      /* The write path. Kept in its own dispatcher because everything below it
+         can commit to the repository, and that is worth being able to read as
+         one block rather than finding interleaved with display handlers. */
+      var ad = e.target.closest("#ghStart,#ghEnd,#aNew,#aCancel,#aSave,#aImgSet,#aImgClear," +
+                                "#aRetract,#aRelease,[data-aedit]");
+      if (ad) {
+        e.stopPropagation();
+        return adminAction(ad);
+      }
+
       var row = e.target.closest(".wdi-row");
       if (row) toggle(row.parentNode.getAttribute("data-id"));
     });
@@ -996,6 +1601,11 @@ JS = r"""
            once here so nothing downstream has to know the old name. */
         var NOT_LE = [/not formally limited/i, /^capped/i, /annually/i];
         DATA = (p.watches || [])
+          /* Retracted entries are hidden here and nowhere else. Nothing is ever
+             deleted from data.json — a mistaken entry is part of the audit trail
+             and a sold-out one is the historical record — so retraction is a
+             display rule, exactly like the production-cap scope rule beside it. */
+          .filter(function (w) { return !w.retracted; })
           .filter(function (w) { var e = String(w.edition || "").trim(); return !NOT_LE.some(function (rx) { return rx.test(e); }); })
           .map(function (w) { return w.tier === "Retailer enquiry" ? Object.assign({}, w, { tier: "Buy at retailer", rank: 3 }) : w; });
         render();
@@ -1010,6 +1620,22 @@ JS = r"""
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
+
+  /* A named surface for test/template.test.js, which otherwise cannot reach
+     anything inside this IIFE. Exposing it costs nothing that was not already
+     available: this is a public static page, so whatever the page can do a
+     console on the page can do, and nothing here holds a secret — the token
+     lives in sessionStorage, which is equally reachable either way. What it
+     buys is real: the id scheme below MUST agree with Python's md5 on all 252
+     existing entries, and a hand-added entry whose id disagrees is a watch the
+     refresh job thinks is a different watch. That is worth an assertion. */
+  window.WDI = {
+    md5: md5, makeId: makeId, b64encode: b64encode, b64decode: b64decode,
+    ghError: ghError, ghWhatChanged: ghWhatChanged, ghSave: ghSave,
+    ghSetToken: ghSetToken, ghToken: ghToken, imageWorks: imageWorks,
+    renderAdmin: renderAdmin, adminDiff: adminDiff, markManual: markManual,
+    state: state,
+  };
 })();
 """
 
@@ -1331,6 +1957,18 @@ HTML = f"""<!DOCTYPE html>
     <!-- Editor's journal. Rendered to the reference exactly, but it only ever
          mounts for an unlocked admin (see adminUnlocked() in the script) — on
          the live site the query string alone is not a gate. -->
+    <!-- The write path. Same gate as the journal: it only ever mounts for an
+         unlocked admin, and on the live site the query string alone is not a
+         gate. Read-only until a token is pasted, and visibly so — a save button
+         that looks armed and quietly does nothing is worse than a disabled one,
+         because the edit appears to have been made. -->
+    <section id="adminPanel" style="display:none">
+      <div style="width:26px;height:2px;background:#8a5a2b;margin:64px 0 0"></div>
+      {H2.format(m='12px 0 4px', t='The register — editing')}
+      <p style="color:#8a8071;font-size:13.5px;margin:0 0 14px;max-width:720px">Edits here commit straight to <code>data.json</code> on <code>main</code>, which on this repository is the deploy. Every save is previewed first, names what it changed, and is one click from being reverted. Fields you edit become <b>yours</b>: the refresh job may propose a change to them and will never make one.</p>
+      <div id="adminBody"></div>
+    </section>
+
     <section id="journal" style="display:none">
       <div style="width:26px;height:2px;background:#8a5a2b;margin:64px 0 0"></div>
       {H2.format(m='12px 0 4px', t="Editor's journal — name changes")}

@@ -871,6 +871,90 @@ R.apply_tier(demoted)
 check("a re-derivation keeps the demotion instead of reverting it",
       (demoted["tier"], demoted["rank"]), ("Retailer enquiry", 2))
 
+section("A human edit wins, permanently, until a human releases it")
+# The failure mode: Lowell hand-corrects a price on Sunday and Monday's run puts
+# it back. Same shape as the demotion bug — two rules disagree and the one on a
+# timer wins every time, so the edit survives exactly until nobody is watching.
+R.PROPOSALS.clear()
+e = entry(id="0000000011", price="$9,999", priceNum=9999)
+R.mark_manual(e, ["price", "priceNum"])
+check("the fields are recorded as owned", e["manual"], ["price", "priceNum"])
+check("...and stamped with when and by whom", (e["editedOn"], e["editedBy"]), (R.today(), "admin"))
+check("a guarded write to an owned field is refused",
+      R.guarded_set(e, "price", "$1,000", "found on the brand page"), False)
+check("...and the value is untouched", e["price"], "$9,999")
+check("...and the disagreement is PROPOSED, not swallowed", len(R.PROPOSALS), 1)
+check("...naming the field and both values",
+      (R.PROPOSALS[0]["field"], R.PROPOSALS[0]["from"], R.PROPOSALS[0]["to"]),
+      ("price", "$9,999", "$1,000"))
+check("an unowned field still writes normally",
+      (R.guarded_set(e, "desc", "new copy"), e["desc"]), (True, "new copy"))
+R.PROPOSALS.clear()
+check("writing the SAME value to an owned field proposes nothing",
+      (R.guarded_set(e, "price", "$9,999"), len(R.PROPOSALS)), (False, 0))
+check("bookkeeping fields can never be owned by a human",
+      (R.mark_manual(e, ["imageProbe", "deadImages"]), "imageProbe" in e["manual"]), (None, False))
+R.release_manual(e, ["price"])
+check("releasing one field leaves the others owned", e["manual"], ["priceNum"])
+check("...and automation can write it again",
+      (R.guarded_set(e, "price", "$1,000"), e["price"]), (True, "$1,000"))
+R.release_manual(e)
+check("releasing everything drops the key", "manual" in e, False)
+
+# Tier and rank are two spellings of one fact and must be guarded together, or a
+# row renders one thing and filters as another.
+R.PROPOSALS.clear()
+pinned = entry(id="0000000012", status="Available", tier="Gone", rank=6, tags=[],
+               buyLabel="Add to cart", manual=["tier"])
+R.apply_tier(pinned)
+check("a pinned tier is not re-derived", (pinned["tier"], pinned["rank"]), ("Gone", 6))
+check("...and the derivation is proposed instead", len(R.PROPOSALS), 1)
+R.PROPOSALS.clear()
+pinned_rank = entry(id="0000000013", status="Available", tier="Gone", rank=6, tags=[],
+                    buyLabel="Add to cart", manual=["rank"])
+R.apply_tier(pinned_rank)
+check("owning rank alone also protects tier", pinned_rank["tier"], "Gone")
+
+# The whole point, end to end: a simulated refresh must not move a manual entry.
+R.PROPOSALS.clear()
+owned = entry(id="0000000014", status="Available", manual=["status"])
+run_stage2([owned], StubModel(default=verdict("no", "sold_out", "Sold out.", "high")))
+check("a sell-out cannot flip a manually owned status", owned["status"], "Available")
+check("...and the tier does not move either", owned["tier"], "Buy online now")
+check("...but the page is still QUOTED, because evidence is not a claim",
+      owned["verified"]["note"], 'Purchase page reads: "Sold out."')
+free = entry(id="0000000015", status="Available")
+run_stage2([free], StubModel(default=verdict("no", "sold_out", "Sold out.", "high")))
+check("an unowned entry still flips exactly as before", free["status"], "Sold out")
+
+section("A hand-picked photograph is flagged when it breaks, never replaced")
+# A human chose that picture. The machine reports the problem; it does not
+# overrule the choice by scraping an og:image over the top of it.
+mine = entry(id="0000000016", image="https://img.example/chosen.jpg",
+             imageCredit="Lowell", manual=["image"])
+s = rot_stage([mine], {mine["image"]: ("rotted", "HTTP 404")})
+check("a broken manual image is KEPT", mine["image"], "https://img.example/chosen.jpg")
+check("...and its credit is kept too", mine["imageCredit"], "Lowell")
+check("...and it is flagged for a person", len(s["flagged"]), 1)
+check("...and marked as needing a human, not as ordinary rot",
+      (mine["imageCheck"]["result"], mine["imageCheck"]["manual"]), ("rotted", True))
+check("...and it is NOT queued for automatic re-resolution",
+      len(R.photo_candidates([mine])), 0)
+auto = entry(id="0000000017", image="https://img.example/auto.jpg", imageCredit="SJX")
+rot_stage([auto], {auto["image"]: ("rotted", "HTTP 404")})
+check("an automatic image still gets cleared exactly as before", auto["image"], None)
+
+section("Retracted entries are hidden, never deleted")
+# Never delete: a mistaken entry is part of the audit trail and a sold-out one is
+# the historical record.
+gone = entry(id="0000000018", retracted=True, rank=0)
+check("a retracted entry reads as retracted", R.is_retracted(gone), True)
+check("an ordinary entry does not", R.is_retracted(entry()), False)
+check("it is not worth spending a stock check on",
+      len([w for w in [gone, entry(id="0000000019", rank=0)]
+           if w["rank"] <= 2 and not R.is_retracted(w)]), 1)
+check("...nor a photograph probe", len(R.photo_candidates([gone])), 0)
+
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())
 (tmp / "data.json").write_text("{ this is not json")

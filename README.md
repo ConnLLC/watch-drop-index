@@ -110,6 +110,60 @@ The gate is a shared secret: only the SHA-256 of the token is published, in
 Nothing behind the gate writes to the register, so this protects editorial machinery
 rather than data.
 
+### Editing the register from the page
+
+Behind the same `?admin=` gate, **The register — editing** can change an entry, set or
+clear a photograph, and add an entry. All three are the same operation underneath: a JSON
+edit plus a commit, through the GitHub Contents API — the one write path a static site has.
+
+**The token.** This page is static and public, so any secret the page needs is a published
+secret; there is no server to keep one behind. So Lowell **pastes a fine-grained PAT** to
+start an editing session:
+
+> Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+> **Only select repositories: `ConnLLC/watch-drop-index`** → Repository permissions →
+> **Contents: Read and write** → nothing else → 90-day expiry.
+
+It is held in `sessionStorage` for that tab only — never `localStorage`, never the repo,
+never the HTML, never a build artifact, never a URL, never an error message. It dies when
+the tab closes. GitHub's own error bodies are rewritten before display, because an error
+body can echo the request and the request carries the token. With no token the panel is
+**read-only and says so**: the save button is visibly disabled rather than silently doing
+nothing, because a save that looks armed and no-ops is worse than one that is greyed out.
+
+Blast radius if it leaks is one public hobby repo. That is proportionate; anything wider
+would not be.
+
+**Optimistic locking is mandatory.** The daily and weekly jobs commit to this same file on
+a schedule. Every save re-reads `data.json` immediately before writing, and if the `sha`
+has moved it is **refused** — not merged, not retried, not last-write-wins. The panel
+reloads and shows what changed underneath the edit. A last-write-wins panel would silently
+erase a scheduled run, or a run would erase the edit.
+
+**A human edit wins, permanently, until a human releases it.** Fields you change are added
+to the entry's `manual` list, and from then on the refresh job may **propose** a change to
+them and will **never commit** one; proposals are collected in the run report. The same
+holds for a photograph you choose by hand: the photograph pass will not re-resolve it, and
+if it breaks the rot check **flags** it rather than clearing it — a person chose that
+picture, so the machine reports the problem instead of overruling the choice. One click
+releases a field back to automation. Identical in principle to the standing rule for the
+curated editorial claims: propose, never commit.
+
+**Nothing is ever deleted.** A mistaken entry is part of the audit trail and a sold-out one
+is the historical record, so "remove" is a `retracted` flag that stops it rendering.
+
+Two details worth knowing if you touch this code:
+
+- **Ids are MD5.** The scheme is `md5("brand|model".lower())[:10]` and it is immutable —
+  rewriting one orphans that watch's verification history. Web Crypto has no MD5, so the
+  panel carries its own implementation, and `test/template.test.js` asserts it reproduces
+  **all 252 existing ids**. A hand-added entry whose id disagrees is a watch the refresh
+  job thinks is a different watch.
+- **A manually entered image URL is truth-tested before it is written**, by loading it as
+  an `Image` and checking it decoded. This is the one place the browser is a *better*
+  instrument than CI: it is a real browser, on the real page, with a real referer. CORS
+  stops us reading a status code, and we do not need one.
+
 ### Running it locally
 
 Browsers block `fetch()` on `file://`, so opening `index.html` by double-clicking shows

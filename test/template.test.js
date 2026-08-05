@@ -10,6 +10,7 @@
 const fs = require("fs");
 const path = require("path");
 const { JSDOM } = require("jsdom");
+const { TextEncoder, TextDecoder } = require("util");
 
 const ROOT = path.join(__dirname, "..");
 const HTML = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
@@ -34,6 +35,7 @@ async function load(payload, hash = "") {
   // broken gate pass this suite by looking exactly like a locked one.
   Object.defineProperty(w, "crypto", { value: require("node:crypto").webcrypto, configurable: true });
   w.TextEncoder = TextEncoder;
+  w.TextDecoder = TextDecoder;   // the admin panel's base64 round-trip needs both
   w.Element.prototype.scrollIntoView = function () {};
   w.scrollTo = function () {};
   w.fetch = async () => ({ ok: true, status: 200, json: async () => payload });
@@ -232,6 +234,87 @@ const keep = (list) => list
         w.document.querySelectorAll("template[data-dial]").length, 4); // plain needs no markup
   check("stat ledger is a ruled register, not a sentence",
         w.document.querySelectorAll('[data-mq="hstats"] [id^="t-"]').length, 5);
+
+  console.log("\n=== 5b. THE ADMIN WRITE PATH ===");
+  // These assert the things that would be SILENT failures — a token leaking into
+  // the page, a stale write erasing a scheduled run, an id that disagrees with
+  // the refresh job about which watch it is.
+  w = await load(BASE);
+
+  // The id scheme is md5("brand|model" lowercased) sliced to ten hex characters,
+  // and it is immutable: rewriting one orphans that watch's verification
+  // history. Web Crypto has no MD5, so the panel carries its own — which is only
+  // safe if it agrees with Python's on every entry that already exists.
+  check("the panel's id scheme reproduces every id in the register", (() => {
+    const bad = BASE.watches.filter((x) => w.WDI.makeId(x.brand, x.model) !== x.id);
+    return bad.length ? `${bad.length} mismatched, first: ${bad[0].id}` : true;
+  })(), true);
+  check("...including non-ASCII brand names, which is where btoa/latin-1 breaks", (() => {
+    const acc = BASE.watches.find((x) => /[^\x00-\x7F]/.test(x.brand + x.model));
+    if (!acc) return true;
+    return w.WDI.makeId(acc.brand, acc.model) === acc.id;
+  })(), true);
+  check("base64 round-trips UTF-8 rather than mangling it",
+        w.WDI.b64decode(w.WDI.b64encode("Girard-Perregaux Laureato — Grönefeld ✓")),
+        "Girard-Perregaux Laureato — Grönefeld ✓");
+
+  // THE TOKEN. It must never reach the DOM, a URL, or an error message.
+  w.WDI.ghSetToken("ghp_TESTTOKEN_shouldneverappear");
+  check("a stored token is in sessionStorage, not localStorage", (() => {
+    const inSession = w.sessionStorage.getItem("wdi-gh-pat");
+    const leaked = Object.keys(w.localStorage).some(
+      (k) => String(w.localStorage.getItem(k)).includes("shouldneverappear"));
+    return inSession && !leaked;
+  })(), true);
+  w.WDI.state.admin = true; w.WDI.renderAdmin();
+  check("the token never appears in the rendered page",
+        w.document.body.innerHTML.includes("shouldneverappear"), false);
+  check("...nor in the URL", w.location.href.includes("shouldneverappear"), false);
+  check("...and GitHub's error text is rewritten, never echoed back", (() => {
+    const msg = w.WDI.ghError({status: 401});
+    return !msg.includes("shouldneverappear") && /token/i.test(msg);
+  })(), true);
+  w.WDI.ghSetToken("");
+  check("ending a session removes it", w.sessionStorage.getItem("wdi-gh-pat"), null);
+
+  // WITHOUT A TOKEN THE PANEL IS READ-ONLY — visibly, not silently. A save that
+  // looks armed and no-ops is worse than one that is disabled, because the edit
+  // appears to have been made.
+  Object.assign(w.WDI.state, {admin: true, adminEdit: "new", adminForm: {brand: "X"}}); w.WDI.renderAdmin();
+  check("with no token the save is disabled",
+        w.document.querySelector("#aSave").disabled, true);
+  check("...and says why", /read-only/i.test(w.document.querySelector("#aSave").textContent), true);
+
+  // OPTIMISTIC LOCKING. The daily and weekly jobs commit to this same file, so a
+  // save built on a stale copy would erase whatever a run wrote in between.
+  check("a moved sha is REFUSED, not merged", await (async () => {
+    w.WDI.ghSetToken("t"); w.WDI.state.gh = {sha: "OLD", payload: {watches: []}};
+    let putCalled = false;
+    w.fetch = async (url, opts) => {
+      if (opts && opts.method === "PUT") { putCalled = true; return { ok: true, status: 200, json: async () => ({}) }; }
+      return { ok: true, status: 200, json: async () => ({
+        sha: "NEW", content: w.WDI.b64encode(JSON.stringify({watches: []})) }) };
+    };
+    try {
+      await w.WDI.ghSave((p) => p, "m");
+      return "the save went through";
+    } catch (err) {
+      if (!err.stale) return `wrong error: ${err.message}`;
+      return putCalled ? "it wrote anyway" : true;
+    }
+  })(), true);
+  check("...and the refusal explains what changed underneath it", (() => {
+    const changed = w.WDI.ghWhatChanged(
+      {watches: [{id: "a", brand: "B", model: "M", price: "$1"}]},
+      {watches: [{id: "a", brand: "B", model: "M", price: "$2"}]});
+    return changed.length === 1 && changed[0].includes("price");
+  })(), true);
+
+  // A manually entered image is truth-tested BEFORE it is written, so the panel
+  // cannot become the one path that introduces a broken photograph.
+  check("a non-https image URL is refused without a network call",
+        await w.WDI.imageWorks("http://example.com/a.jpg"), false);
+  check("...and an empty one too", await w.WDI.imageWorks(""), false);
 
   console.log("\n=== 6. THE MOBILE CONTRACT ===");
   // The whole ≤720px pass keys off data-mq and nothing else, so a renamed hook
