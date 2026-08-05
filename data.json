@@ -6,7 +6,7 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 5,
+    "revision": 6,
     "domain": "watchdropindex.com",
     "imagesResolved": 221
   },
@@ -47,7 +47,12 @@
       "imageSize": [
         1366,
         768
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -87,7 +92,12 @@
       "imageSize": [
         1024,
         1024
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -124,6 +134,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "HTTP 202"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -160,6 +175,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "HTTP 403"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -196,6 +216,11 @@
         "date": "2026-08-04",
         "result": "dead",
         "note": "HTTP 404"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -233,6 +258,11 @@
         "date": "2026-08-04",
         "result": "dead",
         "note": "HTTP 404"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -294,8 +324,8 @@
         "Stone dial"
       ],
       "id": "c1fc881646",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -309,7 +339,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -331,8 +366,8 @@
         "Buy online"
       ],
       "id": "3742f1912d",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -342,6 +377,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "HTTP 403"
+      },
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
       }
     },
     {
@@ -381,7 +421,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Farer",
@@ -421,7 +466,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Grand Seiko",
@@ -458,7 +508,12 @@
       "imageSize": [
         1600,
         1066
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Grand Seiko",
@@ -496,7 +551,12 @@
       "imageSize": [
         1200,
         630
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Hamilton",
@@ -596,8 +656,8 @@
         "Anniversary"
       ],
       "id": "c5d8a2932b",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -611,7 +671,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "King Seiko",
@@ -634,8 +699,8 @@
         "Anniversary"
       ],
       "id": "2ec35534c0",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -649,7 +714,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Longines",
@@ -762,7 +832,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Louis Erard",
@@ -800,7 +875,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Louis Erard",
@@ -823,8 +903,8 @@
         "Buy online"
       ],
       "id": "a1b78c5069",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -838,7 +918,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Marathon",
@@ -879,7 +964,12 @@
       "imageSize": [
         2560,
         1097
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Ming × J.N. Shapiro",
@@ -917,7 +1007,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Montblanc",
@@ -939,8 +1034,8 @@
         "Buy online"
       ],
       "id": "6439084b5e",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -954,7 +1049,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Montblanc",
@@ -976,8 +1076,8 @@
         "Buy online"
       ],
       "id": "9285eb23d1",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -991,7 +1091,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Montblanc",
@@ -1013,8 +1118,8 @@
         "Buy online"
       ],
       "id": "f214e1ccd1",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1028,7 +1133,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Nodus × Raven",
@@ -1064,6 +1174,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -1105,7 +1220,12 @@
       "imageSize": [
         1750,
         986
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Sarpaneva",
@@ -1165,8 +1285,8 @@
         "Collab"
       ],
       "id": "7a9358068b",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1180,7 +1300,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Seiko 5 Sports",
@@ -1203,8 +1328,8 @@
         "Collab"
       ],
       "id": "04e3517bea",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1218,7 +1343,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko 5 Sports",
@@ -1241,8 +1371,8 @@
         "Collab"
       ],
       "id": "039c98b92c",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1256,7 +1386,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Astron",
@@ -1278,8 +1413,8 @@
         "Buy online"
       ],
       "id": "55a4e3d7d3",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1293,7 +1428,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Astron",
@@ -1316,8 +1456,8 @@
         "Anniversary"
       ],
       "id": "c64eaa14c5",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1331,7 +1471,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Presage",
@@ -1354,8 +1499,8 @@
         "Anniversary"
       ],
       "id": "72caa08841",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1369,7 +1514,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Presage",
@@ -1392,8 +1542,8 @@
         "Anniversary"
       ],
       "id": "27c2369217",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1407,7 +1557,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Presage",
@@ -1430,8 +1585,8 @@
         "Anniversary"
       ],
       "id": "b7f4682af2",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1445,7 +1600,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Prospex",
@@ -1468,8 +1628,8 @@
         "Anniversary"
       ],
       "id": "d6701e4615",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1483,7 +1643,12 @@
       "imageSize": [
         1200,
         675
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Prospex",
@@ -1506,8 +1671,8 @@
         "Anniversary"
       ],
       "id": "13ace13046",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1521,7 +1686,12 @@
       "imageSize": [
         1200,
         675
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Prospex",
@@ -1544,8 +1714,8 @@
         "Collab"
       ],
       "id": "5525894899",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1559,7 +1729,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Prospex",
@@ -1583,8 +1758,8 @@
         "Collab"
       ],
       "id": "c598e26767",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1598,7 +1773,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko Prospex",
@@ -1621,8 +1801,8 @@
         "Anniversary"
       ],
       "id": "13983c5f13",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1636,7 +1816,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Seiko × Rowing Blazers × Wind Vintage",
@@ -1659,8 +1844,8 @@
         "Collab"
       ],
       "id": "15c82758d3",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1674,7 +1859,12 @@
       "imageSize": [
         1998,
         1333
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Seiko × SEGA",
@@ -1744,6 +1934,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -1789,6 +1984,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "og:image is a URL already proven dead"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -1812,8 +2012,8 @@
         "Collab"
       ],
       "id": "789ee8a282",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1827,7 +2027,12 @@
       "imageSize": [
         1750,
         986
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Studio Underd0g × Time+Tide",
@@ -1850,8 +2055,8 @@
         "Collab"
       ],
       "id": "02ba3cbd77",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1865,7 +2070,12 @@
       "imageSize": [
         1750,
         986
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Timex × Hodinkee",
@@ -1903,7 +2113,12 @@
       "imageSize": [
         1200,
         675
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Timex × Worn & Wound",
@@ -1945,6 +2160,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "og:image is a URL already proven dead"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -1986,7 +2206,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Trilobe",
@@ -2027,7 +2252,12 @@
       "imageSize": [
         1600,
         1600
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Unimatic",
@@ -2064,7 +2294,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Unimatic",
@@ -2086,8 +2321,8 @@
         "Buy online"
       ],
       "id": "2b4f2807d3",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
@@ -2104,7 +2339,12 @@
       "imageSize": [
         1024,
         576
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Unimatic × Tullio Abbate",
@@ -2142,7 +2382,12 @@
       "imageSize": [
         1366,
         768
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Wren / Ben's Watches",
@@ -2164,8 +2409,8 @@
         "Buy online"
       ],
       "id": "843fa81555",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Retailer enquiry",
+      "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -2179,7 +2424,12 @@
       "imageSize": [
         2800,
         650
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Yema",
@@ -2219,7 +2469,12 @@
       "imageSize": [
         1200,
         628
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Yema",
@@ -2259,7 +2514,12 @@
       "imageSize": [
         1200,
         628
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Zodiac × Worn & Wound",
@@ -2301,6 +2561,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "og:image is a URL already proven dead"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -2418,7 +2683,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2455,7 +2725,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2493,7 +2768,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2530,7 +2810,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2565,7 +2850,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2602,7 +2892,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -2639,7 +2934,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -2712,7 +3012,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Chopard",
@@ -2749,7 +3054,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Chopard",
@@ -2786,7 +3096,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Citizen",
@@ -2816,6 +3131,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -2853,7 +3173,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Citizen",
@@ -2888,7 +3213,12 @@
       "imageSize": [
         1098,
         1373
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Hublot",
@@ -3027,6 +3357,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -3057,6 +3392,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -3089,6 +3429,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -3127,7 +3472,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Omega",
@@ -3315,7 +3665,12 @@
       "imageSize": [
         480,
         271
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "TAG Heuer",
@@ -3429,7 +3784,12 @@
       "imageSize": [
         2000,
         1333
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Omega",
@@ -3498,6 +3858,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -3530,6 +3895,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -3568,7 +3938,12 @@
       "imageSize": [
         1256,
         707
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "A. Lange & Söhne",
@@ -3603,7 +3978,12 @@
       "imageSize": [
         1800,
         1800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "A. Lange & Söhne",
@@ -3638,7 +4018,12 @@
       "imageSize": [
         1800,
         1800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3675,7 +4060,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3710,7 +4100,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3745,7 +4140,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3780,7 +4180,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3817,7 +4222,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3852,7 +4262,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Armin Strom",
@@ -3887,7 +4302,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Audemars Piguet",
@@ -3924,7 +4344,12 @@
       "imageSize": [
         649,
         365
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Audemars Piguet",
@@ -3959,7 +4384,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Blancpain",
@@ -4101,7 +4531,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Bovet",
@@ -4136,7 +4571,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Breguet",
@@ -4321,7 +4761,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Breitling",
@@ -4356,7 +4801,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Bvlgari",
@@ -4669,7 +5119,12 @@
       "imageSize": [
         644,
         1200
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Casio G-Shock",
@@ -4805,7 +5260,12 @@
       "imageSize": [
         2560,
         989
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Chopard",
@@ -4842,7 +5302,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Citizen",
@@ -4879,7 +5344,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Citizen",
@@ -4993,7 +5463,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Credor",
@@ -5031,7 +5506,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Credor",
@@ -5069,7 +5549,12 @@
       "imageSize": [
         1000,
         1000
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -5104,7 +5589,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -5135,6 +5625,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "HTTP 403"
+      },
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
       }
     },
     {
@@ -5170,7 +5665,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -5207,7 +5707,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Czapek & Cie",
@@ -5242,7 +5747,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "De Bethune",
@@ -5279,7 +5789,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "De Bethune × Louis Vuitton",
@@ -5312,6 +5827,11 @@
         "date": "2026-08-04",
         "result": "ok",
         "note": "image/jpeg"
+      },
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -5459,7 +5979,12 @@
       "imageSize": [
         1200,
         630
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Grand Seiko",
@@ -5684,7 +6209,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Greubel Forsey",
@@ -5721,7 +6251,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Greubel Forsey",
@@ -5756,7 +6291,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Grönefeld",
@@ -5787,6 +6327,11 @@
         "date": "2026-08-04",
         "result": "ok",
         "note": "image/avif"
+      },
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
       }
     },
     {
@@ -5824,7 +6369,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "H. Moser & Cie.",
@@ -5859,7 +6409,12 @@
       "imageSize": [
         1919,
         930
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "H. Moser & Cie.",
@@ -5898,7 +6453,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "H. Moser & Cie.",
@@ -5935,7 +6495,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "H. Moser & Cie. × Reebok",
@@ -5972,7 +6537,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Hublot",
@@ -6046,7 +6616,12 @@
       "imageSize": [
         2560,
         1708
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Hublot",
@@ -6258,7 +6833,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -6293,7 +6873,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -6328,7 +6913,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -6365,7 +6955,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -6402,7 +6997,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Jaeger-LeCoultre",
@@ -6437,7 +7037,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "King Seiko",
@@ -6510,7 +7115,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Krayon",
@@ -6545,7 +7155,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "MB&F",
@@ -6580,7 +7195,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "MB&F",
@@ -6615,7 +7235,12 @@
       "imageSize": [
         1920,
         1440
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "MB&F",
@@ -6652,7 +7277,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Ming",
@@ -6689,7 +7319,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Oris",
@@ -6726,7 +7361,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Panerai",
@@ -6908,7 +7548,12 @@
       "imageSize": [
         1200,
         766
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -6945,7 +7590,12 @@
       "imageSize": [
         1200,
         766
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -6982,7 +7632,12 @@
       "imageSize": [
         1200,
         766
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Parmigiani Fleurier",
@@ -7019,7 +7674,12 @@
       "imageSize": [
         1200,
         766
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Patek Philippe",
@@ -7056,7 +7716,12 @@
       "imageSize": [
         649,
         365
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Patek Philippe",
@@ -7093,7 +7758,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Patek Philippe",
@@ -7130,7 +7800,12 @@
       "imageSize": [
         649,
         365
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Patek Philippe",
@@ -7167,7 +7842,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Ressence × Marc Newson",
@@ -7239,7 +7919,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "TAG Heuer",
@@ -7351,7 +8036,12 @@
       "imageSize": [
         1280,
         695
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Ulysse Nardin",
@@ -7382,6 +8072,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "HTTP 403"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -7420,7 +8115,12 @@
       "imageSize": [
         976,
         1315
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Urwerk",
@@ -7457,7 +8157,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Urwerk",
@@ -7492,7 +8197,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Urwerk",
@@ -7527,7 +8237,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Urwerk",
@@ -7564,7 +8279,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Vacheron Constantin",
@@ -7997,7 +8717,12 @@
       "imageSize": [
         1888,
         1333
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "M.A.D.Editions (MB&F)",
@@ -8034,7 +8759,12 @@
       "imageSize": [
         1100,
         667
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Studio Underd0g",
@@ -8069,7 +8799,12 @@
       "imageSize": [
         1100,
         667
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "TAG Heuer",
@@ -8144,7 +8879,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Baltic × SpaceOne",
@@ -8181,7 +8921,12 @@
       "imageSize": [
         1600,
         1067
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Blancpain",
@@ -8354,7 +9099,12 @@
       "imageSize": [
         2000,
         1333
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Citizen",
@@ -8391,7 +9141,12 @@
       "imageSize": [
         1280,
         695
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Furlan Marri",
@@ -8428,7 +9183,12 @@
       "imageSize": [
         2000,
         2000
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Glashütte Original",
@@ -8468,7 +9228,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Grand Seiko",
@@ -8540,6 +9305,11 @@
         "date": "2026-08-04",
         "result": "ok",
         "note": "image/avif"
+      },
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
       }
     },
     {
@@ -8577,7 +9347,12 @@
       "imageSize": [
         1200,
         628
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Kurono Tokyo",
@@ -8610,6 +9385,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -8643,6 +9423,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -8681,7 +9466,12 @@
       "imageSize": [
         649,
         365
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Ming",
@@ -8718,7 +9508,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Ming",
@@ -8755,7 +9550,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -8792,7 +9592,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "brand",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "does not name this watch (homepage or category page)"
+      }
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -8830,7 +9635,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -8867,7 +9677,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Naoya Hida & Co.",
@@ -8904,7 +9719,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Nivada Grenchen",
@@ -8934,6 +9754,11 @@
       "imageProbe": {
         "date": "2026-08-04",
         "result": "none"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -9051,7 +9876,12 @@
       "imageSize": [
         1074,
         716
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch and offers a way to buy it"
+      }
     },
     {
       "brand": "Simon Brette",
@@ -9162,7 +9992,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     },
     {
       "brand": "Vacheron Constantin",
@@ -9237,7 +10072,12 @@
       "imageSize": [
         2100,
         1400
-      ]
+      ],
+      "buyKind": "listing",
+      "buyCheck": {
+        "date": "2026-08-04",
+        "note": "names the watch but offers no purchase"
+      }
     }
   ],
   "calendar": {

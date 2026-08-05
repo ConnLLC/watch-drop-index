@@ -45,6 +45,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import collections
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -234,9 +235,19 @@ def outlet_for(url: str) -> str:
     return OUTLETS.get(d, d)
 
 
-def rank_for(status: str, buy_label: str, tags: list[str]) -> int:
+def rank_for(status: str, buy_label: str, tags: list[str], buy_kind: str | None = None) -> int:
     """Tier derivation. Describes how the brand distributes the watch — never
-    a guess about whether stock remains."""
+    a guess about whether stock remains.
+
+    `buy_kind` is the evidence from stage 8, and it can only ever DEMOTE. "Buy
+    online now" is the strongest claim here, and it has to be earned: if we have
+    looked at the page and a reader cannot buy the watch there, the honest
+    answer is a retailer enquiry.
+
+    This lives inside the derivation rather than as a separate pass on purpose.
+    A demotion applied on top of this function would be silently reverted the
+    next time an availability check re-derived the tier — two rules disagreeing,
+    with the weaker one winning every Monday."""
     if status == "Sold out":
         return 6
     if status == "Event only":
@@ -249,12 +260,19 @@ def rank_for(status: str, buy_label: str, tags: list[str]) -> int:
         return 1
     if status in ("Available", "Pre-order"):
         purchasable = bool(PURCHASE_LABEL.search(buy_label or "")) or "Buy online" in (tags or [])
-        return 0 if purchasable else 2
+        if not purchasable:
+            return 2
+        # Known-and-not-product demotes. UNKNOWN does not: an unreachable page
+        # is silence, and silence has never been allowed to move an entry here.
+        if buy_kind is not None and buy_kind != "product":
+            return 2
+        return 0
     raise ValueError(f"unknown status: {status!r}")
 
 
 def apply_tier(entry: dict) -> None:
-    entry["rank"] = rank_for(entry["status"], entry.get("buyLabel", ""), entry.get("tags", []))
+    entry["rank"] = rank_for(entry["status"], entry.get("buyLabel", ""),
+                             entry.get("tags", []), entry.get("buyKind"))
     entry["tier"] = TIERS[entry["rank"]]
 
 
@@ -947,6 +965,144 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
     return summary
 
 
+# ---------------------------------------------------- stage 8: the buy links
+"""
+"Buy online now" is the strongest claim this register makes, and for a large
+share of entries the link behind it is a brand homepage or a category page.
+Telling a reader to go and find it themselves is exactly the aggregator
+behaviour the site exists to beat.
+
+The second-order failure is worse than the first, and it is why this is not
+cosmetic: the Monday stock check fetches these same URLs and judges availability
+from them. A homepage cannot report that a watch is sold out — it reads as
+perfectly fine for ever. So for those entries the verification is structurally
+incapable of detecting the thing it exists to detect, and a green "Stock checked"
+note on one of them asserts more than we know.
+
+Classification is by EVIDENCE, not by URL shape:
+  product — the page names this watch AND offers a way to buy it
+  listing — the page names this watch but sells nothing (a review, a spec page)
+  brand   — the page never names it (homepage, category, collection)
+  none    — there is no URL to check
+
+A fetch failure is NOT a classification. Chat's four values have no slot for
+"we could not tell", and calling an unreachable page `brand` would invent a fact
+from silence — the one thing this job never does. Those keep whatever buyKind
+they had and are reported separately.
+"""
+
+# Words that appear in half the watch names ever made. Matching on these would
+# let a category page claim it names a specific watch.
+_GENERIC = {
+    "watch", "watches", "limited", "edition", "automatic", "chronograph", "steel",
+    "titanium", "bronze", "black", "blue", "green", "white", "silver", "gold",
+    "dial", "series", "collection", "special", "auto", "date", "diver", "gmt",
+    "the", "and", "with", "for", "new", "mens", "womens", "piece", "pieces",
+}
+
+# Purchase affordance, in the MARKUP rather than the prose — a cart button is a
+# form, an attribute or a schema.org Offer long before it is a word on screen.
+_CART = re.compile(
+    r"add[\s_-]*to[\s_-]*(cart|bag|basket)|/cart/add|single_add_to_cart_button|"
+    r"add_to_cart_button|data-product-id|\bbuy\s+now\b|\bpre-?order\b|"
+    r'"@type"\s*:\s*"Offer"|itemprop=["\']offers|name="add"|id="AddToCart',
+    re.I,
+)
+
+
+def _distinctive(text: str) -> set[str]:
+    return {t for t in re.findall(r"[a-z0-9]{3,}", text.lower()) if t not in _GENERIC}
+
+
+def names_the_watch(entry: dict, text: str) -> bool:
+    """Does this page actually identify THIS watch? A reference number is the
+    strongest signal; otherwise most of the distinctive words in the model name
+    have to appear. Erring towards 'no' is deliberate — a false negative
+    under-claims, a false positive tells a reader to buy something that is not
+    there."""
+    low = text.lower()
+    ref = str(entry.get("ref") or "").strip()
+    if ref and ref != "—" and len(ref) >= 4:
+        squashed = re.sub(r"[^a-z0-9]", "", ref.lower())
+        if len(squashed) >= 4 and squashed in re.sub(r"[^a-z0-9]", "", low):
+            return True
+    tokens = _distinctive(entry.get("model", ""))
+    if not tokens:
+        tokens = _distinctive(entry.get("brand", ""))
+    if not tokens:
+        return False
+    hit = sum(1 for t in tokens if t in low)
+    return hit / len(tokens) >= 0.6
+
+
+def classify_buy(entry: dict) -> tuple[str | None, str]:
+    url = entry.get("buy") or ""
+    if not url.startswith("http"):
+        return "none", "no url"
+    raw, note = fetch(url)
+    if raw is None:
+        return None, note                      # silence: not a classification
+    text = page_text(raw)
+    if len(text) < MIN_PAGE_TEXT:
+        return None, "page unreadable"
+    named = names_the_watch(entry, text)
+    sells = bool(_CART.search(raw)) or bool(jsonld_availability(raw))
+    if named and sells:
+        return "product", "names the watch and offers a way to buy it"
+    if named:
+        return "listing", "names the watch but offers no purchase"
+    return "brand", "does not name this watch (homepage or category page)"
+
+
+def stage_buy_links(watches: list[dict], only_rank: int | None = None) -> dict:
+    targets = [w for w in watches if only_rank is None or w["rank"] <= only_rank]
+    log(f"\n[8] BUY LINKS — classifying {len(targets)} links by evidence")
+    summary = {"kinds": collections.Counter(), "unreadable": [], "demote": [], "changed": []}
+    limiter = HostLimiter(PHOTO_HOST_DELAY)
+
+    def probe(w: dict) -> tuple[dict, str | None, str]:
+        kind, why = limiter.run(w.get("buy", ""), lambda: classify_buy(w))
+        return w, kind, why
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        for i, (w, kind, why) in enumerate(pool.map(probe, targets), 1):
+            if kind is None:
+                summary["unreadable"].append((w, why))
+                continue
+            if w.get("buyKind") and w["buyKind"] != kind:
+                summary["changed"].append((w, w["buyKind"], kind))
+            w["buyKind"] = kind
+            w["buyCheck"] = {"date": today(), "note": why}
+            summary["kinds"][kind] += 1
+            # The claim has to be earned: "Buy online now" means a page where the
+            # reader can actually buy it.
+            if w["rank"] == 0 and kind != "product":
+                summary["demote"].append((w, kind))
+            if i % 25 == 0:
+                log(f"    ...{i}/{len(targets)}")
+
+    log("    " + " · ".join(f"{k} {n}" for k, n in summary["kinds"].most_common())
+        + f" · unreadable {len(summary['unreadable'])}")
+    if summary["demote"]:
+        log(f"    {len(summary['demote'])} entries claim 'Buy online now' without a product page")
+    return summary
+
+
+def apply_buy_demotions(summary: dict) -> int:
+    """Tie the tier to the link. An entry we cannot point at a purchase page for
+    should not be telling readers they can buy it online — it becomes a retailer
+    enquiry until a real product URL is found. This LOWERS the headline
+    'buyable online' figure, and that is the point: the current number is partly
+    unearned.
+
+    Re-derives through apply_tier rather than assigning a tier directly, so the
+    stored rank is always something rank_for() would produce. Anything else
+    drifts the moment another stage re-derives it."""
+    for w, _kind in summary["demote"]:
+        apply_tier(w)
+    return len(summary["demote"])
+
+
 # ------------------------------------------------- stage 7: rotted image URLs
 """
 The photograph stage only ever looks at entries with NO image, so an image URL
@@ -1480,7 +1636,7 @@ def summary_n(rot: dict) -> int:
 
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
                  model: "Model | None" = None, cal: dict | None = None,
-                 rot: dict | None = None) -> str:
+                 rot: dict | None = None, buy: dict | None = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
 
     # Spend goes near the top and is reported on EVERY run, generous ceiling or
@@ -1573,6 +1729,38 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                   + ("never checked" if age >= 1e8 else f"last checked {int(age)} days ago")
                   for kind, i, age in cal["stale"]] + [""]
 
+    if buy:
+        kinds = buy["kinds"]
+        L += ["## Buy links", "",
+              "> The strongest claim this register makes is \"Buy online now\". This checks "
+              "the link behind it by evidence: does the page name this watch, and can a "
+              "reader actually buy it there?", "",
+              f"- **product** (names it, sells it): **{kinds.get('product', 0)}**",
+              f"- **listing** (names it, no purchase): **{kinds.get('listing', 0)}**",
+              f"- **brand** (never names it — homepage or category): **{kinds.get('brand', 0)}**",
+              f"- **none** (no URL at all): **{kinds.get('none', 0)}**",
+              f"- unreadable, left unclassified: **{len(buy['unreadable'])}**", ""]
+        if buy["demote"]:
+            L += [f"### {len(buy['demote'])} entries claim \"Buy online now\" without a page "
+                  "to buy from", "",
+                  "> The second-order problem is the worse one: the Monday stock check reads "
+                  "these same URLs. A homepage cannot report that a watch is sold out, so for "
+                  "these entries the verification cannot detect the thing it exists to detect.",
+                  ""]
+            L += [f"- **{w['brand']} {w['model']}** — `{kind}` · {w['buy']}"
+                  for w, kind in buy["demote"][:40]] + [""]
+        if buy["changed"]:
+            L += ["### Buy links that changed shape since last week", ""]
+            L += [f"- **{w['brand']} {w['model']}** — {was} → {now}" for w, was, now in buy["changed"]] + [""]
+        if buy["unreadable"]:
+            L += ["<details><summary>Unreadable buy links "
+                  f"({len(buy['unreadable'])}) — not classified, because silence is not "
+                  "evidence</summary>", "",
+                  "> These are also the entries whose weekly stock check cannot work: if we "
+                  "cannot read the page, neither can the verifier.", ""]
+            L += [f"- {w['brand']} {w['model']} — {why} · {w['buy']}" for w, why in buy["unreadable"]]
+            L += ["", "</details>", ""]
+
     if news:
         L += ["## New releases", "", f"- Added: **{len(news['added'])}**", ""]
         if news["added"]:
@@ -1608,7 +1796,7 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Weekly refresh for the Watch Drop Index.")
-    ap.add_argument("--stages", default="2,3,4,6,7", help="comma-separated stage numbers")
+    ap.add_argument("--stages", default="2,3,4,6,7,8", help="comma-separated stage numbers")
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
@@ -1616,6 +1804,8 @@ def main() -> int:
                     help="cap the photograph pass (0 = every entry that still has none)")
     ap.add_argument("--image-batch", type=int, default=IMAGE_CHECK_BATCH,
                     help="how many resolved photographs to re-check for rot (0 = all)")
+    ap.add_argument("--demote-unearned", action="store_true",
+                    help="drop 'Buy online now' entries that have no product page to buy from")
     ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
                     help="weekly ceiling in CAD for model spend (0 = no ceiling)")
     ap.add_argument("--corrections", type=Path, default=None,
@@ -1663,7 +1853,7 @@ def main() -> int:
     # they are never the thing a budget stop takes away. Running them after the
     # new-releases search also means this week's additions get their pictures
     # this week instead of next.
-    avail = photos = news = cal = rot = {}
+    avail = photos = news = cal = rot = buy = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
     if 4 in stages:
@@ -1674,6 +1864,15 @@ def main() -> int:
         rot = stage_image_rot(watches, args.image_batch)
     if 3 in stages:
         photos = stage_photos(watches, args.photo_batch)
+    # Free: fetch and parse, no model call. Runs every week because buy links
+    # rot and change shape without telling anyone.
+    if 8 in stages:
+        buy = stage_buy_links(watches)
+        if args.demote_unearned:
+            n = apply_buy_demotions(buy)
+            if n:
+                log(f"    demoted {n} entries out of 'Buy online now' — the claim was "
+                    "not backed by a page a reader can buy from")
     # Free and deterministic, so it runs whatever the budget did — the calendar
     # rotting is the one failure a reader can see without checking anything.
     if 6 in stages:
@@ -1691,7 +1890,7 @@ def main() -> int:
             f"({gone_now / start_count:.0%} of the register, cap is {GONE_BLAST_RADIUS:.0%}).")
         log("That pattern means the fetch layer broke, not that the market cleared.")
         write_report(meta, avail, photos, news, f"BLOCKED — {gone_now} Gone flips exceeds the "
-                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal, rot)
+                                                f"{GONE_BLAST_RADIUS:.0%} blast-radius cap. Not committed.", model, cal, rot, buy)
         return 20
 
     # Silence is a failure — but only silence we actually went looking for.
@@ -1703,7 +1902,7 @@ def main() -> int:
         log(f"\nFAILING: {attempted} availability checks and not one page was readable.")
         log("Silence on this scale is a broken fetch layer, not a quiet week.")
         write_report(meta, avail, photos, news, "FAILED — zero pages readable across "
-                                                f"{attempted} checks. Not committed.", model, cal, rot)
+                                                f"{attempted} checks. Not committed.", model, cal, rot, buy)
         return 21
 
     meta["updated"] = today()
@@ -1715,7 +1914,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.", model, cal, rot)
+        write_report(meta, avail, photos, news, "No changes.", model, cal, rot, buy)
         return 10
 
     parts = []
@@ -1741,7 +1940,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject, model, cal, rot)
+    write_report(meta, avail, photos, news, subject, model, cal, rot, buy)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")

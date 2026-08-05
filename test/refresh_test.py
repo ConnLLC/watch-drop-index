@@ -118,7 +118,8 @@ def run_stage2(entries, model, fetch_result=("<html><body>" + "x" * 600 + "</bod
 
 section("Tier derivation matches the live register")
 mismatch = [w for w in REAL["watches"]
-            if R.rank_for(w["status"], w.get("buyLabel", ""), w.get("tags", [])) != w["rank"]]
+            if R.rank_for(w["status"], w.get("buyLabel", ""), w.get("tags", []),
+                          w.get("buyKind")) != w["rank"]]
 check("all 252 ranks reproduced", len(mismatch), 0)
 check("all 252 ids reproduced", sum(1 for w in REAL["watches"]
                                     if R.make_id(w["brand"], w["model"]) == w["id"]), 252)
@@ -741,6 +742,108 @@ check("the oldest check outranks a recent one",
 check("batch 0 means everything", len(R.image_check_candidates(pool, 0)), 10)
 check("entries with no photograph are not candidates",
       len(R.image_check_candidates([entry(image=None)], 0)), 0)
+
+section("Buy links are classified by evidence, never by URL shape")
+# "Buy online now" is the strongest claim the register makes. A homepage behind
+# it is an unearned claim — and worse, the weekly stock check reads that same
+# URL, so a homepage reads as "fine" for ever and the verification cannot detect
+# the thing it exists to detect.
+BRE = {"brand": "Breitling", "model": 'Navitimer B01 Chronograph 43 "Tribute to Concorde"',
+       "ref": "AB01452A1L1X1"}
+check("a reference number identifies the watch",
+      R.names_the_watch(BRE, "product code ab01452a1l1x1, in stock"), True)
+check("...even punctuated differently",
+      R.names_the_watch(BRE, "Ref. AB01452-A1L1X1 available"), True)
+check("the model's distinctive words identify it",
+      R.names_the_watch(BRE, "The new Navitimer Tribute to Concorde has landed"), True)
+check("a homepage does not", R.names_the_watch(BRE, "Welcome to Breitling. Shop all watches."), False)
+check("nor does a generic category page",
+      R.names_the_watch(BRE, "Limited edition automatic chronograph watches in steel and gold"), False)
+
+for markup, label, want in [
+    ('<button name="add">Add to Cart</button>', "a cart button", True),
+    ('<form action="/cart/add">', "a cart form", True),
+    ('{"@type": "Offer", "price": 9500}', "a schema.org offer", True),
+    ("<a href='/x'>Pre-order now</a>", "a pre-order link", True),
+    ("<p>Read our full review of this watch.</p>", "a review with no purchase", False),
+]:
+    check(f"purchase affordance in {label}", bool(R._CART.search(markup)), want)
+
+
+def classify(entry, html, note="ok"):
+    orig = R.fetch
+    R.fetch = lambda url: (html, note)
+    try:
+        return R.classify_buy(entry)
+    finally:
+        R.fetch = orig
+
+
+body = "x" * 400
+e = {**BRE, "buy": "https://example.com/p"}
+check("names it and sells it -> product",
+      classify(e, f"<html><body>Navitimer Tribute to Concorde {body}"
+                  '<button name="add">Add to Cart</button></body></html>')[0], "product")
+check("names it but sells nothing -> listing",
+      classify(e, f"<html><body>Navitimer Tribute to Concorde. Find a retailer. {body}</body></html>")[0],
+      "listing")
+check("never names it -> brand",
+      classify(e, f"<html><body>Welcome to Breitling, shop all watches {body}"
+                  '<button name="add">Add to Cart</button></body></html>')[0], "brand")
+check("no URL at all -> none", R.classify_buy({**BRE, "buy": ""})[0], "none")
+
+# The rule that matters most: an unreachable page is NOT a classification.
+check("a 403 classifies nothing", classify(e, None, "HTTP 403")[0], None)
+check("a timeout classifies nothing", classify(e, None, "fetch failed: Timeout")[0], None)
+check("a too-short page classifies nothing", classify(e, "<html>tiny</html>")[0], None)
+check("...and the reason is carried through", classify(e, None, "HTTP 403")[1], "HTTP 403")
+
+section("The tier has to be earned by the link")
+w1 = entry(id="0000000001", rank=0, tier="Buy online now")   # will classify listing
+w2 = entry(id="0000000002", rank=0, tier="Buy online now")   # will classify product
+w3 = entry(id="0000000003", rank=4, tier="AD or boutique")   # not a rank-0 claim
+pages = {
+    w1["id"]: f"<html><body>Testbrand Fixture One. Find a retailer. {body}</body></html>",
+    w2["id"]: f"<html><body>Testbrand Fixture One {body}<button name=\"add\">Add to Cart</button></body></html>",
+    w3["id"]: f"<html><body>Welcome, shop all {body}</body></html>",
+}
+orig = R.fetch
+R.fetch = lambda url: (pages[url.rsplit("/", 1)[-1]], "ok")
+try:
+    for x in (w1, w2, w3):
+        x["buy"] = "https://example.com/" + x["id"]
+    s = R.stage_buy_links([w1, w2, w3])
+finally:
+    R.fetch = orig
+
+check("each entry carries its evidence class", [w1["buyKind"], w2["buyKind"], w3["buyKind"]],
+      ["listing", "product", "brand"])
+check("only unearned rank-0 claims are queued for demotion",
+      [w["id"] for w, _ in s["demote"]], [w1["id"]])
+check("a product page keeps its claim", w2["tier"], "Buy online now")
+R.apply_buy_demotions(s)
+check("the unearned claim is dropped", w1["tier"], "Retailer enquiry")
+check("...and rank stays consistent with tier", R.TIERS[w1["rank"]], w1["tier"])
+check("the earned one is untouched", (w2["tier"], w2["rank"]), ("Buy online now", 0))
+check("a non-rank-0 entry is classified but never demoted", w3["tier"], "AD or boutique")
+
+# The rule lives INSIDE the derivation, not on top of it. Two rules that
+# disagree would mean the weaker one wins every Monday: an availability check
+# re-derives the tier and silently restores the claim we just took away.
+check("the derivation itself demotes on evidence",
+      R.rank_for("Available", "Add to cart", ["Buy online"], "listing"), 2)
+check("...and keeps the claim when it is earned",
+      R.rank_for("Available", "Add to cart", ["Buy online"], "product"), 0)
+check("...but treats unknown as silence, not as failure",
+      R.rank_for("Available", "Add to cart", ["Buy online"], None), 0)
+check("evidence can never PROMOTE an entry",
+      R.rank_for("Available", "Read the review", [], "product"), 2)
+check("...nor resurrect a sold-out one",
+      R.rank_for("Sold out", "Add to cart", ["Buy online"], "product"), 6)
+demoted = entry(id="0000000009", rank=0, tier="Buy online now", buyKind="brand")
+R.apply_tier(demoted)
+check("a re-derivation keeps the demotion instead of reverting it",
+      (demoted["tier"], demoted["rank"]), ("Retailer enquiry", 2))
 
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())

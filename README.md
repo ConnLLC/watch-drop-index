@@ -206,9 +206,30 @@ Each run:
    them** — replacing a stale claim with an unreviewed generation trades one problem for
    a worse one. Anything unconfirmed for 30 days is listed in the report; confirm or
    correct it, then stamp `checkedOn` on the item.
-8. **Commits** with a summarising message and a full report in the body.
+8. **Classifies every buy link by evidence.** "Buy online now" is the strongest claim the
+   register makes, so it has to be earned. Each buy URL is fetched and judged on two
+   questions — does the page *name this watch* (by reference number, or by most of the
+   distinctive words in its model name), and does it carry a *purchase affordance* (a cart
+   form, an add-to-bag button, a schema.org `Offer`, a pre-order)? That yields `buyKind`:
+   `product` · `listing` (names it, sells nothing) · `brand` (never names it — a homepage
+   or category page) · `none`.
 
-Stages run **2 → 4 → 7 → 3 → 6**, which is the budget's priority order (below): the paid
+   **An unreachable page is not a classification.** Calling it `brand` would invent a fact
+   from silence, so those keep whatever they had and are reported separately.
+
+   The tier is then tied to the link: rank 0 requires `buyKind == product`. This lives
+   *inside* `rank_for()` rather than as a pass on top of it — two rules that disagree would
+   mean the weaker one wins every Monday, when an availability check re-derives the tier
+   and silently restores a claim we had just taken away. Evidence can only ever demote,
+   never promote, and unknown never moves anything.
+
+   The second-order reason this matters more than it looks: the weekly stock check reads
+   these same URLs. **A homepage cannot report that a watch is sold out** — it reads as
+   fine for ever — so for those entries the verification is structurally incapable of
+   detecting the thing it exists to detect.
+9. **Commits** with a summarising message and a full report in the body.
+
+Stages run **2 → 4 → 7 → 3 → 8 → 6**, which is the budget's priority order (below): the paid
 stages go first, most valuable first, and the free ones go last. A side benefit is that a watch
 found this week gets its photograph this week rather than next.
 
