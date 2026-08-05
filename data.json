@@ -6,7 +6,7 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 7,
+    "revision": 8,
     "domain": "watchdropindex.com",
     "imagesResolved": 221,
     "lastImageSweep": "2026-08-05",
@@ -216,6 +216,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "dead",
+        "note": "HTTP 404"
       }
     },
     {
@@ -258,6 +263,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "dead",
+        "note": "HTTP 404"
       }
     },
     {
@@ -367,6 +377,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch but offers no purchase"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -894,6 +909,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -3468,6 +3488,11 @@
         "date": "2026-08-04",
         "result": "blocked",
         "note": "fetch failed: ReadTimeout"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "fetch failed: ReadTimeout"
       }
     },
     {
@@ -5092,6 +5117,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch but offers no purchase"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {
@@ -7234,6 +7264,11 @@
       "buyCheck": {
         "date": "2026-08-05",
         "note": "names the watch and offers a way to buy it"
+      },
+      "sourceCheck": {
+        "date": "2026-08-05",
+        "result": "unclear",
+        "note": "HTTP 403"
       }
     },
     {

@@ -58,6 +58,7 @@ import struct
 import sys
 import threading
 import time
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
@@ -535,6 +536,62 @@ def check_image(url: str) -> tuple[str, str]:
         # 200, but it is not a picture — a soft 404. Positive evidence of rot.
         return "rotted", f"HTTP {r.status_code} serving {ctype}"
     return "unclear", f"HTTP {r.status_code} with no content-type"
+
+
+def _is_bare_root(url: str) -> bool:
+    """Does this URL point at a site's front door rather than a page on it?"""
+    try:
+        p = urllib.parse.urlsplit(url)
+    except ValueError:
+        return False
+    return p.path.strip("/") == "" and not p.query
+
+
+def check_link(url: str, was_deep: bool | None = None) -> tuple[str, str]:
+    """Is this page still there? The same three-way rule as check_image:
+
+      "ok"      — it answers
+      "dead"    — POSITIVE evidence it does not: 404/410, or a soft-404 where a
+                  deep URL redirects to the site's bare root
+      "unclear" — 403, 429, 5xx, a timeout. Silence, not evidence.
+
+    THE SOFT-404 IS THE ONE THAT WOULD OTHERWISE BE MISSED, and it is the whole
+    reason this cannot be a bare status check. When a publisher pulls an article
+    or a retailer pulls a product, they very often 301 to the homepage or a
+    category page rather than 404. A HEAD returns a clean 200, the link looks
+    perfect, and the thing it pointed at is gone. So the destination is compared
+    with the origin: a deep URL that lands on a bare root is dead, whatever the
+    status code says.
+
+    Deliberately NOT treated as dead: a deep URL landing on a different deep URL.
+    Sites reorganise and redirect properly, and calling that rot would delete
+    working links — the same asymmetry as 403 not meaning 404.
+    """
+    if not url or not url.startswith("http"):
+        return "dead", "no url"
+    deep = (not _is_bare_root(url)) if was_deep is None else was_deep
+    headers = {"User-Agent": UA, "Accept": "text/html,*/*;q=0.8"}
+    try:
+        r = requests.head(url, timeout=FETCH_TIMEOUT, allow_redirects=True, headers=headers)
+        # A great many sites refuse HEAD outright or answer it with nothing
+        # useful. Fall back to a ranged GET rather than concluding from a refusal.
+        if r.status_code in (403, 405, 501) or not r.headers.get("content-type"):
+            r = requests.get(url, timeout=FETCH_TIMEOUT, allow_redirects=True, stream=True,
+                             headers={**headers, "Range": "bytes=0-0"})
+            r.close()
+    except requests.RequestException as e:
+        return "unclear", f"fetch failed: {type(e).__name__}"
+
+    if r.status_code in (404, 410):
+        return "dead", f"HTTP {r.status_code}"
+    if r.status_code >= 400:
+        return "unclear", f"HTTP {r.status_code}"
+    final = str(r.url or url)
+    # No origin/destination comparison needed: `deep` already means the origin
+    # was not a bare root, so a bare-root destination is necessarily different.
+    if deep and _is_bare_root(final):
+        return "dead", f"soft-404: redirected to {final}"
+    return "ok", f"HTTP {r.status_code}"
 
 
 # ----------------------------------------------------------------- the model
@@ -1397,6 +1454,73 @@ def stage_image_rot(watches: list[dict], batch: int = IMAGE_CHECK_BATCH) -> dict
     return summary
 
 
+# --------------------------------------- stage 9: source and calendar links
+"""
+The other half of the link sweep. Stage 7 checks image URLs and stage 8 checks
+buy URLs, which between them covered roughly 480 of the register's ~750 links
+while the run report said "full sweep". This closes the gap.
+
+The two link types are treated DIFFERENTLY on purpose, because a dead one means
+a different thing in each case:
+
+  SOURCE — provenance. Losing it does not invalidate the watch: the edition was
+    still announced, the price was still reported. But every confidence rating
+    on this site rests on a source, so a `high` confidence pointing at a 404 is
+    a claim quietly resting on nothing. Recorded on the entry, never auto-cleared
+    and never used to demote — that is a judgement for a person.
+
+  CALENDAR — curated. These were written by hand, so a dead one is flagged for a
+    human rather than acted on, exactly like the editorial claims.
+
+Nothing here spends: fetch and parse, no model call.
+"""
+
+
+def stage_links(watches: list[dict], calendar: dict | None = None) -> dict:
+    sources = [w for w in watches if (w.get("source") or "").startswith("http")]
+    cal_items = []
+    for key in ("drops", "events"):
+        for item in (calendar or {}).get(key, []) or []:
+            if (item.get("url") or "").startswith("http"):
+                cal_items.append((key, item))
+
+    log(f"\n[9] SOURCE + CALENDAR LINKS — {len(sources)} sources, {len(cal_items)} calendar")
+    summary = {"ok": 0, "dead": [], "unclear": [], "cal_dead": [], "by_outlet": collections.Counter()}
+    limiter = HostLimiter(PHOTO_HOST_DELAY)
+
+    def probe_source(w: dict) -> tuple[dict, str, str]:
+        url = w["source"]
+        result, detail = limiter.run(url, lambda: check_link(url))
+        return w, result, detail
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        for w, result, detail in pool.map(probe_source, sources):
+            if result == "ok":
+                # Same rule as the photograph sweep: a pass is recorded on the
+                # run, not on the entry. A per-entry "source fine today" would
+                # rewrite every line of data.json daily to say nothing, and would
+                # assert more than a checker outside a reader's browser can know.
+                w.pop("sourceCheck", None)
+                summary["ok"] += 1
+                continue
+            w["sourceCheck"] = {"date": today(), "result": result, "note": detail}
+            if result == "dead":
+                summary["dead"].append((w, detail))
+                summary["by_outlet"][outlet_for(w["source"])] += 1
+            else:
+                summary["unclear"].append((w, detail))
+
+    for key, item in cal_items:
+        result, detail = limiter.run(item["url"], lambda: check_link(item["url"]))
+        if result == "dead":
+            summary["cal_dead"].append((key, item, detail))
+
+    log(f"    sources still good {summary['ok']} · DEAD {len(summary['dead'])} "
+        f"· no answer {len(summary['unclear'])}"
+        + (f" · calendar links dead {len(summary['cal_dead'])}" if summary["cal_dead"] else ""))
+    return summary
+
+
 # ------------------------------------------------------ stage 4: new releases
 
 
@@ -1862,7 +1986,8 @@ def summary_n(rot: dict) -> int:
 
 def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str,
                  model: "Model | None" = None, cal: dict | None = None,
-                 rot: dict | None = None, buy: dict | None = None) -> str:
+                 rot: dict | None = None, buy: dict | None = None,
+                 links: dict | None = None) -> str:
     L = [f"# Refresh {today()}", "", f"**Outcome:** {verdict}", ""]
 
     # Spend goes near the top and is reported on EVERY run, generous ceiling or
@@ -2030,6 +2155,34 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                   "the entries show their full brand and model.", ""]
             L += [f"- {q}" for q in news["design"]] + [""]
 
+    if links:
+        L += ["## Source and calendar links", "",
+              "> Provenance, not decoration: every confidence rating on this site rests on "
+              "a source, so a `high` confidence pointing at a 404 is a claim resting on "
+              "nothing. Nothing here is auto-cleared or auto-demoted — a dead source does "
+              "not make the watch untrue, and deciding what it does mean is a person's job.",
+              "",
+              f"- sources still answering: **{links['ok']}**",
+              f"- **dead: {len(links['dead'])}** — 404/410 or a soft-404 redirect to a bare "
+              "domain root",
+              f"- no answer (403, 429, 5xx, timeout — silence, not evidence): "
+              f"**{len(links['unclear'])}**", ""]
+        if links["dead"]:
+            L += ["### Dead sources", ""]
+            L += [f"- **{w['brand']} {w['model']}** ({w.get('conf', '?')} confidence) — "
+                  f"{why} · {w['source']}" for w, why in links["dead"][:40]] + [""]
+            if links["by_outlet"]:
+                # The by-outlet grouping is the genuinely useful half: one domain
+                # producing most of the rot is a fixable cause, spread thin is
+                # just the shape of the web.
+                L += ["Dead sources by outlet — a single domain dominating this list is a "
+                      "fixable cause; spread thin is just the web:", ""]
+                L += [f"- {outlet}: {n}" for outlet, n in links["by_outlet"].most_common()] + [""]
+        if links["cal_dead"]:
+            L += ["### Dead calendar links — curated, so these need a human", ""]
+            L += [f"- ({key}) **{item.get('what', '?')}** — {why} · {item.get('url')}"
+                  for key, item, why in links["cal_dead"]] + [""]
+
     # Proposals last, because they are the section a person has to act on: every
     # one is a place where this run and a human disagree about a fact. Refusing
     # the write is only half the rule — a guard that hides the disagreement just
@@ -2065,7 +2218,7 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Weekly refresh for the Watch Drop Index.")
-    ap.add_argument("--stages", default="2,3,4,6,7,8", help="comma-separated stage numbers")
+    ap.add_argument("--stages", default="2,3,4,6,7,8,9", help="comma-separated stage numbers")
     ap.add_argument("--dry-run", action="store_true", help="change nothing on disk")
     ap.add_argument("--no-api", action="store_true", help="skip all model calls")
     ap.add_argument("--limit-checks", type=int, default=None)
@@ -2128,7 +2281,7 @@ def main() -> int:
     # they are never the thing a budget stop takes away. Running them after the
     # new-releases search also means this week's additions get their pictures
     # this week instead of next.
-    avail = photos = news = cal = rot = buy = {}
+    avail = photos = news = cal = rot = buy = links = {}
     if 2 in stages:
         avail = stage_availability(watches, model, args.limit_checks)
     if 4 in stages:
@@ -2152,6 +2305,11 @@ def main() -> int:
     # rotting is the one failure a reader can see without checking anything.
     if 6 in stages:
         cal = stage_calendar(payload.setdefault("calendar", {}), watches)
+    # The other half of the link sweep. Free, and it runs last because it is the
+    # only stage that reports rather than repairs — nothing downstream waits on
+    # it. Placed after the calendar so it sees whatever that stage retired.
+    if 9 in stages:
+        links = stage_links(watches, payload.get("calendar"))
 
     log(f"\nSPEND — {model.cad:.2f} CAD of {args.budget:.2f} "
         f"({model.calls} model call{'' if model.calls == 1 else 's'}, "
@@ -2200,7 +2358,7 @@ def main() -> int:
     changed = json.dumps(payload, sort_keys=True) != before
     if not changed:
         log("\nNo changes to commit.")
-        write_report(meta, avail, photos, news, "No changes.", model, cal, rot, buy)
+        write_report(meta, avail, photos, news, "No changes.", model, cal, rot, buy, links)
         return 10
 
     parts = []
@@ -2226,7 +2384,7 @@ def main() -> int:
         DATA.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
         log(f"\nWrote data.json — revision {meta['revision']}, {meta['count']} entries")
 
-    write_report(meta, avail, photos, news, subject, model, cal, rot, buy)
+    write_report(meta, avail, photos, news, subject, model, cal, rot, buy, links)
     Path(ROOT / "refresh-subject.txt").write_text(subject + "\n")
     log(f"Commit subject: {subject}")
     log(f"Model calls: {model.calls}")

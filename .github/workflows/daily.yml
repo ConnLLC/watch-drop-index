@@ -36,8 +36,8 @@ on:
   workflow_dispatch:
     inputs:
       stages:
-        description: 'Free stages only (3=photos, 6=calendar, 7=image rot, 8=buy links)'
-        default: '7,3,6,8'
+        description: 'Free stages only (3=photos, 6=calendar, 7=image rot, 8=buy links, 9=source+calendar links)'
+        default: '7,3,6,8,9'
         required: false
       dry_run:
         description: 'Run everything but write nothing'
@@ -83,7 +83,7 @@ jobs:
         run: |
           set +e
           python3 scripts/refresh.py \
-            --stages "${{ inputs.stages || '7,3,6,8' }}" \
+            --stages "${{ inputs.stages || '7,3,6,8,9' }}" \
             --no-api \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
           echo "code=$?" >> "$GITHUB_OUTPUT"

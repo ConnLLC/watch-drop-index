@@ -204,7 +204,7 @@ whether they are allowed to spend.
 | | `daily.yml` — daily sweep | `refresh.yml` — weekly refresh |
 |---|---|---|
 | When | 09:00 UTC, every day | 09:00 UTC, Mondays |
-| Stages | 7, 3, 6, 8 | 2, 4, then 7, 3, 6, 8 |
+| Stages | 7, 3, 6, 8, 9 | 2, 4, then 7, 3, 6, 8, 9 |
 | Cost | **zero, structurally** | model calls, capped by `WEEKLY_BUDGET_CAD` |
 
 **The split exists because a single cadence was wrong in both directions.** Link checks,
@@ -222,6 +222,19 @@ The weekly job runs the free stages too, so a watch found by the new-release sea
 its photograph, its buy-link classification and its tier in the same run instead of waiting
 for tomorrow. Both jobs share a `concurrency` group and rebase before pushing, since both
 rewrite `data.json`.
+
+**The link sweep is now complete**, which it previously was not while claiming to be.
+Stage 7 checks image URLs, stage 8 checks buy URLs, and stage 9 checks source and calendar
+URLs — roughly 750 requests, free, every run. All three classify by evidence rather than by
+status code alone: a 403 or 429 is a bot wall and means *silence*, never rot, and a **soft
+404** — a deep URL that 301s to a bare domain root because the article or product was pulled
+— counts as dead however clean its 200 looks.
+
+Each link type gets a different action, because a dead one means a different thing:
+**image** → cleared, so the photograph pass re-resolves it; **buy** → feeds `buyKind`, since
+a dead URL cannot be `product`; **source** → flagged on the entry and never auto-cleared,
+because losing provenance does not untrue the watch but every confidence rating rests on
+it; **calendar** → flagged for a human, since those are curated.
 
 **The real ceiling is politeness, not money.** Seven times the frequency is seven times the
 load on other people's servers, and three outlets already refuse this client. `HostLimiter`

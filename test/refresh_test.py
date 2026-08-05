@@ -1020,6 +1020,98 @@ check("it is not worth spending a stock check on",
            if w["rank"] <= 2 and not R.is_retracted(w)]), 1)
 check("...nor a photograph probe", len(R.photo_candidates([gone])), 0)
 
+section("Source and calendar links — the other half of the sweep")
+# Stage 7 checks images and stage 8 checks buy URLs; between them that was ~480
+# of the register's ~750 links while the report said "full sweep". This closes it.
+
+
+class LinkResp:
+    def __init__(self, status, ctype="text/html", url=None):
+        self.status_code = status
+        self.headers = {"content-type": ctype} if ctype else {}
+        self.url = url
+
+    def close(self):
+        pass
+
+
+def run_link(url, resp, was_deep=None):
+    orig = R.requests.head, R.requests.get
+    R.requests.head = lambda *a, **k: resp
+    R.requests.get = lambda *a, **k: resp
+    try:
+        return R.check_link(url, was_deep)
+    finally:
+        R.requests.head, R.requests.get = orig
+
+
+DEEP = "https://monochrome-watches.com/some-watch-review/"
+check("a live page is ok", run_link(DEEP, LinkResp(200, url=DEEP))[0], "ok")
+check("a 404 is dead", run_link(DEEP, LinkResp(404, url=DEEP))[0], "dead")
+check("a 410 is dead", run_link(DEEP, LinkResp(410, url=DEEP))[0], "dead")
+check("a 403 is silence, NOT dead", run_link(DEEP, LinkResp(403, url=DEEP))[0], "unclear")
+check("a 429 is silence too", run_link(DEEP, LinkResp(429, url=DEEP))[0], "unclear")
+check("a 500 is silence", run_link(DEEP, LinkResp(500, url=DEEP))[0], "unclear")
+check("an empty url is dead", run_link("", LinkResp(200))[0], "dead")
+
+# THE SOFT-404 — the trap a bare status check cannot see. When a publisher pulls
+# an article they very often 301 to the homepage rather than 404, so the link
+# returns a clean 200 and the thing it pointed at is gone.
+soft = run_link(DEEP, LinkResp(200, url="https://monochrome-watches.com/"))
+check("a deep URL redirected to the bare root is a soft-404", soft[0], "dead")
+check("...and says so rather than reporting a 200", "soft-404" in soft[1], True)
+check("a deep URL redirected to ANOTHER deep URL is fine — sites reorganise",
+      run_link(DEEP, LinkResp(200, url="https://monochrome-watches.com/moved/"))[0], "ok")
+check("a URL that was ALREADY a root is not a soft-404 against itself",
+      run_link("https://monochrome-watches.com/",
+               LinkResp(200, url="https://monochrome-watches.com/"))[0], "ok")
+check("root detection ignores a trailing slash",
+      (R._is_bare_root("https://x.com"), R._is_bare_root("https://x.com/"),
+       R._is_bare_root("https://x.com/a")), (True, True, False))
+check("...but a query string means it is not a bare root",
+      R._is_bare_root("https://x.com/?s=watch"), False)
+
+
+def run_stage9(watches, results, calendar=None):
+    orig = R.check_link
+    R.check_link = lambda url, was_deep=None: results.get(url, ("ok", "HTTP 200"))
+    try:
+        return R.stage_links(watches, calendar)
+    finally:
+        R.check_link = orig
+
+
+live = entry(id="0000000021", source="https://monochrome-watches.com/a")
+gone = entry(id="0000000022", source="https://sjx.com/dead", conf="high")
+blocked = entry(id="0000000023", source="https://fratellowatches.com/x")
+s9 = run_stage9([live, gone, blocked], {
+    gone["source"]: ("dead", "HTTP 404"),
+    blocked["source"]: ("unclear", "HTTP 403"),
+})
+check("a live source is counted, not stamped", (s9["ok"], "sourceCheck" in live), (1, False))
+check("a dead source is flagged on the entry", gone["sourceCheck"]["result"], "dead")
+check("...and the ENTRY is kept — a dead source does not untrue the watch",
+      gone["source"], "https://sjx.com/dead")
+check("...and its confidence is NOT auto-downgraded; that is a person's call",
+      gone["conf"], "high")
+check("...and it is grouped by outlet, which is the fixable-cause half",
+      s9["by_outlet"].most_common(1)[0][1], 1)
+check("a blocked source is 'no answer', not dead", len(s9["unclear"]), 1)
+check("...and is not counted as dead", len(s9["dead"]), 1)
+check("the stage costs nothing", "model" in R.stage_links.__code__.co_varnames, False)
+
+# A recovered source loses its old failure stamp, same as photographs.
+recovered = entry(id="0000000024", source="https://monochrome-watches.com/b",
+                  sourceCheck={"date": "2026-01-01", "result": "dead", "note": "HTTP 404"})
+run_stage9([recovered], {})
+check("a source that comes back loses its failure stamp", "sourceCheck" in recovered, False)
+
+cal = {"drops": [{"what": "A drop", "url": "https://example.com/dead-drop"}],
+       "events": [{"what": "An event", "url": "https://example.com/live"}]}
+s9c = run_stage9([], {"https://example.com/dead-drop": ("dead", "HTTP 404")}, cal)
+check("a dead calendar link is flagged for a human", len(s9c["cal_dead"]), 1)
+check("...and the curated item is NOT edited or removed", len(cal["drops"]), 1)
+
 section("Corrupt data.json aborts without touching anything")
 tmp = Path(tempfile.mkdtemp())
 (tmp / "data.json").write_text("{ this is not json")
