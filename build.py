@@ -135,8 +135,12 @@ input[type=search]:focus{border-color:#17130d}
   [data-mq="cols"] > *:nth-child(6){display:none !important}
   [data-mq="detail"]{display:block !important;padding:8px 2px 22px 16px !important}
   [data-mq="detail"] > div:first-child{margin-bottom:18px}
-  [data-mq="two"]{grid-template-columns:1fr !important}
-  [data-mq="row2"]{grid-template-columns:1fr !important;gap:2px !important}
+  /* "two" and "row2" were removed with the sections below the register on
+     2026-08-05. Both hooks existed only for that markup, so keeping the rules
+     would leave CSS defending elements that no longer exist. Removed from the
+     mobile contract in test/template.test.js in the same commit — deliberately,
+     because a hook silently vanishing from that list is the exact failure the
+     contract is there to catch. */
   [data-mq="badge"]{font-size:16px !important;right:14px !important;bottom:14px !important;padding:12px 38px 12px 14px !important}
 }
 
@@ -1148,38 +1152,13 @@ JS = r"""
     el("#bandBtns").innerHTML = out;
   }
 
-  /* ---- sections from the calendar --------------------------------------- */
-  function renderSections(cal, byTier) {
-    var out = "";
-    TIERS.forEach(function (t) {
-      if (!byTier[t]) return;
-      var r = t === "Gone" ? 6 : t === "Buy at retailer" ? 3 : t === "Drop upcoming" ? 1
-            : t === "Waitlist or ballot" ? 3 : t === "AD or boutique" ? 4 : t === "In person only" ? 5 : 0;
-      out += '<div data-mq="row2" style="display:grid;grid-template-columns:180px 1fr;gap:18px;padding:10px 0;border-bottom:1px solid #e9e4d8;font-size:13.5px;color:#8a8071">' +
-        '<b style="color:#17130d;font-weight:650;display:flex;align-items:center;gap:9px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + DOT(r) + '"></span>' + esc(t) + '</b>' +
-        '<span>' + esc(HELP[t] || "") + '</span></div>';
-    });
-    el("#keyRows").innerHTML = out;
-
-    var li = function (d, withWhere) {
-      var detail = withWhere
-        ? '<b style="color:#5c5546;font-weight:600">' + esc(d.where || "") + '</b> ' + esc(d.detail ? "— " + d.detail : "")
-        : esc(d.detail || "");
-      return '<li data-mq="row2" style="display:grid;grid-template-columns:168px 1fr;gap:20px;padding:14px 0;border-bottom:1px solid #e9e4d8">' +
-        '<div style="font-size:13px;font-weight:650;color:#17130d;font-variant-numeric:tabular-nums">' + esc(d.date) + '</div>' +
-        '<div><div style="font-weight:600;color:#17130d;margin-bottom:2px;font-size:14px">' + esc(d.what) + '</div>' +
-        '<div style="font-size:13.5px;color:#8a8071;line-height:1.5">' + detail + '</div></div></li>';
-    };
-    el("#drops").innerHTML = (cal.drops || []).map(function (d) { return li(d, false); }).join("");
-    el("#events").innerHTML = (cal.events || []).map(function (d) { return li(d, true); }).join("");
-
-    var note = function (n) {
-      return '<div style="margin-bottom:16px"><b style="color:#17130d;display:block;margin-bottom:2px;font-size:14px">' + esc(n.what) + '</b>' +
-        '<p style="margin:0;font-size:13.5px;color:#8a8071;line-height:1.5">' + esc(n.detail) + '</p></div>';
-    };
-    el("#notHappening").innerHTML = (cal.notHappening || []).map(note).join("");
-    el("#expected").innerHTML = (cal.expected || []).map(note).join("");
-  }
+  /* renderSections() lived here. It drew the availability key and the four
+     calendar sections below the register; all five were cut on 2026-08-05.
+     Note what did NOT go with it: HELP still explains every tier INLINE inside
+     the expanded row, which is why the key below the table was redundant rather
+     than load-bearing — a reader has already been told what "Buy online now"
+     means before they could ever have scrolled to it. The calendar survives in
+     data.json and the expiry stage still runs against it. */
 
   /* ---- main render ------------------------------------------------------ */
   function render() {
@@ -1261,6 +1240,7 @@ JS = r"""
     put("#t-gone", byTier["Gone"] || 0);
     put("#t-brands", (function () { var s = {}; DATA.forEach(function (d) { s[d.brand] = 1; }); return Object.keys(s).length; })());
     put("#t-updated", m.updated || "");
+    put("#c-updated", m.updated || "");
     put("#c-rev", m.revision == null ? "" : m.revision);
     put("#c-imgs", DATA.filter(function (d) { return d.image; }).length);
     put("#c-total", DATA.length);
@@ -1608,7 +1588,9 @@ JS = r"""
           .filter(function (w) { var e = String(w.edition || "").trim(); return !NOT_LE.some(function (rx) { return rx.test(e); }); })
           .map(function (w) { return w.tier === "Retailer enquiry" ? Object.assign({}, w, { tier: "Buy at retailer", rank: 3 }) : w; });
         render();
-        renderSections(p.calendar || {}, (function () { var b = {}; DATA.forEach(function (d) { b[d.tier] = (b[d.tier] || 0) + 1; }); return b; })());
+        /* p.calendar is still loaded and still maintained by the weekly job; it
+           simply has nowhere to render since the sections below the register
+           were cut. Deliberate — see the note where renderSections used to be. */
         var deep = location.hash.slice(1);
         if (deep) openById(deep, false);
       })
@@ -1996,64 +1978,60 @@ HTML = f"""<!DOCTYPE html>
       <div id="journalRows" style="border-top:2px solid #17130d"></div>
     </section>
 
-    <section>
-      {SECTION_RULE.format(m='64px 0 0')}
-      {H2.format(m='12px 0 4px', t='Reading the availability marks')}
-      <p style="color:#8a8071;font-size:13.5px;margin:0 0 16px;max-width:720px">Assigned from how the brand actually sells the watch — not a guess at demand.</p>
-      <div id="keyRows" style="border-top:1px solid #ddd6c8"></div>
-    </section>
-
-    <section>
-      {SECTION_RULE.format(m='56px 0 0')}
-      {H2.format(m='12px 0 4px', t='Dated opportunities')}
-      <p style="color:#8a8071;font-size:13.5px;margin:0 0 16px">Drops, order windows and deadlines with a date attached.</p>
-      <ul id="drops" style="list-style:none;padding:0;margin:0;border-top:1px solid #ddd6c8"></ul>
-    </section>
-
-    <section>
-      {SECTION_RULE.format(m='56px 0 0')}
-      {H2.format(m='12px 0 16px', t='Where the rest of 2026 gets announced')}
-      <ul id="events" style="list-style:none;padding:0;margin:0;border-top:1px solid #ddd6c8"></ul>
-    </section>
-
-    <section data-mq="two" style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
-      <div>
-        {SECTION_RULE.format(m='56px 0 0')}
-        {H2.format(m='12px 0 16px', t='Not happening in 2026')}
-        <div id="notHappening"></div>
-      </div>
-      <div>
-        {SECTION_RULE.format(m='56px 0 0')}
-        {H2.format(m='12px 0 16px', t='Expected but unannounced')}
-        <div id="expected"></div>
-      </div>
-    </section>
-
+    <!-- Everything that used to sit here — the availability key, dated
+         opportunities, the events calendar, "not happening" and "expected",
+         Method and Known gaps — was cut on Lowell's instruction, 2026-08-05.
+         It was a research document's furniture bolted to a reference tool.
+         Method and Known gaps were RELOCATED to README.md, not deleted: they are
+         the honest record of what the register does not know, and a collaborator
+         reads them there. The calendar DATA and its expiry logic both survive
+         untouched — the expiry is deterministic and free, so it keeps the data
+         correct against the day this section returns.
+         What remains below is the three things a reader actually needs. -->
     <footer style="margin-top:64px;border-top:2px solid #17130d;padding:26px 0 80px;font-size:13.5px;color:#8a8071">
-      <div data-mq="two" style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
-        <div>
-          <h3 style="font-family:'Newsreader',serif;font-size:17px;color:#17130d;margin:0 0 10px;font-weight:600">Method</h3>
-          <ul style="margin:0;padding-left:18px;line-height:1.55">
-            <li style="margin-bottom:6px"><b style="color:#17130d;font-weight:600">Limited editions only.</b> Numbered runs, capped annual production, ballot pieces and single-retailer exclusives. Unnumbered special editions are included but labelled as such.</li>
-            <li style="margin-bottom:6px"><b style="color:#17130d;font-weight:600">Confidence is stated, not implied.</b> High means a brand source or several credible outlets agree; medium means one credible source; low means a single aggregator or an unresolved conflict.</li>
-            <li style="margin-bottom:6px"><b style="color:#17130d;font-weight:600">Stock status is only claimed where checked.</b> Entries with a green check had their purchase page read on that date. Everything else is classified by how the brand distributes.</li>
-            <li style="margin-bottom:6px"><b style="color:#17130d;font-weight:600">Converted prices are marked with a tilde.</b> Sorting uses the USD estimate, so ranking near a band boundary is approximate.</li>
-            <li style="margin-bottom:6px"><b style="color:#17130d;font-weight:600">Photographs are drawn from the reporting outlet</b> that covered each release, credited beneath the image, and used to identify the watch being indexed.</li>
-          </ul>
-        </div>
-        <div>
-          <h3 style="font-family:'Newsreader',serif;font-size:17px;color:#17130d;margin:0 0 10px;font-weight:600">Known gaps</h3>
-          <ul style="margin:0;padding-left:18px;line-height:1.55">
-            <li style="margin-bottom:6px">Grand Seiko and Seiko's H2 2026 announcements are not yet captured.</li>
-            <li style="margin-bottom:6px">F.P. Journe surfaced no 2026 limited edition across four independent sources — likely a coverage gap.</li>
-            <li style="margin-bottom:6px">Casio rarely discloses G-Shock edition sizes; only the MR-G Phoenix carries a confirmed number.</li>
-            <li style="margin-bottom:6px">Minase, Knot, Zelos, Certina, Mido, Rado, Nomos and Zodiac are not researched to completion.</li>
-            <li style="margin-bottom:6px">Rolex issued no numbered limited editions in 2026.</li>
-            <li style="margin-bottom:6px">Open price conflicts: Patek 5810/1G-001, AP × AMBUSH, Doxa × Hodinkee edition size.</li>
-          </ul>
-        </div>
-      </div>
-      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{sum(1 for i in _kept if i.get('image'))}</span> of <span id="c-total">{len(_kept)}</span> photographs resolved · every entry links to the source it came from</p>
+
+      <!-- What "checked" means. This stays because the green stock-check mark and
+           the confidence rating are the register's entire claim over an
+           aggregator, and an unexplained mark is an unearned one. Two sentences,
+           not the five bullets it replaces. -->
+      <p style="margin:0;max-width:720px;line-height:1.55">A green check means that entry's purchase page was read on the date shown — not inferred from how the brand distributes. Confidence is stated rather than implied: <b style="color:#17130d;font-weight:600">high</b> is a brand source or several credible outlets agreeing, <b style="color:#17130d;font-weight:600">medium</b> is one credible source, <b style="color:#17130d;font-weight:600">low</b> is a single aggregator or an unresolved conflict.</p>
+
+      <!-- TAKEDOWN — a requirement, not furniture. We publish press photographs
+           we do not own under an editorial-use rationale, and that position holds
+           only while a rights holder has an obvious route to object. Wording is
+           deliberate: it states the editorial basis rather than asserting a
+           licence we do not hold, and it promises removal with no conditions and
+           no appeal, which is the correct posture for a register built on other
+           people's press images and cheap to honour.
+           Design: presence and permanent visibility are the requirement; the
+           treatment is yours. Do not fold this behind anything.
+
+           WHY conn.llc AND NOT watchdropindex.com. The obvious address would have
+           been takedown@ on the site's own domain, and it was, right up until it
+           was tested. That domain has no mailbox of its own — it relies on
+           registrar forwarding, and forwarding breaks SPF: the message reaches
+           the destination from the forwarder rather than the original sender,
+           and watchdropindex.com publishes a hard fail (-all). The likely
+           outcome is a takedown notice filed silently as spam, which is the same
+           black hole as publishing no address, except it looks like due process.
+           conn.llc runs Cloudflare Email Routing, which rewrites the envelope
+           sender on forward and so re-establishes SPF instead of breaking it.
+           It is also the entity already named two lines below as the trademark
+           holder, so it is the honest address rather than a workaround.
+
+           Honouring a request is TWO steps, not one — see suppress_image() in
+           scripts/refresh.py. Nulling `image` alone lasts exactly until the next
+           photograph pass re-resolves it from the same article. -->
+      <p id="takedown" style="margin:16px 0 0;max-width:720px;line-height:1.55">Photographs are drawn from the publication that reported each release and are credited individually. If you hold rights to an image here and want it removed, write to <a href="mailto:wdi-takedown@conn.llc" style="color:#8a5a2b;text-decoration:underline;text-underline-offset:3px">wdi-takedown@conn.llc</a> and it will be taken down.</p>
+
+      <!-- The colophon keeps #c-rev, #c-imgs and #c-total DELIBERATELY. Chat's
+           cut list said "last updated and a repo link, nothing else", but those
+           three spans are half the hydration contract that test/template.test.js
+           enforces — they are what proves the page re-reads data.json instead of
+           quoting build-time numbers. Dropping them to satisfy a copy preference
+           would trade a live safety property for two fewer words. Flagged to Chat
+           rather than done silently. #c-updated is new and hydrated alongside. -->
+      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · updated <span id="c-updated">{html.escape(str(meta.get('updated', '')))}</span> · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{sum(1 for i in _kept if i.get('image'))}</span> of <span id="c-total">{len(_kept)}</span> photographs resolved · <a href="https://github.com/ConnLLC/watch-drop-index" style="color:#8a8071;text-decoration:underline;text-underline-offset:3px">source</a></p>
       <p style="margin-top:10px;font-size:10px;letter-spacing:.1em;text-align:center;color:#a09786">WATCH DROP INDEX™ is a trademark of Conn LLC, Toronto, Ontario, Canada. All rights reserved.</p>
     </footer>
 

@@ -456,3 +456,99 @@ These are what separate this from an auto-generated aggregator. Don't erode them
   sites. Saying so is the point.
 - **One outbound click.** The only link a visitor should follow off the site is the one
   that buys the watch. Attribution links stay subordinate.
+
+## Method
+
+Relocated here from the foot of the site on 2026-08-05, when the material below the
+register was cut. It was written for a collaborator rather than a visitor, and this is
+where a collaborator reads it.
+
+- **Limited editions only.** Numbered runs, capped annual production, ballot pieces and
+  single-retailer exclusives. Unnumbered special editions are included but labelled as
+  such.
+- **Confidence is stated, not implied.** High means a brand source or several credible
+  outlets agree; medium means one credible source; low means a single aggregator or an
+  unresolved conflict.
+- **Stock status is only claimed where checked.** Entries with a green check had their
+  purchase page read on that date. Everything else is classified by how the brand
+  distributes. The one-sentence version of this is the only piece of it that still
+  appears on the site, because it is what a reader needs to interpret the mark.
+- **Converted prices are marked with a tilde.** Sorting uses the USD estimate, so ranking
+  near a band boundary is approximate.
+- **Photographs are drawn from the reporting outlet** that covered each release, credited
+  beneath the image, and used to identify the watch being indexed. See **Takedowns**
+  below for what happens when a rights holder objects.
+
+## Known gaps
+
+The honest record of what the register does not know. Kept deliberately — an index that
+does not publish its own holes is claiming more coverage than it has. Each of these is
+researchable and none of them is blocked.
+
+- Grand Seiko and Seiko's H2 2026 announcements are not yet captured. The source roundup
+  used covers January–June only, so a whole half-year of Seiko, Grand Seiko, Credor and
+  Citizen limited editions is missing. `plus9time.com` is the thorough source.
+- F.P. Journe surfaced no 2026 limited edition across four independent sources. That is
+  almost certainly a search-coverage failure rather than a real absence.
+- Casio rarely discloses G-Shock edition sizes; only the MR-G Phoenix carries a confirmed
+  number.
+- Minase, Knot, Zelos, Certina, Mido, Rado, Nomos and Zodiac are not researched to
+  completion.
+- Rolex issued no numbered limited editions in 2026.
+- Open price conflicts, each dragging an entry's confidence rating down until one
+  authoritative source settles it: Patek 5810/1G-001 (CHF 60,000 vs 75,000),
+  AP × AMBUSH (USD 225,000 vs 267,000), Doxa × Hodinkee edition size (200 vs 250).
+- **Verification coverage.** Only a small fraction of entries carry a real `verified`
+  stock check; the rest are classified by distribution model. That is sound reasoning
+  but it is not the same claim, and "we actually checked" is the site's differentiator.
+  A backfill over the buyable tiers is specified and waiting on a measured cost figure.
+
+## Takedowns
+
+Photographs are published under an editorial-use rationale: they come from the
+publication that reported each release and are credited individually. That position holds
+only while a rights holder has an obvious route to object, which is why
+`wdi-takedown@conn.llc` is permanently visible in the site footer.
+
+**The address is deliberately on `conn.llc`, not on the site's own domain.**
+`takedown@watchdropindex.com` was the obvious choice and it was the choice, until it was
+tested. `watchdropindex.com` has no mailbox of its own and depends on registrar
+forwarding — and forwarding breaks SPF, because the message arrives at the destination
+from the forwarder rather than the original sender, while the domain publishes a hard fail
+(`v=spf1 a mx -all`). The likely result is a takedown notice filed silently as spam, which
+is the same black hole as publishing no address at all, except that it looks like due
+process. `conn.llc` runs Cloudflare Email Routing, which rewrites the envelope sender on
+forward and therefore re-establishes SPF rather than breaking it. Conn LLC is also already
+named in the footer as the trademark holder, so this is the honest address rather than a
+workaround. **If the address ever moves back to the site's domain, that domain needs a real
+mailbox first, not forwarding.**
+
+Honouring a request is **two steps, not one**: null the entry's `image`, *and* add the URL
+to the do-not-resolve list. Step one alone lasts exactly until the next photograph pass,
+which re-reads the same article, finds the same `og:image` and puts it back — so a removal
+would undo itself within a day. Two steps is the difference between complying and
+appearing to comply.
+
+One command does both:
+
+```bash
+python3 scripts/refresh.py --stages "" --takedown "https://…/photo.jpg" \
+  --takedown-note "who asked, and when"
+```
+
+It records the rule in `data.json` under `suppressed`, clears that picture from every entry
+using it, and leaves the entry, its source link and its provenance intact — the objection
+is to republishing the photograph, not to the fact that the outlet reported the watch. The
+entry simply carries no picture, which the register already renders honestly.
+
+The list is enforced at load on **every** run, before any stage reads an image, so a rule
+added by hand or through the admin panel takes effect immediately rather than whenever the
+rot check next visits that entry. Two rule shapes are honoured:
+
+```jsonc
+{"url": "https://…/photo.jpg", "on": "2026-08-05", "note": "…"}   // one photograph
+{"domain": "example.com",      "on": "2026-08-05", "note": "…"}   // an outlet, wholesale
+```
+
+URL matching ignores a tracking query string and a `www.` prefix; a domain rule covers
+subdomains but not lookalike domains.

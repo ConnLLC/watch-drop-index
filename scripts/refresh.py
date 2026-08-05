@@ -1093,6 +1093,92 @@ def is_retracted(entry: dict) -> bool:
     return bool(entry.get("retracted"))
 
 
+# ------------------------------------------------- takedowns: the suppression list
+"""
+We publish photographs we do not own, under an editorial-use rationale, with a
+published address for rights holders to object to. Honouring an objection is TWO
+steps and only the second one actually holds.
+
+Nulling `image` on its own lasts until the next photograph pass, which re-reads
+the same source article, finds the same og:image, and writes it straight back —
+so a removal would silently undo itself within a day of the daily schedule. The
+suppression list is what makes it permanent. It is the difference between
+complying with a takedown and appearing to comply with one, and it is exactly the
+same shape of bug as `deadImages`: two stages that disagree, with the weaker one
+winning on a timer.
+
+Kept inside data.json rather than a file of its own on purpose — the refresh
+workflow refuses to commit anything except data.json, so a separate file could
+be written by hand but never maintained by the job or the admin panel.
+
+Two shapes, both honoured everywhere an image URL is considered:
+    {"url": "https://…/photo.jpg", "on": "2026-08-05", "note": "…"}
+    {"domain": "example.com",      "on": "2026-08-05", "note": "…"}
+A domain entry is for an outlet that objects wholesale rather than to one image.
+"""
+
+
+def _norm_url(url: str) -> str:
+    """Compare URLs the way a takedown request means them: same picture, ignoring
+    a tracking query string or a capitalised host."""
+    try:
+        p = urllib.parse.urlsplit((url or "").strip())
+    except ValueError:
+        return (url or "").strip().lower()
+    return urllib.parse.urlunsplit(("https", p.netloc.lower().removeprefix("www."), p.path, "", ""))
+
+
+def suppressions(payload: dict) -> list[dict]:
+    return payload.get("suppressed") or []
+
+
+def is_suppressed(url: str | None, rules: list[dict]) -> bool:
+    if not url:
+        return False
+    norm, host = _norm_url(url), domain_of(url)
+    for r in rules:
+        if r.get("url") and _norm_url(r["url"]) == norm:
+            return True
+        d = (r.get("domain") or "").lower().removeprefix("www.")
+        if d and (host == d or host.endswith("." + d)):
+            return True
+    return False
+
+
+def suppress_image(payload: dict, url: str, note: str = "") -> int:
+    """Action a takedown. Records the rule, then clears the picture everywhere it
+    is currently used. Returns how many entries were cleared.
+
+    Deliberately does NOT touch `source`, `imageCredit` history or the entry
+    itself: the objection is to republishing the photograph, not to the fact that
+    the outlet reported the watch. The entry keeps its provenance and simply
+    carries no picture, which the register is already built to render honestly."""
+    rules = payload.setdefault("suppressed", [])
+    if not any(_norm_url(r.get("url", "")) == _norm_url(url) for r in rules if r.get("url")):
+        rules.append({"url": url, "on": today(), "note": note or "takedown request"})
+    return enforce_suppressions(payload)
+
+
+def enforce_suppressions(payload: dict) -> int:
+    """Clear every suppressed image currently in the data. Runs at load, before
+    any stage reads an image, so a rule added by hand or by the admin panel takes
+    effect on the very next run rather than whenever stage 7 gets round to it."""
+    rules = suppressions(payload)
+    if not rules:
+        return 0
+    cleared = 0
+    for w in payload.get("watches", []):
+        if is_suppressed(w.get("image"), rules):
+            w["image"] = None
+            w["imageCredit"] = None
+            w["imageSize"] = None
+            # A permanent verdict, so the photograph stage does not spend a fetch
+            # on this article every run only to be refused at the end of it.
+            w["imageProbe"] = {"date": today(), "result": "none", "note": "suppressed on request"}
+            cleared += 1
+    return cleared
+
+
 # ---------------------------------------------------------- stage 3: photos
 
 
@@ -1130,7 +1216,7 @@ def probe_result_for(note: str) -> str:
     return "blocked"
 
 
-def stage_photos(watches: list[dict], batch: int = 0) -> dict:
+def stage_photos(watches: list[dict], batch: int = 0, suppressed: list[dict] | None = None) -> dict:
     """Uncapped by default. Reading an og:image tag is a fetch and a parse — no
     model call, no judgement, no cost — so the per-run cap this used to carry
     was throttling the only free stage in the job and stretching a one-run pass
@@ -1140,6 +1226,7 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
     eight sites is fine, eight at one site is not. Requests to the same host are
     serialised and spaced by PHOTO_HOST_DELAY, so 200 fetches take a few minutes
     and no single outlet notices."""
+    rules = suppressed or []
     targets = photo_candidates(watches)
     if batch:
         targets = targets[:batch]
@@ -1160,6 +1247,11 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
         # stages would hand the same broken picture back and forth every week.
         if img and img in (w.get("deadImages") or []):
             return w, None, "og:image is a URL already proven dead"
+        # The takedown gate. This is the check that makes a removal permanent:
+        # without it the article still offers the picture and we would republish
+        # it on the next run, having been asked not to.
+        if img and is_suppressed(img, rules):
+            return w, None, "og:image is suppressed on request"
         return w, img, "ok" if img else "no og:image"
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
@@ -1176,6 +1268,13 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
                 summary["resolved"].append(w)
             elif note == "no og:image":
                 w["imageProbe"] = {"date": today(), "result": "none"}
+                summary["none"].append(w)
+            elif note == "og:image is suppressed on request":
+                # Permanent, not a retry candidate — the article will keep
+                # offering it and we will keep declining. "none" is the right
+                # verdict because as far as this register is concerned there is
+                # no photograph available for this entry.
+                w["imageProbe"] = {"date": today(), "result": "none", "note": note}
                 summary["none"].append(w)
             elif note.startswith("og:image is a URL already proven dead"):
                 # The article is fine; its picture is not. Worth another look
@@ -2232,6 +2331,10 @@ def main() -> int:
                     help="weekly ceiling in CAD for model spend (0 = no ceiling)")
     ap.add_argument("--corrections", type=Path, default=None,
                     help="apply Lowell's admin export (Copy corrections JSON) into data.json")
+    ap.add_argument("--takedown", metavar="URL", default=None,
+                    help="action a takedown: suppress this image URL permanently and clear it")
+    ap.add_argument("--takedown-note", default="",
+                    help="who asked, so the reason survives in the data")
     args = ap.parse_args()
     stages = {int(s) for s in args.stages.split(",") if s.strip()}
 
@@ -2267,6 +2370,21 @@ def main() -> int:
         log("    (--no-api: fetch layer only, no model calls)")
     log(f"    budget: {args.budget:.2f} CAD" if args.budget > 0 else "    budget: none set")
 
+    # Takedowns are honoured BEFORE any stage reads an image. A rule added by
+    # hand, by the admin panel or by --takedown takes effect on this run, not
+    # whenever the rot check next happens to visit that entry.
+    if args.takedown:
+        takedown_cleared = suppress_image(payload, args.takedown, args.takedown_note)
+        log(f"    takedown recorded — {args.takedown}")
+        log(f"    cleared from {takedown_cleared} entr"
+            f"{'y' if takedown_cleared == 1 else 'ies'}; it will not be re-resolved")
+    else:
+        takedown_cleared = enforce_suppressions(payload)
+        if takedown_cleared:
+            log(f"    {takedown_cleared} suppressed image(s) cleared before any stage ran")
+    if suppressions(payload):
+        log(f"    suppression list: {len(suppressions(payload))} rule(s) in force")
+
     # Lowell's hand corrections go in before anything else looks at a name, so a
     # run can never write a display name over an edit he made this morning.
     if args.corrections:
@@ -2291,7 +2409,7 @@ def main() -> int:
     if 7 in stages:
         rot = stage_image_rot(watches, args.image_batch)
     if 3 in stages:
-        photos = stage_photos(watches, args.photo_batch)
+        photos = stage_photos(watches, args.photo_batch, suppressions(payload))
     # Free: fetch and parse, no model call. Runs every week because buy links
     # rot and change shape without telling anyone.
     if 8 in stages:
@@ -2376,6 +2494,12 @@ def main() -> int:
         parts.append(f"{len(cal['expired'])} calendar entries expired")
     if rot.get("rotted"):
         parts.append(f"{len(rot['rotted'])} rotted photos cleared")
+    # A takedown is the most material change this job can make and it must never
+    # land under "no material change" — that commit is the record that a rights
+    # holder's request was honoured, and it has to be findable in the log.
+    if takedown_cleared:
+        parts.append(f"{takedown_cleared} photograph"
+                     f"{'' if takedown_cleared == 1 else 's'} suppressed on request")
     subject = f"refresh {today()} — " + (", ".join(parts) if parts else "no material change")
 
     if args.dry_run:

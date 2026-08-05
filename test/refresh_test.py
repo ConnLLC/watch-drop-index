@@ -1019,6 +1019,58 @@ check("it is not worth spending a stock check on",
       len([w for w in [gone, entry(id="0000000019", rank=0)]
            if w["rank"] <= 2 and not R.is_retracted(w)]), 1)
 check("...nor a photograph probe", len(R.photo_candidates([gone])), 0)
+section("Takedowns are permanent, not seven-day")
+# The failure this guards against is specific and embarrassing: honour a rights
+# holder's request by nulling `image`, then re-publish the same photograph on the
+# next photograph pass because the source article still offers it. Complying for
+# exactly one day is not complying.
+PHOTO = "https://www.ablogtowatch.com/wp-content/uploads/2026/06/a-watch-scaled.jpeg"
+pay = {"meta": {}, "watches": [
+    entry(id="1111111111", image=PHOTO, imageCredit="aBlogtoWatch", imageSize=[1200, 800]),
+    entry(id="2222222222", image=PHOTO, imageCredit="aBlogtoWatch"),
+    entry(id="3333333333", image="https://hodinkee.com/other.jpg", imageCredit="Hodinkee"),
+]}
+cleared = R.suppress_image(pay, PHOTO, "rights holder request")
+check("a takedown clears the picture from every entry using it", cleared, 2)
+check("...and leaves other photographs alone", pay["watches"][2]["image"], "https://hodinkee.com/other.jpg")
+check("the credit goes with the picture", pay["watches"][0]["imageCredit"], None)
+check("the entry itself survives — the objection is to the photograph",
+      pay["watches"][0]["id"], "1111111111")
+check("provenance is untouched: the outlet still reported the watch",
+      pay["watches"][0]["source"], "https://monochrome-watches.com/a")
+check("the rule is recorded with a date", bool(pay["suppressed"][0]["on"]), True)
+check("actioning the same URL twice does not duplicate the rule",
+      (R.suppress_image(pay, PHOTO), len(pay["suppressed"])), (0, 1))
+
+rules = R.suppressions(pay)
+check("suppression ignores a tracking query string",
+      R.is_suppressed(PHOTO + "?utm_source=x", rules), True)
+check("...and a www prefix", R.is_suppressed(PHOTO.replace("www.", ""), rules), True)
+check("a different photograph from the same outlet is NOT suppressed",
+      R.is_suppressed("https://www.ablogtowatch.com/wp-content/uploads/2026/06/b.jpeg", rules), False)
+check("an unrelated URL is not suppressed", R.is_suppressed("https://hodinkee.com/x.jpg", rules), False)
+check("a null image is not suppressed", R.is_suppressed(None, rules), False)
+
+# The whole point: the photograph stage must REFUSE to re-adopt it.
+readopt = {"meta": {}, "watches": [entry(id="1111111111", image=None)]}
+readopt["suppressed"] = pay["suppressed"]
+check("the photograph stage will not re-resolve a suppressed image",
+      R.is_suppressed(PHOTO, R.suppressions(readopt)), True)
+check("a suppressed entry is not even a candidate after enforcement", (
+    R.enforce_suppressions({"meta": {}, "suppressed": pay["suppressed"],
+                            "watches": [entry(id="4444444444", image=PHOTO)]}),
+), (1,))
+
+# An outlet objecting wholesale rather than to a single image.
+whole = {"meta": {}, "suppressed": [{"domain": "example-press.com", "on": "2026-08-05"}],
+         "watches": [entry(id="5555555555", image="https://cdn.example-press.com/a.jpg"),
+                     entry(id="6666666666", image="https://example-press.com/b.jpg"),
+                     entry(id="7777777777", image="https://notexample-press.com/c.jpg")]}
+check("a domain rule covers the outlet and its subdomains", R.enforce_suppressions(whole), 2)
+check("...without catching a lookalike domain", whole["watches"][2]["image"],
+      "https://notexample-press.com/c.jpg")
+
+check("no suppression list is not an error", R.enforce_suppressions({"meta": {}, "watches": []}), 0)
 
 section("Source and calendar links — the other half of the sweep")
 # Stage 7 checks images and stage 8 checks buy URLs; between them that was ~480

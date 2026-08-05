@@ -57,7 +57,9 @@ const rows = (w) => w.document.querySelectorAll("[data-id]").length;
 //    the display layer. data.json still holds them — nothing is deleted — so one
 //    reappears by itself the week its edition is confirmed.
 //  * The FILTER BUTTONS are narrowed to the four actionable tiers. The other
-//    three are still listed, searchable and explained in the availability key.
+//    three are still listed, searchable, and explained inline in their own
+//    expanded row — the availability key that used to carry that job was cut
+//    on 2026-08-05.
 //
 // The test mirrors both rules rather than importing them, so changing one copy
 // and not the other fails here rather than live.
@@ -97,6 +99,27 @@ const keep = (list) => list
   check("colophon: revision", txt(w, "#c-rev"), BASE.meta.revision);
   check("colophon: photos resolved", txt(w, "#c-imgs"), KEPT.filter((x) => x.image).length);
   check("colophon: total", txt(w, "#c-total"), N);
+  check("colophon: updated", txt(w, "#c-updated"), BASE.meta.updated);
+  // The three survivors of the 2026-08-05 cut. The takedown line is the one that
+  // is not a preference: 224 photographs are published under an editorial-use
+  // rationale that only holds while a rights holder can find a route to object.
+  // If a restyle drops it, that is a legal posture quietly evaporating, so it
+  // fails here rather than shipping.
+  check("takedown route is present and reachable", (() => {
+    const n = w.document.querySelector("#takedown");
+    if (!n) return "no #takedown";
+    const a = n.querySelector('a[href^="mailto:"]');
+    if (!a) return "no mailto link";
+    if (a.getAttribute("href") !== "mailto:wdi-takedown@conn.llc") return `wrong address: ${a.getAttribute("href")}`;
+    // "Permanently visible, not folded behind anything" — it must not be inside
+    // anything the page hides, which is how a required notice usually dies.
+    for (let e = n; e; e = e.parentElement) {
+      if (e.style && e.style.display === "none") return "hidden by an ancestor";
+    }
+    return true;
+  })(), true);
+  check("the register still says what 'checked' means",
+        /purchase page was read on the date shown/i.test(w.document.querySelector("footer").textContent), true);
   check("filter badge: All", tierBadge(w, "All"), N);
   check("filter badge: Buy online now", tierBadge(w, "Buy online now"), tally("Buy online now"));
   check("filter badge: Gone", tierBadge(w, "Gone"), tally("Gone"));
@@ -105,7 +128,9 @@ const keep = (list) => list
   // Rendered content only — the script's own source names the old tier, since
   // that is what it remaps FROM.
   check("no 'Retailer enquiry' reaches the reader", (() => {
-    const seen = [...w.document.querySelectorAll("#list [title], #keyRows, [data-tier]")]
+    // #keyRows dropped out of this selector when the availability key was cut
+    // (2026-08-05). The remap still has to hold everywhere it can still be seen.
+    const seen = [...w.document.querySelectorAll("#list [title], [data-tier]")]
       .map((n) => (n.getAttribute("title") || "") + " " + n.textContent);
     return seen.some((s) => s.includes("Retailer enquiry"));
   })(), false);
@@ -123,9 +148,36 @@ const keep = (list) => list
     w.document.querySelector('[data-tier="All"]').dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
     return rows(w) === N ? true : `All: ${rows(w)} rows, expected ${N}`;
   })(), true);
-  check("the availability key explains every tier in the data",
-        w.document.querySelector("#keyRows").children.length,
-        new Set(KEPT.map((x) => x.tier)).size);
+  // The availability key below the register was cut on 2026-08-05, so this no
+  // longer has a #keyRows to count. The obligation it encoded did not go away —
+  // every tier must still be explained to the reader — so it moves to where the
+  // explanation now lives: inline, in each expanded row. That is a STRONGER
+  // assertion than the old one, since it checks the tier the reader is actually
+  // looking at rather than a list further down the page.
+  // Opening a row fills its panel asynchronously, so each tier needs the same
+  // settle the deep-link and keyboard checks give it. Done as an awaited const
+  // rather than inline because check() takes a value, not a promise — an inline
+  // async IIFE would hand it a pending Promise and pass unconditionally.
+  const tiersExplained = await (async () => {
+    // Every node must be re-queried after each click: toggling a row rewrites
+    // #list wholesale, so a reference captured beforehand is detached from the
+    // document and reads as an empty panel. That detail cost an hour once.
+    const ctl = (id) => w.document.querySelector(`[data-id="${id}"] .wdi-row`);
+    for (const tier of new Set(KEPT.map((x) => x.tier))) {
+      const one = KEPT.find((x) => x.tier === tier);
+      if (!ctl(one.id)) return `no row for ${tier}`;
+      ctl(one.id).dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+      const panel = w.document.querySelector("#p-" + one.id);
+      if (!panel || !panel.textContent.includes(tier)) return `${tier}: not named in its own row`;
+      // The em-dashed gloss after the tier name is the explanation itself.
+      if (!/—\s*\S/.test(panel.textContent.split(tier)[1] || "")) return `${tier}: named but not explained`;
+      ctl(one.id).dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    return true;
+  })();
+  check("every tier in the data is still explained inline", tiersExplained, true);
   check("an un-buttoned watch is still findable by search", (() => {
     const hidden = KEPT.find((x) => UNFILTERABLE.includes(x.tier));
     if (!hidden) return true;
@@ -217,11 +269,18 @@ const keep = (list) => list
         w.document.querySelector('#lockup [data-clock="sec"]').style.animationDelay.endsWith("s"), true);
   check("corner badge is a template until scrolled", !!w.document.querySelector("#badgeTpl"), true);
   check("badge not mounted at rest", w.document.querySelector("#badgeHost").children.length, 0);
-  check("availability key rendered", w.document.querySelector("#keyRows").children.length > 0, true);
-  check("calendar sections rendered from data",
-        w.document.querySelector("#drops").children.length, BASE.calendar.drops.length);
-  check("events rendered from data",
-        w.document.querySelector("#events").children.length, BASE.calendar.events.length);
+  // The availability key and the calendar sections were cut on 2026-08-05.
+  // Asserting their ABSENCE rather than deleting the checks: if a future restyle
+  // reintroduces the furniture Lowell asked to have removed, that should fail
+  // here rather than quietly reappear under the register.
+  check("the sections below the register stay gone", (() => {
+    const gone = ["#keyRows", "#drops", "#events", "#notHappening", "#expected"]
+      .filter((s) => w.document.querySelector(s));
+    return gone.length ? `still present: ${gone.join(", ")}` : true;
+  })(), true);
+  // The calendar data itself is NOT gone — the expiry stage still maintains it,
+  // so it stays correct against the day these sections come back.
+  check("calendar data survives the cut", BASE.calendar.drops.length > 0, true);
   // jsdom has no canvas, so this also proves the wordmark degrades instead of
   // taking the page down when text metrics are unavailable.
   check("page still renders without canvas metrics", rows(w), N);
@@ -319,10 +378,19 @@ const keep = (list) => list
   console.log("\n=== 6. THE MOBILE CONTRACT ===");
   // The whole ≤720px pass keys off data-mq and nothing else, so a renamed hook
   // silently drops a rule on phones while desktop stays perfect.
+  // "two" and "row2" were removed on 2026-08-05 with the sections they styled.
+  // Removed here CONSCIOUSLY and in the same commit as the markup and the CSS —
+  // a hook disappearing from this list without anyone noticing is precisely the
+  // failure the mobile contract exists to prevent, so it must never happen by
+  // accident. Their @media rules went too; nothing is left defending them.
   const MQ = ["utilwrap", "util", "utc", "hdr", "hgrid", "hleft", "hdiv", "hstats",
               "lockup", "wide", "fwrap", "fbar", "flabel", "pband", "preset",
-              "search", "sort", "main", "colh", "cols", "detail", "two", "row2", "badge"];
+              "search", "sort", "main", "colh", "cols", "detail", "badge"];
   const media = HTML.slice(HTML.indexOf("@media (max-width:720px)"));
+  for (const dead of ["two", "row2"]) {
+    check(`retired hook "${dead}" leaves no orphan CSS`,
+          HTML.includes(`data-mq="${dead}"`) || media.includes(`[data-mq="${dead}"]`), false);
+  }
   for (const hook of MQ) {
     const inDom = !!w.document.querySelector(`[data-mq="${hook}"]`) ||
                   HTML.includes(`data-mq="${hook}"`);
