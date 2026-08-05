@@ -12,6 +12,7 @@ Run:  python3 test/refresh_test.py
 
 from __future__ import annotations
 
+import collections
 import copy
 import json
 import sys
@@ -75,10 +76,23 @@ class StubModel:
         self.skipped = 0
         self.stopped_at = None
         self._exhausted = exhausted
+        # The per-stage spend surface. Mirrored here for the reason this class's
+        # docstring already gives: a double that silently lacks something the
+        # production code reads turns an interface change into a confusing
+        # AttributeError instead of a failed assertion. It did exactly that.
+        self.by_stage = collections.Counter()
+        self.calls_by_stage = collections.Counter()
+        self.searches_by_stage = collections.Counter()
+
+        self.carried_cad = 0.0
 
     @property
     def cad(self) -> float:
         return self.usd * R.USD_TO_CAD
+
+    @property
+    def week_cad(self) -> float:
+        return self.carried_cad + self.cad
 
     def exhausted(self) -> bool:
         return self._exhausted
@@ -272,7 +286,7 @@ def run_main(watches, model_factory, argv) -> tuple[int, dict]:
 section("Guardrail: blast radius")
 many = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(40)]
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
-code, after = run_main(many, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
+code, after = run_main(many, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
                        ["--stages", "2"])
 check("exits 20 when >15% would flip to Gone", code, 20)
 check("data.json is NOT written", after["meta"]["revision"], 1)
@@ -281,7 +295,7 @@ check("no entry was persisted as Gone", [w for w in after["watches"] if w["statu
 section("Guardrail: silence is a failure")
 R.fetch = lambda url: (None, "HTTP 403")
 code, after = run_main([entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)],
-                       lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
+                       lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
 check("exits 21 when no page was readable", code, 21)
 check("data.json is NOT written", after["meta"]["revision"], 1)
 
@@ -289,7 +303,7 @@ section("Guardrail: entries are never deleted, ids never rewritten")
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
 ids_before = [w["id"] for w in watches]
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2"])
 check("exit 0", code, 0)
 check("no entries lost", len(after["watches"]), 20)
@@ -310,14 +324,14 @@ class OneGone(StubModel):
                 else verdict("yes", "add_to_cart", "In stock", "high"))
 
 
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: OneGone(), ["--stages", "2"])
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: OneGone(), ["--stages", "2"])
 check("exit 0", code, 0)
 check("exactly one entry went Gone", sum(1 for w in after["watches"] if w["status"] == "Sold out"), 1)
 check("the rest kept their tier", sum(1 for w in after["watches"] if w["tier"] == "Buy online now"), 39)
 
 section("--dry-run writes nothing")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2", "--dry-run"])
 check("exit 0", code, 0)
 check("data.json untouched on disk", after["meta"]["revision"], 1)
@@ -422,6 +436,26 @@ for pattern in ("not formally limited", "^capped", "annually"):
     check(f"build.py carries the {pattern!r} rule", pattern in build_src, True)
     check(f"the page carries the {pattern!r} rule", pattern in page_src, True)
 
+section("The ceiling is WEEKLY, not per-run")
+# This was a live bug until 2026-08-05, and the sort that hides behind a correct
+# word. Every run started its meter at zero, so a ceiling called "weekly" was
+# really "per invocation, unbounded per week". One manual dispatch spent 4.33 CAD
+# and Monday's scheduled run would have been free to spend 5.00 more, with
+# nothing anywhere noticing. Everything below asserts the word is now true.
+check("a fresh week starts at zero",
+      R.spend_carried({"spend": {"weekStart": "1999-01-04", "cad": 4.33}})[0], 0.0)
+check("...and spend inside the current week is carried",
+      R.spend_carried({"spend": {"weekStart": R.week_anchor(), "cad": 4.33}})[0], 4.33)
+check("no ledger at all is zero, not an error", R.spend_carried({})[0], 0.0)
+check("the week is anchored to a Monday a human can check on a calendar",
+      R.week_anchor("2026-08-05"), "2026-08-03")
+check("...including when today IS Monday", R.week_anchor("2026-08-03"), "2026-08-03")
+check("...and Sunday belongs to the week that started six days earlier",
+      R.week_anchor("2026-08-09"), "2026-08-03")
+# A corrupt ledger must never hand out a free budget.
+check("an unreadable ledger reads as fully spent, not as empty",
+      R.spend_carried({"spend": {"weekStart": R.week_anchor(), "cad": "??"}})[0], float("inf"))
+
 section("The spend guard measures real usage")
 # Money is the one thing here nobody can eyeball afterwards, so the arithmetic
 # is pinned to the published rates rather than trusted.
@@ -442,9 +476,17 @@ class Searches:
 
 
 def meter(budget=5.0):
-    m = R.Model.__new__(R.Model)          # no API client, no key needed
-    m.enabled, m.calls, m.usd, m.searches = True, 0, 0.0, 0
-    m.budget_cad, m.skipped, m.stopped_at, m._worst_call_cad = budget, 0, None, 0.0
+    """A real Model with no API client.
+
+    Built through __init__ with enabled=False — which is exactly the path that
+    skips the anthropic import and the key — and then switched on. It used to be
+    hand-assembled with __new__ and a list of fields, which meant every new
+    attribute on Model broke this with an AttributeError from inside production
+    code rather than a failed assertion. Adding per-stage cost tracking did
+    precisely that. Constructing it properly cannot drift.
+    """
+    m = R.Model(enabled=False, budget_cad=budget)
+    m.enabled = True
     return m
 
 
@@ -484,6 +526,29 @@ check("_afford records what it refused", (m._afford("availability"), m.skipped, 
       (False, 1, "availability"))
 check("a zero budget means no ceiling at all", meter(budget=0).exhausted(), False)
 
+# --- and the ceiling has to span the WEEK, not one invocation ---------------
+carried = meter(budget=5.0)
+carried.carried_cad = 4.33
+check("a run inherits what the week already spent", round(carried.week_cad, 2), 4.33)
+check("...and only 0.67 of the ceiling remains", round(carried.remaining_cad(), 2), 0.67)
+carried._worst_call_cad = 1.0
+check("...so a call larger than the remainder is refused", carried.exhausted(), True)
+check("a second dispatch in the same week cannot spend a second full ceiling",
+      carried._afford("availability"), False)
+check("but a genuinely fresh week can", meter(budget=5.0).exhausted(), False)
+
+# Written on EVERY run, free ones included — that is what rolls the week over on
+# a Monday rather than waiting for the next paid run to notice.
+m2 = meter(budget=5.0)
+m2.carried_cad = 1.0
+m2.usd = 1.0 / R.USD_TO_CAD
+meta_out = {}
+R.record_spend(meta_out, m2)
+check("the ledger records the WEEK's total, not the run's",
+      round(meta_out["spend"]["cad"], 2), 2.0)
+check("...stamped with the week it belongs to",
+      meta_out["spend"]["weekStart"], R.week_anchor())
+
 section("A budget stop is safe to commit, and is not a failure")
 # The refused call returns None — the same thing an unreadable page returns — so
 # every decision rule already leaves the entry alone. That is what makes stopping
@@ -499,7 +564,7 @@ check("...without pretending it read the page", summary["read"], 0)
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
 code, after = run_main(
     watches,
-    lambda enabled=True, budget_cad=0.0: StubModel(
+    lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(
         default=verdict("yes", "add_to_cart", "In stock"), exhausted=True),
     ["--stages", "2"])
 check("a fully-skipped run is green, not red", code, 0)

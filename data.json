@@ -9,7 +9,11 @@
     "revision": 7,
     "domain": "watchdropindex.com",
     "imagesResolved": 221,
-    "lastImageSweep": "2026-08-05"
+    "lastImageSweep": "2026-08-05",
+    "spend": {
+      "weekStart": "2026-08-03",
+      "cad": 4.33
+    }
   },
   "watches": [
     {

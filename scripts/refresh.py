@@ -551,8 +551,11 @@ class Model:
     without positive evidence. That is what makes a mid-run budget stop safe to
     commit rather than something to roll back."""
 
-    def __init__(self, enabled: bool = True, budget_cad: float = WEEKLY_BUDGET_CAD):
+    def __init__(self, enabled: bool = True, budget_cad: float = WEEKLY_BUDGET_CAD,
+                 carried_cad: float = 0.0):
         self.enabled = enabled
+        # Already spent this week, before this run started. See week_cad().
+        self.carried_cad = carried_cad
         self.calls = 0
         self.usd = 0.0
         self.searches = 0
@@ -560,6 +563,9 @@ class Model:
         self.skipped = 0            # calls the ceiling refused
         self.stopped_at = None      # which stage ran out
         self._worst_call_cad = 0.0  # self-calibrating reserve; see _afford()
+        self.by_stage: collections.Counter = collections.Counter()
+        self.calls_by_stage: collections.Counter = collections.Counter()
+        self.searches_by_stage: collections.Counter = collections.Counter()
         self._client = None
         if enabled:
             import anthropic  # imported lazily so --no-api needs no dependency
@@ -568,10 +574,23 @@ class Model:
     # ---- money ------------------------------------------------------------
     @property
     def cad(self) -> float:
+        """THIS RUN's spend."""
         return self.usd * USD_TO_CAD
 
+    @property
+    def week_cad(self) -> float:
+        """Spend for the WEEK — what the ceiling is actually about.
+
+        This distinction was a live bug until 2026-08-05. Every run started its
+        meter at zero, so a ceiling named "weekly" was really "per invocation,
+        unbounded per week": one manual dispatch spent 4.33 CAD and Monday's
+        scheduled run would have been free to spend 5.00 more, with nothing
+        anywhere noticing. The word promised a guarantee the code did not make.
+        The carried figure is read from meta.spend and rolls over on Monday."""
+        return self.carried_cad + self.cad
+
     def remaining_cad(self) -> float:
-        return max(0.0, self.budget_cad - self.cad)
+        return max(0.0, self.budget_cad - self.week_cad)
 
     def exhausted(self) -> bool:
         """Would the next call breach the ceiling? The reserve is the most
@@ -581,20 +600,22 @@ class Model:
         Read-only: callers use it to stop fetching pages they cannot judge."""
         if self.budget_cad <= 0:
             return False                      # no ceiling configured
-        return self.cad + max(self._worst_call_cad, 0.05) > self.budget_cad
+        return self.week_cad + max(self._worst_call_cad, 0.05) > self.budget_cad
 
     def _afford(self, stage: str) -> bool:
         if self.exhausted():
             self.skipped += 1
             if self.stopped_at is None:
                 self.stopped_at = stage
+                carried = (f" — {self.carried_cad:.2f} of it spent earlier this week"
+                           if self.carried_cad else "")
                 log(f"    ! weekly ceiling of {self.budget_cad:.2f} CAD reached "
-                    f"({self.cad:.2f} CAD spent). Skipping the rest of the model work; "
-                    f"everything finished so far still commits.")
+                    f"({self.week_cad:.2f} CAD spent this week{carried}). Skipping the rest "
+                    f"of the model work; everything finished so far still commits.")
             return False
         return True
 
-    def _charge(self, usage) -> None:
+    def _charge(self, usage, stage: str = "other") -> None:
         """Price one response. Unknown fields default to zero rather than
         raising — a usage field that moves must never take a run down, and the
         spend line in the report is where an under-count would show up."""
@@ -609,6 +630,15 @@ class Model:
         self.searches += searches
         usd += searches * WEB_SEARCH_USD
         self.usd += usd
+        # Per-stage, because a single total cannot answer the question that
+        # actually matters: what does ONE stock check cost, versus one press
+        # search? Without that split, a cadence tiered by volatility can only
+        # be guessed at. Counted here rather than estimated afterwards from
+        # call counts, which silently assumes every call costs the same — and
+        # a 16k-token search with 18 web results plainly does not.
+        self.by_stage[stage] += usd
+        self.calls_by_stage[stage] += 1
+        self.searches_by_stage[stage] += searches
         self._worst_call_cad = max(self._worst_call_cad, usd * USD_TO_CAD)
 
     # ---- calls ------------------------------------------------------------
@@ -627,7 +657,7 @@ class Model:
                     output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
                     messages=[{"role": "user", "content": prompt}],
                 )
-                self._charge(r.usage)
+                self._charge(r.usage, stage)
                 if r.stop_reason == "refusal":
                     return None
                 text = next((b.text for b in r.content if b.type == "text"), None)
@@ -663,7 +693,7 @@ class Model:
             # Streaming still carries a full usage block on the final message —
             # including server_tool_use.web_search_requests, which is the only
             # place the per-search charge is visible.
-            self._charge(msg.usage)
+            self._charge(msg.usage, stage)
             if msg.stop_reason == "refusal":
                 return None
             return "\n".join(b.text for b in msg.content if b.type == "text").strip() or None
@@ -963,6 +993,41 @@ def release_manual(entry: dict, fields: list[str] | None = None) -> None:
         entry["manual"] = sorted(owned)
     else:
         entry.pop("manual", None)
+
+
+def week_anchor(day: str | None = None) -> str:
+    """The Monday of the week containing `day`. The ledger key.
+
+    Monday rather than a rolling seven days on purpose: a rolling window means
+    the answer to "how much is left?" changes while nobody is running anything,
+    which is impossible to reason about from a run report. A named day is
+    checkable by a human against a calendar."""
+    d = dt.date.fromisoformat(day or today())
+    return (d - dt.timedelta(days=d.weekday())).isoformat()
+
+
+def spend_carried(meta: dict) -> tuple[float, str]:
+    """What has already been spent this week, and which week that is.
+
+    Returns 0 when the recorded week is not the current one — that IS the
+    rollover, and doing it on read means it happens even on a run that spends
+    nothing, rather than waiting for the next paid run to notice."""
+    rec = meta.get("spend") or {}
+    week = week_anchor()
+    if rec.get("weekStart") != week:
+        return 0.0, week
+    try:
+        return max(0.0, float(rec.get("cad") or 0.0)), week
+    except (TypeError, ValueError):
+        # A corrupt ledger must not hand out a free budget. Treating it as
+        # "nothing spent" would be the failure this whole function exists to
+        # prevent, so it reads as fully spent instead and a human can reset it.
+        log("    ! spend ledger is unreadable — treating the week as fully spent")
+        return float("inf"), week
+
+
+def record_spend(meta: dict, model: "Model") -> None:
+    meta["spend"] = {"weekStart": week_anchor(), "cad": round(model.week_cad, 4)}
 
 
 def is_retracted(entry: dict) -> bool:
@@ -1805,10 +1870,27 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
     # the right ceiling should be.
     if model is not None:
         L += ["## Spend", "",
-              f"- **{model.cad:.2f} CAD** of a {model.budget_cad:.2f} CAD weekly ceiling "
-              f"(${model.usd:.3f} USD at a fixed {USD_TO_CAD} CAD/USD)",
+              f"- **{model.cad:.2f} CAD this run** (${model.usd:.3f} USD at a fixed "
+              f"{USD_TO_CAD} CAD/USD)",
+              f"- **{model.week_cad:.2f} CAD this week** of a {model.budget_cad:.2f} CAD "
+              f"ceiling, week beginning {week_anchor()}"
+              + (f" — {model.carried_cad:.2f} CAD of it from earlier runs"
+                 if model.carried_cad else ""),
               f"- {model.calls} model call(s) · {model.searches} web search(es) "
               f"· photographs cost nothing (no model call)", ""]
+        # The unit costs, because the total cannot answer the question that
+        # decides cadence: what does ONE stock check cost against ONE press
+        # search? Averaging the total over the call count assumes every call
+        # costs the same, and a 16k-token search carrying 18 web results plainly
+        # does not. Measured per stage rather than inferred.
+        if model.by_stage:
+            L += ["| stage | calls | searches | CAD | CAD per call |",
+                  "|---|---|---|---|---|"]
+            for stage, usd in model.by_stage.most_common():
+                n = model.calls_by_stage[stage]
+                L += [f"| {stage} | {n} | {model.searches_by_stage[stage]} | "
+                      f"{usd * USD_TO_CAD:.3f} | {(usd * USD_TO_CAD / n if n else 0):.4f} |"]
+            L += [""]
         if model.stopped_at:
             L += [f"> **The ceiling was reached during the {model.stopped_at} stage.** "
                   f"{model.skipped} further call(s) were skipped and everything already "
@@ -2021,7 +2103,13 @@ def main() -> int:
     log(f"    {start_count} entries · {len({w['brand'] for w in watches})} brands · "
         f"revision {meta.get('revision')} · updated {meta.get('updated')}")
 
-    model = Model(enabled=not args.no_api, budget_cad=args.budget)
+    # The weekly ledger. Without this the ceiling is per-invocation and the word
+    # "weekly" is a promise the code does not keep — see Model.week_cad().
+    carried, week_start = spend_carried(meta)
+    model = Model(enabled=not args.no_api, budget_cad=args.budget, carried_cad=carried)
+    if carried:
+        log(f"    already spent this week (from {week_start}): {carried:.2f} CAD "
+            f"· {max(0.0, args.budget - carried):.2f} CAD left of the ceiling")
     if args.no_api:
         log("    (--no-api: fetch layer only, no model calls)")
     log(f"    budget: {args.budget:.2f} CAD" if args.budget > 0 else "    budget: none set")
@@ -2104,6 +2192,9 @@ def main() -> int:
     # sweep that a --stages flag skipped.
     if rot:
         meta["lastImageSweep"] = today()
+    # Written on EVERY run, including free ones: that is what rolls the week over
+    # on a Monday whether or not anything paid has run yet.
+    record_spend(meta, model)
     meta["revision"] = int(meta.get("revision", 0)) + 1
 
     changed = json.dumps(payload, sort_keys=True) != before
