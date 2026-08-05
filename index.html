@@ -246,6 +246,20 @@ input[type=search]:focus{border-color:#17130d}
 
   </main>
 
+  <!-- The enlarged photograph. Lowell's ask, 2026-08-05. Mechanism only: this
+       is deliberately plain — every value below is from the approved palette
+       and nothing decorative has been invented. FLAGGED TO DESIGN for a
+       treatment; the markup is stable and the CSS is theirs to replace.
+       It stays on the page, so it does not touch the one-outbound-click rule. -->
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photograph" tabindex="-1"
+       style="display:none;position:fixed;inset:0;z-index:60;background:rgba(23,19,13,.94);
+              align-items:center;justify-content:center;flex-direction:column;gap:16px;
+              padding:28px;box-sizing:border-box;cursor:zoom-out">
+    <img id="lightboxImg" alt="" referrerpolicy="no-referrer"
+         style="display:block;max-width:94vw;max-height:82vh;width:auto;height:auto;border:1px solid #3a342b">
+    <div id="lightboxCap" style="font-size:11px;letter-spacing:.04em;color:#c9c0ad;text-align:center;max-width:70ch"></div>
+  </div>
+
   <div id="badgeHost"></div>
   <template id="badgeTpl"><div class="wdi-badge" data-logo-px="20" data-mq="badge" role="button" tabindex="0" title="Back to top" style="position:fixed;right:24px;bottom:22px;z-index:40;display:grid;justify-items:center;row-gap:0;line-height:1;font-family:'Newsreader',serif;font-size:20px;font-weight:600;letter-spacing:0;color:#17130d;cursor:pointer;background:#f4f1ea;border:1px solid #c9c0ad;padding:16px 44px 16px 18px;box-shadow:0 6px 26px rgba(23,19,13,.28);animation:wdi-badge-in .6s cubic-bezier(.22,.61,.36,1) both"><span style="display:block;width:3.9em"><span style="display:flex;justify-content:space-between;width:3.6em;position:relative;left:-.065em"><span data-b="wl">W</span><span>A</span><span>T</span><span>C</span><span data-b="hr">H</span></span></span>
       <span style="position:relative;display:block;width:3.9em;height:1em">
@@ -548,7 +562,14 @@ input[type=search]:focus{border-color:#17130d}
            browser to make that request instead. Costs nothing, invisible, and
            it is the difference between a photograph and a broken-image box for
            any outlet with hotlink protection turned on. */
-        '<img src="' + esc(d.image) + '" alt="' + esc(d.brand + " " + d.model) + '" loading="lazy" referrerpolicy="no-referrer" style="width:100%;display:block;border:1px solid #ddd6c8;background:#ece7da">' +
+        '<img src="' + esc(d.image) + '" alt="' + esc(d.brand + " " + d.model) + '" loading="lazy" referrerpolicy="no-referrer"' +
+        ' data-zoom="1" role="button" tabindex="0" aria-label="Enlarge the photograph of ' + esc(d.brand + " " + d.model) + '"' +
+        /* Native size travels with the image so the viewer can refuse to
+           upscale. Median here is 1600px and 211 of 217 are 900px or more, so
+           enlarging is worth offering — but a 480px file blown up to fill a 4K
+           display is worse than the inline thumbnail, not better. */
+        (d.imageSize ? ' data-w="' + d.imageSize[0] + '" data-h="' + d.imageSize[1] + '"' : '') +
+        ' style="width:100%;display:block;border:1px solid #ddd6c8;background:#ece7da;cursor:zoom-in">' +
         '<figcaption style="font-size:11px;color:#8a8071;margin-top:7px;letter-spacing:.04em">Photograph · ' + esc(d.imageCredit || "source") + '</figcaption></figure>';
     } else {
       var plate = (d.ref && d.ref !== "—") ? d.ref : String(d.brand || "").toUpperCase();
@@ -881,6 +902,43 @@ input[type=search]:focus{border-color:#17130d}
     }
   }
 
+  /* ---- the enlarged photograph ------------------------------------------- */
+  /* Opens at NATIVE size, capped to the viewport — never upscaled. These are
+     press og:image files; stretching a 480px one across a 4K display makes it
+     softer than the thumbnail it came from. Focus goes into the dialog on open
+     and returns to the exact photograph on close, so a keyboard user is not
+     dumped back at the top of the register. */
+  var zoomReturn = null;
+
+  function openZoom(img) {
+    var box = el("#lightbox"), big = el("#lightboxImg"), cap = el("#lightboxCap");
+    if (!box || !big) return;
+    var w = parseInt(img.getAttribute("data-w"), 10);
+    big.src = img.getAttribute("src");
+    big.alt = img.getAttribute("alt") || "";
+    /* No native width recorded means we cannot promise it will not blur, so it
+       is capped at the viewport and no further. */
+    big.style.maxWidth = w ? "min(94vw, " + w + "px)" : "94vw";
+    var fig = img.closest("figure");
+    var credit = fig && fig.querySelector("figcaption");
+    cap.textContent = (img.getAttribute("alt") || "") + (credit ? " — " + credit.textContent.trim() : "");
+    box.style.display = "flex";
+    /* The page behind must not scroll away under the dialog. */
+    document.documentElement.style.overflow = "hidden";
+    zoomReturn = img;
+    box.focus();
+  }
+
+  function closeZoom() {
+    var box = el("#lightbox");
+    if (!box || box.style.display === "none") return;
+    box.style.display = "none";
+    el("#lightboxImg").src = "";
+    document.documentElement.style.overflow = "";
+    if (zoomReturn && document.contains(zoomReturn)) zoomReturn.focus();
+    zoomReturn = null;
+  }
+
   /* ---- deep link --------------------------------------------------------- */
   /* /#<id> opens that watch. Deliberately one page with anchors rather than a
      page per watch. */
@@ -946,7 +1004,16 @@ input[type=search]:focus{border-color:#17130d}
       dropHash(); render();
     });
 
+    /* Clicking the enlarged photograph, or anywhere around it, closes. */
+    el("#lightbox").addEventListener("click", closeZoom);
+
     document.addEventListener("click", function (e) {
+      var zoom = e.target.closest("[data-zoom]");
+      if (zoom) {
+        /* Must not also toggle the row shut underneath the dialog. */
+        e.stopPropagation();
+        return openZoom(zoom);
+      }
       var b = e.target.closest("[data-tier],[data-band]");
       if (b) {
         if (b.hasAttribute("data-tier")) state.tier = b.getAttribute("data-tier");
@@ -996,7 +1063,10 @@ input[type=search]:focus{border-color:#17130d}
     /* The comp makes rows a div[role=button], which — unlike a real button —
        does not activate on Enter or Space. Restored explicitly. */
     document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") return closeZoom();
       if (e.key !== "Enter" && e.key !== " ") return;
+      var zoom = e.target.closest && e.target.closest("[data-zoom]");
+      if (zoom) { e.preventDefault(); e.stopPropagation(); return openZoom(zoom); }
       var head = e.target.closest && e.target.closest("[data-sortcol]");
       if (head) { e.preventDefault(); return sortByColumn(head.getAttribute("data-sortcol")); }
       var row = e.target.closest && e.target.closest(".wdi-row");

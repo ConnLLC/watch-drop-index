@@ -447,6 +447,64 @@ const keep = (list) => list
     return shown && exported[t.id].displayBrand === "Handedit";
   })(), true);
 
+  console.log("\n=== 11. THE ENLARGED PHOTOGRAPH ===");
+  // Mechanism, not treatment — design owns the styling. What must not regress is
+  // the behaviour: it opens, it never upscales, and a keyboard user can both
+  // reach it and get back out to where they were.
+  const zoomable = BASE.watches.find((x) => x.image && x.imageSize);
+  w = await load(BASE, "#" + zoomable.id);
+  const zimg = w.document.querySelector(`[data-id="${zoomable.id}"] img[data-zoom]`);
+  const zbox = w.document.querySelector("#lightbox");
+  const zbig = w.document.querySelector("#lightboxImg");
+  const zrow = w.document.querySelector(`[data-id="${zoomable.id}"] .wdi-row`);
+
+  check("the photograph is reachable by keyboard", zimg.getAttribute("tabindex"), "0");
+  check("...and announces what it does", /enlarge/i.test(zimg.getAttribute("aria-label") || ""), true);
+  check("the viewer starts closed", zbox.style.display, "none");
+
+  const expandedBefore = zrow.getAttribute("aria-expanded");
+  zimg.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+  check("a click opens it", zbox.style.display, "flex");
+  check("showing the same photograph", zbig.src, zoomable.image);
+  // The whole reason dimensions are stored: these are press og:image files, and
+  // upscaling a small one is worse than the thumbnail it came from.
+  check("capped at native size, never upscaled",
+        zbig.style.maxWidth, `min(94vw, ${zoomable.imageSize[0]}px)`);
+  check("the credit travels with it",
+        /Photograph ·/.test(w.document.querySelector("#lightboxCap").textContent), true);
+  check("the row underneath does not collapse", zrow.getAttribute("aria-expanded"), expandedBefore);
+  check("the page behind cannot scroll away", w.document.documentElement.style.overflow, "hidden");
+  check("it is a real dialog to a screen reader",
+        [zbox.getAttribute("role"), zbox.getAttribute("aria-modal")], ["dialog", "true"]);
+
+  w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  check("Escape closes it", zbox.style.display, "none");
+  check("scrolling is restored", w.document.documentElement.style.overflow, "");
+  check("focus returns to the photograph, not the top of the page",
+        w.document.activeElement, zimg);
+
+  zimg.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  check("Enter opens it too", zbox.style.display, "flex");
+  zbox.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+  check("clicking anywhere closes it", zbox.style.display, "none");
+
+  check("an image with no measured size is capped at the viewport instead", await (async () => {
+    const patched = JSON.parse(JSON.stringify(BASE));
+    const t = patched.watches.find((x) => x.image);
+    delete t.imageSize;
+    const v = await load(patched, "#" + t.id);
+    v.document.querySelector(`[data-id="${t.id}"] img[data-zoom]`)
+     .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    return v.document.querySelector("#lightboxImg").style.maxWidth;
+  })(), "94vw");
+
+  // Hotlink protection: outlets serve a bare request and refuse a referred one,
+  // so the page must not send a Referer for a press photograph. Confirmed live
+  // 2026-08-05 — this attribute is what put the Marathon image back.
+  check("no Referer is sent with a hotlinked photograph",
+        [...w.document.querySelectorAll("img")].every((n) => n.getAttribute("referrerpolicy") === "no-referrer"),
+        true);
+
   console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES"} — ${pass} passed, ${fail} failed\n`);
   process.exit(fail ? 1 : 0);
 })();

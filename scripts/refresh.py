@@ -49,9 +49,11 @@ import concurrent.futures
 import datetime as dt
 import hashlib
 import html
+import io
 import json
 import os
 import re
+import struct
 import sys
 import threading
 import time
@@ -389,6 +391,79 @@ class HostLimiter:
                 return work()
             finally:
                 self._last[host] = time.monotonic()
+
+
+def image_dimensions(url: str) -> tuple[int, int] | None:
+    """Native pixel size, read from the file HEADER rather than by downloading
+    the picture. Every format keeps it in the first few KB, so this is a bounded
+    read of at most 128 KB against images that are frequently several MB.
+
+    Stored so the lightbox can cap enlargement at native size: these are press
+    og:image files, and blowing a 900px photograph up to fill a 4K display just
+    makes it soft. Also lets the markup carry width/height, which stops the row
+    jumping as each photograph loads."""
+    try:
+        r = requests.get(url, timeout=FETCH_TIMEOUT, stream=True, allow_redirects=True,
+                         headers={"User-Agent": UA, "Accept": "image/*,*/*;q=0.8"})
+        if r.status_code >= 400:
+            r.close()
+            return None
+        buf = b""
+        for chunk in r.iter_content(8192):
+            buf += chunk
+            if len(buf) >= 131072:
+                break
+        r.close()
+    except requests.RequestException:
+        return None
+    return _parse_dimensions(buf)
+
+
+def _parse_dimensions(buf: bytes) -> tuple[int, int] | None:
+    if buf[:8] == b"\x89PNG\r\n\x1a\n" and len(buf) >= 24:
+        return struct.unpack(">II", buf[16:24])
+    if buf[:6] in (b"GIF87a", b"GIF89a") and len(buf) >= 10:
+        return struct.unpack("<HH", buf[6:10])
+    if buf[:4] == b"RIFF" and buf[8:12] == b"WEBP" and len(buf) >= 30:
+        codec = buf[12:16]
+        if codec == b"VP8 ":
+            w, h = struct.unpack("<HH", buf[26:30])
+            return w & 0x3FFF, h & 0x3FFF
+        if codec == b"VP8L":
+            bits = struct.unpack("<I", buf[21:25])[0]
+            return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+        if codec == b"VP8X":
+            w = buf[24] | buf[25] << 8 | buf[26] << 16
+            h = buf[27] | buf[28] << 8 | buf[29] << 16
+            return w + 1, h + 1
+    if buf[:2] == b"\xff\xd8":                      # JPEG: walk to the SOF frame
+        f = io.BytesIO(buf)
+        f.read(2)
+        while True:
+            b = f.read(1)
+            if not b:
+                return None
+            if b != b"\xff":
+                continue
+            while b == b"\xff":
+                b = f.read(1)
+            if not b:
+                return None
+            marker = b[0]
+            if marker in (0xD8, 0x01) or 0xD0 <= marker <= 0xD7:
+                continue
+            raw = f.read(2)
+            if len(raw) < 2:
+                return None
+            size = struct.unpack(">H", raw)[0]
+            if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+                head = f.read(5)
+                if len(head) < 5:
+                    return None
+                h, w = struct.unpack(">HH", head[1:5])
+                return w, h
+            f.seek(size - 2, 1)
+    return None
 
 
 def check_image(url: str) -> tuple[str, str]:
@@ -844,6 +919,11 @@ def stage_photos(watches: list[dict], batch: int = 0) -> dict:
                 w["image"] = img
                 w["imageCredit"] = outlet_for(w["source"])
                 w.pop("imageProbe", None)
+                # Measured now, while we are already talking to this host, so
+                # the lightbox can cap enlargement at native size.
+                size = limiter.run(img, lambda: image_dimensions(img))
+                if size:
+                    w["imageSize"] = list(size)
                 summary["resolved"].append(w)
             elif note == "no og:image":
                 w["imageProbe"] = {"date": today(), "result": "none"}
