@@ -348,6 +348,92 @@ const keep = (list) => list
     return HTML.includes('data-mq="detail"');
   })(), true);
 
+  console.log("\n=== 6b. THE FILTER ROW CANNOT WRAP AT ANY WIDTH ===");
+  // Lowell's iPad, 2026-08-05: the search field wrapped onto its own line. The
+  // first fix put a narrow flex-basis inside a 721–1100px band — correct logic,
+  // wrong bounds. iPads are 744–1024 in PORTRAIT and 1133–1366 in LANDSCAPE, so
+  // every iPad held sideways sat above the ceiling and still wrapped.
+  //
+  // The lesson is in the test set, not the CSS. The first attempt was probed at
+  // 390, 720, 760 and 1280 — every one either a phone or inside the band. It
+  // encoded the same assumption as the code, so it agreed with the bug. These
+  // widths are pinned permanently so a future range can never quietly miss one.
+  const VIEWPORTS = [
+    [390, "iPhone portrait"], [744, "iPad mini portrait"], [820, "iPad 11 portrait"],
+    [834, "iPad Pro 11 portrait"], [1024, "iPad Pro 13 portrait"],
+    [1133, "iPad mini LANDSCAPE"], [1180, "iPad 11 LANDSCAPE — Lowell's device"],
+    [1194, "iPad Pro 11 LANDSCAPE"], [1366, "iPad Pro 13 LANDSCAPE"],
+    [1280, "laptop"], [1440, "desktop"], [1920, "wide desktop"],
+  ];
+
+  // Which @media blocks apply at a given width, parsed from the stylesheet
+  // rather than assumed — the point is to catch a range that misses a device.
+  const blocksFor = (width) => {
+    const out = [];
+    const re = /@media\s*([^{]+)\{/g;
+    let m;
+    while ((m = re.exec(HTML))) {
+      const cond = m[1];
+      const min = /min-width:\s*(\d+)px/.exec(cond);
+      const max = /max-width:\s*(\d+)px/.exec(cond);
+      if (min && width < +min[1]) continue;
+      if (max && width > +max[1]) continue;
+      // Take the block body by brace-matching from the opening brace.
+      let depth = 1, i = m.index + m[0].length;
+      for (; i < HTML.length && depth; i++) {
+        if (HTML[i] === "{") depth++;
+        else if (HTML[i] === "}") depth--;
+      }
+      out.push(HTML.slice(m.index + m[0].length, i - 1));
+    }
+    return out;
+  };
+
+  // The effective declarations for the search field at a width: its inline style
+  // plus anything a matching @media block overrides on top.
+  const searchStyleAt = (width) => {
+    let css = w.document.querySelector("#q").getAttribute("style");
+    for (const b of blocksFor(width)) {
+      const r = new RegExp('\\[data-mq="search"\\]\\{([^}]*)\\}').exec(b);
+      if (r) css += ";" + r[1];
+    }
+    return css;
+  };
+
+  // A wrapping flex row decides line breaks from an item's BASE size, so the
+  // only thing that stops the field jumping the line is a small basis. A fixed
+  // `width` or a large basis is the bug, at any width, in any band.
+  const basisOf = (css) => {
+    const flex = [...css.matchAll(/(?:^|;)\s*flex\s*:\s*([^;!]+)/g)].pop();
+    if (flex) {
+      const px = /(\d+)px/.exec(flex[1]);
+      if (px) return +px[1];
+    }
+    const width = [...css.matchAll(/(?:^|;)\s*width\s*:\s*(\d+)px/g)].pop();
+    return width ? +width[1] : null;
+  };
+
+  for (const [px, label] of VIEWPORTS) {
+    const css = searchStyleAt(px);
+    const basis = basisOf(css);
+    check(`${px}px (${label}): search field has a shrinkable base, not a fixed 260`,
+          basis !== null && basis <= 200, true);
+  }
+  check("the field is still capped so wide screens look unchanged",
+        /max-width:\s*260px/.test(w.document.querySelector("#q").getAttribute("style")), true);
+  check("...and still right-aligned, because grow resolves before auto margins",
+        /margin-left:\s*auto/.test(w.document.querySelector("#q").getAttribute("style")), true);
+  check("the sort control got the same treatment, not just the one that was noticed",
+        basisOf(w.document.querySelector("#sort").getAttribute("style")) <= 150, true);
+  // The band that remains is only the cramped-layout concessions. If a future
+  // edit puts a basis back inside a range, that is the old bug returning.
+  check("no size band reintroduces a basis for the search field", (() => {
+    const inBands = VIEWPORTS.some(([px]) =>
+      blocksFor(px).some((b) => /\[data-mq="search"\]\{[^}]*flex\s*:[^}]*\d{3}px/.test(b)
+                             && px > 720));
+    return inBands;
+  })(), false);
+
   console.log("\n=== 7. COMPUTED SYMMETRIC MARGINS ===");
   // padRight must come off documentElement.clientWidth. 100vw counts the
   // scrollbar and the register drifts out of line with the stats column.

@@ -85,39 +85,38 @@ input[type=search]:focus{border-color:#17130d}
 }
 
 /* ---- the tablet band ---------------------------------------------------
-   Lowell, on an iPad, 2026-08-05: the search field wraps onto a line of its
-   own. It does, and the cause is arithmetic rather than taste. The filter row
-   is "Availability:" (a fixed 112px gutter) + five tier buttons + a 260px
-   search box. Around 820px of viewport there is roughly 100px left for a box
-   asking for 260, and because the row is flex-wrap the browser decides where
-   items go from their BASE width — it wraps the search rather than shrinking
-   it, so no amount of flex-shrink alone fixes this.
+   Below roughly 900px the filter row genuinely runs out of room: the fixed
+   112px "Availability:" gutter plus five tier buttons leaves under 150px for
+   the search field, and no amount of flex arithmetic conjures space that is not
+   there. So this band makes the two concessions the phone layout already makes
+   one breakpoint down — the labels go, since the buttons say what they filter,
+   and the buttons tighten. Those are the only things here, and they are about
+   how it should LOOK when cramped, which makes them design's to change.
 
-   Between 721 and 1100 the layout is therefore given the two concessions the
-   phone layout already makes, rather than new ones invented here: the labels
-   go (the buttons say what they filter) and the buttons tighten. That buys
-   enough room for the search to hold the line at a usable size.
+   THE WRAP ITSELF IS NOT FIXED HERE ANY MORE, and that history is worth keeping.
+   The first attempt put a narrow flex-basis inside this band, which was correct
+   logic inside wrong bounds: iPads are 744-1024 in PORTRAIT but 1133-1366 in
+   LANDSCAPE, so every iPad held sideways sat above the ceiling and still wrapped.
+   Lowell confirmed exactly that — portrait fixed, landscape broken, on an
+   820x1180 device. Raising the ceiling would have been a second guess at a
+   range with the same failure mode, so the basis moved onto the elements
+   instead and now applies at every width. See the input's own comment.
 
-   NOT A DESIGN RULING — flagged to design. This is the plain mechanical fix
-   for a defect on a real device, reusing decisions design already made one
-   breakpoint down. If they want a different treatment for tablets, this is
-   theirs to replace.
-
-   Widths below are unverifiable from here: neither Code nor design has a
-   browser at this size, so the numbers are reasoned from the type metrics, not
-   measured. Lowell's iPad is the only instrument that can confirm it. */
+   The lesson worth more than the fix: the test set for the first attempt
+   probed 390, 720, 760 and 1280, every one of which is either a phone or inside
+   the band. It encoded the same assumption as the code, so it agreed with the
+   bug. Landscape tablet widths are pinned in test/template.test.js now. */
 @media (min-width:721px) and (max-width:1100px){
   [data-mq="flabel"]{display:none !important}
   [data-mq="fbar"] button{padding:5px 9px !important;font-size:11.5px !important}
-  /* The basis is what matters: a wrapping flex row decides placement from the
-     BASE width, not the shrunk one, which is why the 260px box jumps to its own
-     line instead of narrowing. 170 leaves comfortable slack against the width
-     estimate above — the point is that it cannot wrap, not that it is exactly
-     as wide as it could be. margin-left:auto is kept so it stays right-aligned
-     as on desktop; growing it to fill instead would need that margin removed
-     and would strand the field mid-row at the top of the band. */
-  [data-mq="search"]{width:auto !important;flex:0 1 170px;min-width:140px;margin-left:auto !important}
-  [data-mq="sort"]{width:auto !important;flex:0 1 130px;min-width:110px}
+  /* The search and sort overrides that used to live here are GONE, and their
+     absence is the fix rather than an omission. They tried to stop the wrap with
+     a narrower basis inside a range, which is why a landscape iPad at 1180 —
+     eighty pixels above this ceiling — still wrapped: the range was wrong, and a
+     second guess at a range has the same failure mode. The basis now lives on
+     the elements themselves and applies at every width, so there is no boundary
+     left to get wrong and no device released next year that lands in a gap.
+     What remains here is only the part that IS about this size band. */
 }
 </style>
 </head><body>
@@ -173,13 +172,30 @@ input[type=search]:focus{border-color:#17130d}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Availability:</span>
         <span id="tierBtns" style="display:contents"></span>
-        <input id="q" data-mq="search" type="search" placeholder="Search brand, model, reference…" style="margin-left:auto;width:260px;padding:7px 12px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:13px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;outline:none">
+        <!-- flex:1 1 150px + max-width:260px, NOT width:260px. A wrapping flex
+             row decides line breaks from an item's BASE size, so a 260px box
+             jumps to its own line rather than narrowing, however much
+             flex-shrink it has. A low basis is the only thing that stops it,
+             and this is the whole reason the field wrapped on an iPad.
+             The desktop appearance is unchanged, which is why this needs no
+             breakpoint: flex-grow resolves BEFORE auto margins consume free
+             space, so the field grows to its 260px cap first and margin-left:auto
+             then pushes it right with whatever is left. Wide screens look exactly
+             as they did; cramped ones narrow instead of wrapping.
+             min-width:150px is the floor — below that the field is too small to
+             type in, and wrapping is genuinely the better answer. -->
+        <input id="q" data-mq="search" type="search" placeholder="Search brand, model, reference…" style="margin-left:auto;flex:1 1 150px;min-width:150px;max-width:260px;padding:7px 12px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:13px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;outline:none">
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px">
         <span data-mq="flabel" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:700;width:112px;flex:none;white-space:nowrap">Price:</span>
         <span id="bandBtns" style="display:contents"></span>
         <button id="reset" data-mq="preset" style="border:none;background:none;padding:5px 10px;font-size:12px;font-family:'Archivo',sans-serif;color:#8a5a2b;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Reset</button>
-        <select id="sort" data-mq="sort" style="margin-left:auto;width:150px;padding:6px 8px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:12.5px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;cursor:pointer">
+        <!-- Same treatment as the search field, for the same reason: the price
+             row is the same wrapping flex row with the same fixed-width item at
+             the end of it. Nobody has reported this one wrapping, but it is the
+             identical mechanism and fixing only the field that was noticed
+             leaves the bug in place next to it. -->
+        <select id="sort" data-mq="sort" style="margin-left:auto;flex:1 1 120px;min-width:120px;max-width:150px;padding:6px 8px;border:1px solid #ddd6c8;background:#fbf9f4;font-size:12.5px;font-family:'Archivo',sans-serif;color:#17130d;border-radius:0;cursor:pointer">
           <option value="tier">Sort by</option>
           <option value="date">Newest first</option>
           <option value="brand">Brand A–Z</option>
