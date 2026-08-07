@@ -30,10 +30,13 @@ Four things in here are load-bearing and easy to break:
     It reads documentElement.clientWidth — never 100vw, which includes the
     scrollbar and would break the alignment against the stats column.
 """
-import json, os, html, re
+import json, os, html, re, sys
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "scripts"))
+import pages  # per-watch pages, structured data, sitemap and feed
+
 with open(os.path.join(HERE, "data.json")) as fh:
     payload = json.load(fh)
 
@@ -65,8 +68,16 @@ def in_scope(entry):
 
 
 _kept = [dict(i, tier="Buy at retailer", rank=3) if i["tier"] == "Retailer enquiry" else i
-         for i in items if in_scope(i)]
+         for i in items if in_scope(i) and not i.get("retracted")]
 counts = Counter(i["tier"] for i in _kept)
+
+# The register's DEFAULT display order — tier, then price descending — reproduced
+# here because the ItemList is a claim about what order a reader sees, and a list
+# emitted in file order would be describing a page that does not exist. Same
+# comparator as the runtime sort; the two must not drift.
+_ordered = sorted(_kept, key=lambda w: (
+    TIERS.index(w["tier"]) if w["tier"] in TIERS else len(TIERS),
+    -(w["priceNum"] if w.get("priceNum") is not None else -1)))
 
 # The comp carries these as style-hover / style-focus attributes, which are a
 # design-tool construct rather than real HTML. The @media block and the keyframes
@@ -1244,6 +1255,36 @@ JS = r"""
     put("#c-rev", m.revision == null ? "" : m.revision);
     put("#c-imgs", DATA.filter(function (d) { return d.image; }).length);
     put("#c-total", DATA.length);
+    weekStrip();
+  }
+
+  /* ---- the week strip ----------------------------------------------------
+     Counted against the REAL date, never against meta.updated. Anchoring the
+     window to the data's own timestamp would make a register that stopped
+     updating go on reporting a busy week for ever — the one lie this figure
+     exists to make impossible. A stale site shows an empty week, which is the
+     truth about it. */
+  function weekStrip() {
+    var row = el("#t-weekrow"); if (!row) return;
+    var cut = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    var on = function (v) { return v ? String(v.date || v).slice(0, 10) : ""; };
+    var added = 0, gone = 0, checked = 0;
+    DATA.forEach(function (d) {
+      var a = on(d.addedOn), s = on(d.soldOutOn);
+      if (a >= cut) added++;
+      /* An entry that arrived already sold out carries soldOutOn === addedOn:
+         that is the seeding date, not something we watched happen. */
+      if (s && s >= cut && s > a) gone++;
+      var c = on(d.verified) > on(d.buyCheck) ? on(d.verified) : on(d.buyCheck);
+      if (c && c >= cut) checked++;
+    });
+    var parts = [];
+    if (added) parts.push(added + " added");
+    if (gone) parts.push(gone + " sold out");
+    if (checked) parts.push(checked + " rechecked");
+    if (!parts.length) return;              /* silence, not a zero */
+    row.style.display = "flex";
+    el("#t-week").textContent = parts.join("  ·  ");
   }
 
   /* ---- editor's journal (admin only) ------------------------------------- */
@@ -1835,6 +1876,27 @@ SCRIPT = (JS
           .replace("__ADMINHASH__", ADMIN_HASH))
 assert not re.search(r"__[A-Z]+__", SCRIPT), "an injection placeholder went unfilled"
 
+# --- structured data --------------------------------------------------------
+# Split deliberately. WebSite/Organization are two small nodes and belong in the
+# head; the ItemList is 246 entries and goes at the end of the body, in the
+# url-only form Google documents for a summary page whose detail lives on the
+# pages it links to. Putting 20 KB of JSON in front of the register would delay
+# the thing a reader came for in order to help a crawler that does not care where
+# on the page it finds it.
+_SITE_LD = "\n".join(
+    f'<script type="application/ld+json">{json.dumps(n, ensure_ascii=False, separators=(",", ":"))}</script>'
+    for n in pages.site_ld(meta, len(_kept)))
+_LIST_LD = '<script type="application/ld+json">' + json.dumps({
+    "@context": "https://schema.org", "@type": "ItemList",
+    "name": "Limited-edition watches of 2026",
+    "description": meta.get("tagline"),
+    "numberOfItems": len(_ordered),
+    "itemListOrder": "https://schema.org/ItemListOrderAscending",
+    "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                         "url": f"{pages.CANON}/{pages.path_for(w)}"}
+                        for i, w in enumerate(_ordered)],
+}, ensure_ascii=False, separators=(",", ":")) + "</script>"
+
 SECTION_RULE = '<div style="width:26px;height:2px;background:#17130d;margin:{m}"></div>'
 H2 = ('<h2 style="font-family:\'Newsreader\',serif;font-size:25px;font-weight:500;color:#17130d;'
       'margin:{m};letter-spacing:-.01em">{t}</h2>')
@@ -1857,6 +1919,9 @@ HTML = f"""<!DOCTYPE html>
 <meta property="og:url" content="https://www.{dom}/">
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#f4f1ea">
+<link rel="alternate" type="application/rss+xml" title="Watch Drop Index" href="https://www.{dom}/feed.xml">
+<link rel="alternate" type="application/feed+json" title="Watch Drop Index" href="https://www.{dom}/feed.json">
+{_SITE_LD}
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2317130d'/%3E%3Ccircle cx='16' cy='17.5' r='8' fill='none' stroke='%238a5a2b' stroke-width='2'/%3E%3Cpath d='M16 13.5v4l2.8 2' stroke='%23f4f1ea' stroke-width='1.9' stroke-linecap='round' fill='none'/%3E%3Crect x='13.4' y='4' width='5.2' height='2.8' rx='1' fill='%238a5a2b'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1893,6 +1958,12 @@ HTML = f"""<!DOCTYPE html>
         <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Confirmed gone</span><b id="t-gone" style="color:#17130d;font-weight:700;font-size:15px">{counts.get('Gone', 0)}</b></div>
         <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Brands</span><b id="t-brands" style="color:#17130d;font-weight:700;font-size:15px">{len({i['brand'] for i in _kept})}</b></div>
         <div style="{STAT_ROW}"><span style="{STAT_LABEL}">Updated</span><span id="t-updated" style="color:#17130d;font-weight:600;font-size:13px">{html.escape(meta['updated'])}</span></div>
+        <!-- The week strip. Every number in it was already being computed and
+             thrown away; a register that shows its own pulse reads as maintained,
+             and one that looks static reads as abandoned. Hydrated, and the row
+             REMOVES ITSELF when there is nothing to report rather than printing a
+             zero — an idle week should look like silence, not like a failure. -->
+        <div id="t-weekrow" style="{STAT_ROW};display:none"><span style="{STAT_LABEL}">This week</span><span id="t-week" style="color:#17130d;font-weight:600;font-size:13px"></span></div>
       </div>
     </div>
     </div>
@@ -2056,6 +2127,7 @@ HTML = f"""<!DOCTYPE html>
   {DIAL_TEMPLATES}
 </div>
 <script>{SCRIPT}</script>
+{_LIST_LD}
 </body></html>
 """
 
@@ -2065,3 +2137,11 @@ print(f"built index.html — template only; entries load from data.json at runti
 _filterable = sum(counts.get(t, 0) for t in FILTERABLE)
 print(f"  register: {len(_kept)} entries · {_filterable} in the four filterable tiers")
 print(f"  buyable online: {counts.get('Buy online now', 0)} · gone: {counts.get('Gone', 0)} · size: {len(HTML)//1024} KB")
+
+# The per-watch pages, sitemap and feed. These are DERIVED — every one of them is
+# regenerated from data.json, so nothing here is ever edited by hand and a stale
+# page is a build that did not run rather than a file someone forgot.
+_p = pages.write_all(HERE, meta, _ordered, CSS, lockup, TIER_HELP)
+print(f"  pages: {_p['pages']} written to {pages.PAGES_DIR}/ ({_p['rewritten']} changed)"
+      + (f" · {len(_p['retired'])} retired path(s) left as redirects" if _p["retired"] else ""))
+print(f"  sitemap.xml · feed.xml · feed.json ({_p['feed']} items)")

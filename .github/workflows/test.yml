@@ -57,5 +57,24 @@ jobs:
           sys.exit(1)
           PY
 
+      - name: The per-watch pages, sitemap and feed must match data.json
+        # These are the site's ENTIRE search surface, and they are static. A
+        # data.json edit committed without rebuilding leaves 246 pages quoting a
+        # price that changed and a sitemap claiming a lastmod that did not happen
+        # — and nothing on the register would look wrong, because the register
+        # hydrates. The previous step already ran build.py; this asserts the
+        # result is what is committed.
+        run: |
+          if git diff --quiet -- w sitemap.xml feed.xml feed.json; then
+            echo "derived output is in sync with data.json."
+            exit 0
+          fi
+          echo "::error::w/, sitemap.xml or the feeds are stale — run 'python3 build.py' and commit the result."
+          git diff --stat -- w sitemap.xml feed.xml feed.json
+          exit 1
+
+      - name: Structured data must be valid and honest
+        run: python3 test/pages_test.py
+
       - name: Template renders and hydrates correctly
         run: npm test

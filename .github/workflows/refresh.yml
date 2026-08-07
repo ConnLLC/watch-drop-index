@@ -134,6 +134,12 @@ jobs:
           # data.json, so rebasing is safe and losing a run to a race would be
           # silent — which is the failure worth avoiding.
           git pull --rebase --autostash
+          # DERIVED OUTPUT IS BUILT AFTER THE REBASE, never before — see the same
+          # step in daily.yml. Pages generated from a pre-rebase data.json would
+          # describe entries the merged file no longer holds.
+          python3 build.py
+          git add -A index.html w sitemap.xml feed.xml feed.json
+          git diff --cached --quiet || git commit --amend --no-edit
           git push
 
       - name: Job summary

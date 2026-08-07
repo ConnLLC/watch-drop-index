@@ -291,8 +291,45 @@ const keep = (list) => list
         HTML.includes("is a trademark of Conn LLC, Toronto, Ontario, Canada"), true);
   check("all five dial treatments are available",
         w.document.querySelectorAll("template[data-dial]").length, 4); // plain needs no markup
+  // Five figures plus the week strip's two ids (its row and its value).
   check("stat ledger is a ruled register, not a sentence",
-        w.document.querySelectorAll('[data-mq="hstats"] [id^="t-"]').length, 5);
+        w.document.querySelectorAll('[data-mq="hstats"] [id^="t-"]').length, 7);
+
+  // THE WEEK STRIP. Its whole job is to make "is this maintained?" answerable at
+  // a glance, so the two ways it could lie are what get pinned: reporting
+  // activity on a dead register, and printing a zero that reads as rejection.
+  {
+    const today = new Date().toISOString().slice(0, 10);
+    const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+    const one = (o) => ({ ...BASE, watches: [{ ...BASE.watches[0], ...o }] });
+
+    let x = await load(one({ addedOn: day(-2), soldOutOn: null, verified: null, buyCheck: null }));
+    check("a fresh entry shows in the week strip", txt(x, "#t-week"), "1 added");
+    check("the strip is visible when there is something to report",
+          x.document.querySelector("#t-weekrow").style.display, "flex");
+
+    x = await load(one({ addedOn: day(-400), soldOutOn: null, verified: null, buyCheck: null }));
+    check("an idle week shows silence, never a zero", txt(x, "#t-week"), "");
+    check("and the row removes itself",
+          x.document.querySelector("#t-weekrow").style.display, "none");
+
+    // soldOutOn === addedOn is the seeding date, not something anyone watched.
+    x = await load(one({ addedOn: day(-2), soldOutOn: day(-2), verified: null, buyCheck: null }));
+    check("an entry that arrived sold out is not counted as sold out this week",
+          txt(x, "#t-week"), "1 added");
+
+    x = await load(one({ addedOn: day(-400), soldOutOn: day(-1), verified: null,
+                         buyCheck: { date: day(-1), note: "read" } }));
+    check("a watched sell-out and a recheck both count",
+          txt(x, "#t-week"), "1 sold out  ·  1 rechecked");
+
+    // The window is anchored to the real date, never to meta.updated: a register
+    // that stopped updating must not go on advertising a busy week.
+    x = await load({ ...one({ addedOn: day(-400), soldOutOn: null, verified: null, buyCheck: null }),
+                     meta: { ...BASE.meta, updated: today } });
+    check("a stale register reports an empty week, not meta.updated's week",
+          x.document.querySelector("#t-weekrow").style.display, "none");
+  }
 
   console.log("\n=== 5b. THE ADMIN WRITE PATH ===");
   // These assert the things that would be SILENT failures — a token leaking into

@@ -1,0 +1,110 @@
+
+body{margin:0;background:#f4f1ea;border-top:5px solid #17130d}
+a{color:#8a5a2b}a:hover{color:#17130d}
+::selection{background:#17130d;color:#f4f1ea}
+input::placeholder{color:#a09786}
+@keyframes wdi-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes wdi-badge-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wdi-dateflip{0%{transform:translateY(0)}42%{transform:translateY(-140%)}42.01%{transform:translateY(140%)}100%{transform:translateY(0)}}
+input[type=search]:focus{border-color:#17130d}
+.wdi-btn:hover{border-color:#17130d;color:#17130d}
+.wdi-row:hover{background:#ece7da}
+.wdi-cta:hover{background:#8a5a2b;border-color:#8a5a2b;color:#f4f1ea}
+.wdi-badge:hover{border-color:#17130d}
+.wdi-sort:hover{color:#17130d}
+.wdi-ghost:hover{background:#17130d;color:#f4f1ea}
+/* PROVISIONAL — pending design's ruling, flagged twice on the RELAY thread. The
+   comp specifies no focus state, and the rows are div[role=button], so a
+   keyboard user would otherwise have no way to see where they are. Uses only
+   ink from the approved palette; no new value has been invented. */
+.wdi-row:focus-visible{outline:1px solid #17130d;outline-offset:-1px;background:#ece7da}
+/* Lifted verbatim from the v1.3 reference helmet (design, 2026-08-04 18:12).
+   The stat ledger being hidden rather than removed is now design's own rule —
+   #t-buy/#t-total/#t-gone/#t-brands/#t-updated are the weekly refresh's
+   hydration contract and have to stay in the DOM to be rewritten.
+   Row grids key off nth-child, so the six children of [data-mq="cols"] are
+   positional: dot, brand+model, Released, Edition, USD, chevron. Reordering
+   them silently rearranges the phone layout. */
+@media (max-width:720px){
+  [data-mq="utilwrap"]{padding:0 20px !important}
+  [data-mq="util"]{gap:12px}
+  [data-mq="utc"]{display:none !important}
+  [data-mq="hdr"]{padding:26px 20px 0 !important}
+  [data-mq="hgrid"]{display:block !important}
+  [data-mq="hleft"]{max-width:none !important}
+  [data-mq="hdiv"]{display:none !important}
+  [data-mq="hstats"]{display:none !important}
+  [data-mq="lockup"]{font-size:34px !important}
+  [data-mq="wide"]{width:100% !important;margin-left:0 !important;margin-right:0 !important;padding-left:0 !important}
+  div[data-mq="wide"]{margin-top:16px !important}
+  [data-mq="fwrap"]{position:static !important}
+  [data-mq="fbar"]{padding:10px 20px 12px !important;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  [data-mq="fbar"] > div{display:contents}
+  [data-mq="flabel"]{display:none !important}
+  [data-mq="fbar"] button{padding:7px 10px !important;font-size:11.5px !important}
+  [data-mq="pband"],[data-mq="preset"]{display:none !important}
+  [data-mq="search"]{flex:1 1 140px;min-width:140px;width:auto !important;margin:0 !important}
+  [data-mq="sort"]{flex:1 1 104px;min-width:104px;max-width:170px;width:auto !important;margin:0 !important}
+  [data-mq="main"]{padding:0 20px !important}
+  [data-mq="colh"]{grid-template-columns:16px minmax(0,1fr) 96px !important;gap:12px !important}
+  [data-mq="colh"] > *:nth-child(3), [data-mq="colh"] > *:nth-child(4), [data-mq="colh"] > *:nth-child(6){display:none !important}
+  [data-mq="colh"] > *:nth-child(2) > span:first-child{width:auto !important}
+  [data-mq="cols"]{grid-template-columns:16px minmax(0,1fr) 96px !important;grid-template-rows:auto auto;gap:1px 12px !important;min-height:38px !important;padding:8px 4px 8px 2px !important}
+  [data-mq="cols"] > *:nth-child(1){grid-row:1/3}
+  [data-mq="cols"] > *:nth-child(2){grid-row:1/3;flex-direction:column;align-items:flex-start;gap:1px !important;line-height:1.35 !important}
+  [data-mq="cols"] > *:nth-child(5){line-height:1.35 !important}
+  [data-mq="cols"] > *:nth-child(2) > span{width:auto !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important;box-sizing:border-box}
+  [data-mq="cols"] > *:nth-child(2) > span:last-child{font-size:15.5px !important}
+  [data-mq="cols"] > *:nth-child(4){display:none !important}
+  [data-mq="cols"] > *:nth-child(3){display:flex !important;grid-column:3;grid-row:2;border-left:none !important;line-height:1.3 !important;font-size:11px !important;align-self:center;justify-content:flex-end}
+  [data-mq="cols"] > *:nth-child(5){grid-column:3;grid-row:1;align-self:center}
+  [data-mq="cols"] > *:nth-child(6){display:none !important}
+  [data-mq="detail"]{display:block !important;padding:8px 2px 22px 16px !important}
+  [data-mq="detail"] > div:first-child{margin-bottom:18px}
+  /* "two" and "row2" were removed with the sections below the register on
+     2026-08-05. Both hooks existed only for that markup, so keeping the rules
+     would leave CSS defending elements that no longer exist. Removed from the
+     mobile contract in test/template.test.js in the same commit — deliberately,
+     because a hook silently vanishing from that list is the exact failure the
+     contract is there to catch. */
+  [data-mq="badge"]{font-size:16px !important;right:14px !important;bottom:14px !important;padding:12px 38px 12px 14px !important}
+}
+
+/* ---- the tablet band ---------------------------------------------------
+   Below roughly 900px the filter row genuinely runs out of room: the fixed
+   112px "Availability:" gutter plus five tier buttons leaves under 150px for
+   the search field, and no amount of flex arithmetic conjures space that is not
+   there. So this band makes the two concessions the phone layout already makes
+   one breakpoint down — the labels go, since the buttons say what they filter,
+   and the buttons tighten. Those are the only things here, and they are about
+   how it should LOOK when cramped, which makes them design's to change.
+
+   THE WRAP ITSELF IS NOT FIXED HERE ANY MORE, and that history is worth keeping.
+   The first attempt put a narrow flex-basis inside this band, which was correct
+   logic inside wrong bounds: iPads are 744-1024 in PORTRAIT but 1133-1366 in
+   LANDSCAPE, so every iPad held sideways sat above the ceiling and still wrapped.
+   Lowell confirmed exactly that — portrait fixed, landscape broken, on an
+   820x1180 device. Raising the ceiling would have been a second guess at a
+   range with the same failure mode, so the basis moved onto the elements
+   instead and now applies at every width. See the input's own comment.
+
+   The lesson worth more than the fix: the test set for the first attempt
+   probed 390, 720, 760 and 1280, every one of which is either a phone or inside
+   the band. It encoded the same assumption as the code, so it agreed with the
+   bug. Landscape tablet widths are pinned in test/template.test.js now. */
+@media (min-width:721px) and (max-width:1100px){
+  [data-mq="flabel"]{display:none !important}
+  [data-mq="fbar"] button{padding:5px 9px !important;font-size:11.5px !important}
+  /* The search and sort overrides that used to live here are GONE, and their
+     absence is the fix rather than an omission. They tried to stop the wrap with
+     a narrower basis inside a range, which is why a landscape iPad at 1180 —
+     eighty pixels above this ceiling — still wrapped: the range was wrong, and a
+     second guess at a range has the same failure mode. The basis now lives on
+     the elements themselves and applies at every width, so there is no boundary
+     left to get wrong and no device released next year that lands in a gap.
+     What remains here is only the part that IS about this size band. */
+}
+
+@media (max-width:720px){
+  [data-mq="detail"]{padding-left:0 !important;padding-right:0 !important}
+}

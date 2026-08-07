@@ -113,6 +113,14 @@ jobs:
           # fail: both jobs only ever rewrite data.json, and losing a day's sweep
           # to a race would be silent.
           git pull --rebase --autostash
+          # DERIVED OUTPUT IS BUILT AFTER THE REBASE, never before. The per-watch
+          # pages, sitemap and feed are generated FROM data.json, so building them
+          # from this job's copy and then rebasing onto someone else's would
+          # publish pages describing data that is no longer there. Regenerating
+          # here means they always describe the file that actually ships.
+          python3 build.py
+          git add -A index.html w sitemap.xml feed.xml feed.json
+          git diff --cached --quiet || git commit --amend --no-edit
           git push
 
       - name: Job summary
