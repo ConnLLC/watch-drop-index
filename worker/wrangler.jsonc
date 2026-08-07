@@ -1,0 +1,21 @@
+{
+  // The favourites worker. Separate from the site on purpose: watchdropindex.com
+  // is served by GitHub Pages from this repo's root and is not a Cloudflare zone,
+  // so this cannot be a route on the domain and is reached cross-origin instead.
+  // The worker's CORS allow-list is what makes that safe, and it is the reason
+  // the origin check in index.js is load-bearing rather than decorative.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "watchdrop-favs",
+  "main": "index.js",
+  "compatibility_date": "2026-08-01",
+  "account_id": "e039e0a50533d9db1c8913cdf66df16a",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "kv_namespaces": [
+    {
+      "binding": "FAVS",
+      "id": "01c159b46c754c54a09f486fcc605865",
+      "preview_id": "660712dd7758447e8277ee3808627f76"
+    }
+  ]
+}

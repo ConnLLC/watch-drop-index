@@ -297,6 +297,62 @@ JS = r"""
      empty date window betrays the metaphor. */
   var DATE_WIN = __DATEWIN__;
 
+  /* ---- favourites --------------------------------------------------------
+     Lowell's ruling: TALLY AND DISPLAY FROM DAY ONE. A star with no visible
+     consequence is a bookmark, and browsers already have those.
+
+     MECHANISM ONLY — design owns the treatment, exactly as with the lightbox.
+     Hooks are [data-fav], #favN inside it, and the `wdi-fav-on` class.
+
+     Deliberate properties, none of which are style choices:
+      · NEVER RENDER A ZERO. An unstarred watch shows the control and no number.
+        Absence and zero look identical to a reader and only one reads as
+        rejection.
+      · The count is not re-fetched after a click. The tally is edge-cached for
+        30 seconds, so a refetch would show the reader their own star missing.
+        We adjust locally and let the server catch up.
+      · The device id is generated here and means nothing to us. No accounts, no
+        cookies, no IP. It exists only to make "one star per watch" enforceable.
+      · Failure is silent and local. If the worker is unreachable the star still
+        toggles on this device — a register that breaks because a side feature
+        is down would be a poor trade. */
+  var FAV_API = "https://watchdrop-favs.lp-conn.workers.dev/fav";
+  var favCounts = {};      /* from the server; ids with no star are absent */
+  var favMine = (function () {
+    try { return JSON.parse(localStorage.getItem("wdi-favs") || "{}"); } catch (e) { return {}; }
+  })();
+  function favDevice() {
+    var d = null;
+    try { d = localStorage.getItem("wdi-device"); } catch (e) { return null; }
+    if (!d) {
+      d = "d" + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      try { localStorage.setItem("wdi-device", d); } catch (e) { return null; }
+    }
+    return d;
+  }
+  function favLoad() {
+    fetch(FAV_API).then(function (r) { return r.json(); }).then(function (j) {
+      favCounts = j || {};
+      render();
+    }).catch(function () { /* the register does not depend on this */ });
+  }
+  function favToggle(id) {
+    var on = !favMine[id];
+    if (on) favMine[id] = 1; else delete favMine[id];
+    try { localStorage.setItem("wdi-favs", JSON.stringify(favMine)); } catch (e) {}
+    /* Adjusted locally rather than re-read — see the cache note above. */
+    var n = (favCounts[id] || 0) + (on ? 1 : -1);
+    if (n > 0) favCounts[id] = n; else delete favCounts[id];
+    render();
+    var dev = favDevice();
+    if (!dev) return;
+    fetch(FAV_API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: id, device: dev, on: on })
+    }).catch(function () { /* silent: the local star stands */ });
+  }
+
   /* ---- editor's overrides ------------------------------------------------- */
   /* Lowell's hand corrections, this device only, exported as JSON for the weekly
      job to fold into data.json. They outrank both the data's display fields and
@@ -1131,7 +1187,27 @@ JS = r"""
       '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">' +
       '<a class="wdi-cta" href="' + esc(d.buy) + '" target="_blank" rel="noopener" style="' + ctaStyle + '">' + esc(d.buyLabel || (d.rank <= 2 ? "Buy" : "Where to find it")) + '</a>' +
       '<a href="' + esc(d.source) + '" target="_blank" rel="noopener" style="font-size:12px;color:#8a8071;text-decoration:underline;text-underline-offset:3px">Reported by ' + esc(host) + '</a>' +
+      favHTML(d) +
       '</div></div></div>';
+  }
+
+  /* The favourite control. Palette values only, no invented treatment — the
+     count is omitted entirely at zero rather than rendered as "0". */
+  function favHTML(d) {
+    var mine = !!favMine[d.id];
+    var n = favCounts[d.id] || 0;
+    return '<button type="button" data-fav="' + esc(d.id) + '"' +
+      (mine ? ' class="wdi-fav-on"' : '') +
+      ' aria-pressed="' + (mine ? "true" : "false") + '"' +
+      ' aria-label="' + (mine ? "Remove from your favourites" : "Add to your favourites") + '"' +
+      ' style="display:inline-flex;align-items:center;gap:7px;border:1px solid ' + (mine ? "#8a5a2b" : "#d5cdbc") + ';' +
+      'background:transparent;color:' + (mine ? "#8a5a2b" : "#8a8071") + ';padding:8px 13px;' +
+      "font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;" +
+      'font-weight:600;cursor:pointer;border-radius:0">' +
+      '<span aria-hidden="true" style="font-size:12px;line-height:1">' + (mine ? "★" : "☆") + '</span>' +
+      '<span>Favourite</span>' +
+      (n > 0 ? '<span id="favN" style="font-variant-numeric:tabular-nums;letter-spacing:0;color:#8a8071">' + n + '</span>' : '') +
+      '</button>';
   }
 
   /* ---- filter chrome ---------------------------------------------------- */
@@ -1200,6 +1276,15 @@ JS = r"""
     if (sort === "priceDesc") rows.sort(function (a, b) { return (b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum); });
     if (sort === "edition") rows.sort(function (a, b) { return edN(a.edition) - edN(b.edition); });
     if (sort === "editionDesc") rows.sort(function (a, b) { return edN(b.edition) - edN(a.edition); });
+    /* An ORDERING exposes no counts, so it cannot embarrass the site at low
+       volume the way a visible "1" could — which is why this turns on
+       immediately while the numbers are still small. Ties fall back to the
+       default order rather than to nothing. */
+    if (sort === "favs") rows.sort(function (a, b) {
+      return (favCounts[b.id] || 0) - (favCounts[a.id] || 0) ||
+             TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) ||
+             ((b.priceNum == null ? -1 : b.priceNum) - (a.priceNum == null ? -1 : a.priceNum));
+    });
 
     var byTier = {};
     DATA.forEach(function (d) { byTier[d.tier] = (byTier[d.tier] || 0) + 1; });
@@ -1236,7 +1321,7 @@ JS = r"""
     /* The pulldown has no option for a header sort, so it drops back to its
        label state rather than lying about what the list is ordered by. */
     var sel = el("#sort");
-    if (sel) sel.value = ["tier", "date", "brand", "priceAsc", "priceDesc", "edition"].indexOf(state.sort) >= 0 ? state.sort : "tier";
+    if (sel) sel.value = ["tier", "date", "brand", "priceAsc", "priceDesc", "edition", "favs"].indexOf(state.sort) >= 0 ? state.sort : "tier";
     render();
   }
 
@@ -1582,6 +1667,15 @@ JS = r"""
         return adminAction(ad);
       }
 
+      /* Before the row handler, and stopped: the star sits inside an expanded
+         frame, and without this a click on it would also collapse the row the
+         reader is looking at. */
+      var fav = e.target.closest("[data-fav]");
+      if (fav) {
+        e.preventDefault(); e.stopPropagation();
+        return favToggle(fav.getAttribute("data-fav"));
+      }
+
       var row = e.target.closest(".wdi-row");
       if (row) toggle(row.parentNode.getAttribute("data-id"));
     });
@@ -1629,6 +1723,11 @@ JS = r"""
           .filter(function (w) { var e = String(w.edition || "").trim(); return !NOT_LE.some(function (rx) { return rx.test(e); }); })
           .map(function (w) { return w.tier === "Retailer enquiry" ? Object.assign({}, w, { tier: "Buy at retailer", rank: 3 }) : w; });
         render();
+        /* AFTER the first render, never before it. The tally is a separate host
+           and the register must not wait on it to appear — if the worker is slow
+           or down, the page is already on screen and the counts simply never
+           arrive. */
+        favLoad();
         /* p.calendar is still loaded and still maintained by the weekly job; it
            simply has nowhere to render since the sections below the register
            were cut. Deliberate — see the note where renderSections used to be. */
@@ -2004,6 +2103,7 @@ HTML = f"""<!DOCTYPE html>
           <option value="priceAsc">Price: low to high</option>
           <option value="priceDesc">Price: high to low</option>
           <option value="edition">Smallest edition first</option>
+          <option value="favs">Most favourited</option>
         </select>
       </div>
     </div>

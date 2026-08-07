@@ -23,7 +23,12 @@ const check = (label, got, want) => {
   console.log(`  ${ok ? "ok  " : "FAIL"}  ${label}: ${got}${ok ? "" : `  (expected ${want})`}`);
 };
 
-async function load(payload, hash = "") {
+// Favourites live on a different host, so the stub has to tell the two fetches
+// apart. `favs` is the tally the worker would return; `favPosts` records what the
+// page tried to write, which is the only way to assert the write path without a
+// network. A null tally simulates the worker being DOWN — the register must not
+// care, and there is a test below that says so.
+async function load(payload, hash = "", favs = {}, favPosts = []) {
   const dom = new JSDOM(HTML, {
     runScripts: "dangerously",
     url: "https://www.watchdropindex.com/" + hash,
@@ -38,7 +43,17 @@ async function load(payload, hash = "") {
   w.TextDecoder = TextDecoder;   // the admin panel's base64 round-trip needs both
   w.Element.prototype.scrollIntoView = function () {};
   w.scrollTo = function () {};
-  w.fetch = async () => ({ ok: true, status: 200, json: async () => payload });
+  w.fetch = async (url, opts) => {
+    if (String(url).includes("/fav")) {
+      if (opts && opts.method === "POST") {
+        favPosts.push(JSON.parse(opts.body));
+        return { ok: true, status: 200, json: async () => ({}) };
+      }
+      if (favs === null) throw new Error("worker unreachable");
+      return { ok: true, status: 200, json: async () => favs };
+    }
+    return { ok: true, status: 200, json: async () => payload };
+  };
   w.document.dispatchEvent(new w.Event("DOMContentLoaded", { bubbles: true }));
   await new Promise(r => setTimeout(r, 80)); // let boot()'s awaits settle
   return w;
@@ -778,6 +793,69 @@ const keep = (list) => list
   check("no Referer is sent with a hotlinked photograph",
         [...w.document.querySelectorAll("img")].every((n) => n.getAttribute("referrerpolicy") === "no-referrer"),
         true);
+
+  console.log("\n=== 12. FAVOURITES ===");
+  // Lowell's ruling was tally-and-display from day one, which makes the low-volume
+  // case the dangerous one: this is pinned against rendering a zero, against
+  // losing a reader's star, and against the tally's host being able to take the
+  // register down with it.
+  {
+    const A = BASE.watches[0].id, B = BASE.watches[1].id;
+    const star = (v, id) => v.document.querySelector(`[data-fav="${id}"]`);
+
+    let posts = [];
+    let v = await load(BASE, "#" + A, { [A]: 4 }, posts);
+    check("a starred watch shows its count", txt(v, `[data-fav="${A}"] #favN`), "4");
+
+    v = await load(BASE, "#" + B, { [A]: 4 }, posts);
+    check("a watch nobody has starred shows NO number, not a zero",
+          v.document.querySelector(`[data-fav="${B}"] #favN`), null);
+    check("but the control is still offered", !!star(v, B), true);
+    check("it does not read as pressed", star(v, B).getAttribute("aria-pressed"), "false");
+
+    // Clicking: the star must register, and must NOT collapse the row underneath.
+    posts = [];
+    v = await load(BASE, "#" + B, {}, posts);
+    const openBefore = v.document.querySelector(`[data-id="${B}"] .wdi-row`).getAttribute("aria-expanded");
+    star(v, B).dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 20));
+    check("the row stays open when the star is clicked",
+          v.document.querySelector(`[data-id="${B}"] .wdi-row`).getAttribute("aria-expanded"), openBefore);
+    check("the star now reads as pressed", star(v, B).getAttribute("aria-pressed"), "true");
+    check("and the count appears from the reader's own star",
+          txt(v, `[data-fav="${B}"] #favN`), "1");
+    check("exactly one write was sent", posts.length, 1);
+    check("the write names the watch", posts[0].id, B);
+    check("the write sets rather than clears", posts[0].on, true);
+    check("a device id is generated and sent", /^d[a-z0-9]{8,}$/.test(posts[0].device || ""), true);
+    check("the device id is not the watch id and not a person",
+          posts[0].device !== B && !/@/.test(posts[0].device), true);
+
+    // Unstarring must return the entry to SILENCE, not to a rendered zero.
+    star(v, B).dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 20));
+    check("unstarring clears it back to no number",
+          v.document.querySelector(`[data-fav="${B}"] #favN`), null);
+    check("and sends the clear", posts.length === 2 && posts[1].on, false);
+
+    // The register must survive the tally being down. This is the whole reason
+    // favLoad runs after the first render.
+    v = await load(BASE, "", null, posts);
+    check("the register still renders when the favourites worker is unreachable",
+          rows(v), N);
+    check("and no count is invented in its absence",
+          v.document.querySelectorAll("#favN").length, 0);
+
+    // The ordering ships before the counts are shown anywhere else, because an
+    // ordering exposes no numbers and so cannot embarrass the site at low volume.
+    v = await load(BASE, "", { [B]: 9 }, posts);
+    v.document.querySelector("#sort").value = "favs";
+    v.document.querySelector("#sort").dispatchEvent(new v.Event("change", { bubbles: true }));
+    check("sort by favourites puts the most-favourited first",
+          v.document.querySelector("[data-id]").getAttribute("data-id"), B);
+    check("sorting by favourites reveals no counts in the list",
+          v.document.querySelectorAll("[data-id] #favN").length, 0);
+  }
 
   console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES"} — ${pass} passed, ${fail} failed\n`);
   process.exit(fail ? 1 : 0);

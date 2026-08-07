@@ -4,3 +4,7 @@ __pycache__/
 .venv/
 refresh-report.md
 refresh-subject.txt
+
+# Wrangler's local state. Never committed: the dev cache records the developer's
+# city, ISP and coordinates from a real request, and this repository is public.
+worker/.wrangler/
