@@ -72,8 +72,40 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data.json"
 REPORT = ROOT / "refresh-report.md"
 
-MODEL = os.environ.get("WDI_MODEL", "claude-opus-5")
-EFFORT = os.environ.get("WDI_EFFORT", "low")
+# `or`, not a get() default: an unset repository variable arrives from Actions as
+# an EMPTY STRING, not as an absent key, so a two-argument get() would hand the
+# API a model named "" the moment these are wired into a workflow. Same idiom as
+# WEEKLY_BUDGET_CAD below, and for the same reason.
+MODEL = os.environ.get("WDI_MODEL") or "claude-opus-5"
+EFFORT = os.environ.get("WDI_EFFORT") or "low"
+
+# Per-stage model override. Chat's recommendation, Lowell's call, 2026-08-07.
+#
+# SEARCH-AND-VERIFY IS THE ONE STAGE WHERE A CHEAPER MODEL IS THE RIGHT SHAPE:
+# the model only PROPOSES candidate addresses, and this file's own code does the
+# judging — it fetches every proposed URL, refuses editorial hosts by name, and
+# refuses an entry's own source URL outright. A noisier candidate list is
+# therefore a cost the gate already absorbs; it was that gate, not the model,
+# that caught a Hypebeast article being offered as a buy link.
+#
+# Availability (stage 2) deliberately stays on the default model. It is the
+# stage that can MOVE A TIER on the strength of what the model says it read,
+# and no downstream code re-checks that judgement — so it is exactly the wrong
+# place to trade accuracy for price.
+#
+# Set WDI_SEARCH_MODEL (a repository VARIABLE, like the ceiling) to move this
+# stage back onto the default model without a commit.
+STAGE_MODELS = {
+    "search-and-verify": os.environ.get("WDI_SEARCH_MODEL") or "claude-sonnet-5",
+}
+
+
+def model_for(stage: str) -> str:
+    """The model a stage runs on, never an empty one. An override that arrives
+    blank means "no opinion" and must fall back to the default — a stage silently
+    calling a model named "" would fail every call in that stage while the rest
+    of the run went on looking healthy."""
+    return STAGE_MODELS.get(stage) or MODEL
 
 # ------------------------------------------------------------- the spend guard
 #
@@ -98,15 +130,47 @@ WEEKLY_BUDGET_CAD = float(os.environ.get("WEEKLY_BUDGET_CAD") or 5)
 USD_TO_CAD = float(os.environ.get("USD_TO_CAD") or 1.40)
 
 # USD per million tokens, from platform.claude.com/docs/en/about-claude/pricing
-# (checked 2026-08-04). Cache writes are the 5-minute rate; nothing here sets
+# (checked 2026-08-07). Cache writes are the 5-minute rate; nothing here sets
 # cache_control, so those columns should stay at zero — they are counted anyway
 # so that turning caching on later cannot silently under-report.
+#
+# A PRICE THAT EXPIRES IS A SPEND GUARD THAT LIES. Sonnet 5 is on introductory
+# pricing until 2026-08-31 and reverts to $3/$15 on the 1st of September — a
+# 50% rise. Hard-coding the intro rate would leave the ceiling under-counting
+# by half the moment it lapses, and a budget guard that under-counts does not
+# fail loudly: it silently lets the run spend past the ceiling it was built to
+# hold. So the schedule is IN THE TABLE and the date does the switching.
 PRICES = {
     "claude-opus-5":   {"input": 5.0,  "cache_write": 6.25, "cache_read": 0.50, "output": 25.0},
     "claude-opus-4-8": {"input": 5.0,  "cache_write": 6.25, "cache_read": 0.50, "output": 25.0},
-    "claude-sonnet-5": {"input": 2.0,  "cache_write": 2.50, "cache_read": 0.20, "output": 10.0},
+    "claude-sonnet-5": {
+        "input": 2.0, "cache_write": 2.50, "cache_read": 0.20, "output": 10.0,
+        # Introductory rate; everything below applies from `until` onward.
+        "until": "2026-08-31",
+        "then": {"input": 3.0, "cache_write": 3.75, "cache_read": 0.30, "output": 15.0},
+    },
     "claude-haiku-4-5": {"input": 1.0, "cache_write": 1.25, "cache_read": 0.10, "output": 5.0},
 }
+
+
+def prices_for(model_id: str, on: str | None = None) -> dict:
+    """The rate card in force on a given day.
+
+    Falls back to the most expensive model we know rather than to zero: an
+    unrecognised model must over-report its cost, never under-report it. A run
+    that stops early because it over-estimated is a nuisance; one that sails
+    past the ceiling because it priced an unknown model at nothing is the
+    failure this guard exists to prevent.
+    """
+    p = PRICES.get(model_id)
+    if p is None:
+        return max(PRICES.values(), key=lambda r: r["output"])
+    later = p.get("then")
+    if later and (on or today()) > p["until"]:
+        return later
+    return p
+
+
 # Web search bills separately from tokens: $10 per 1,000 searches. Web fetch and
 # (alongside either) code execution are free, so the photograph stage costs
 # nothing at all — it never calls the model.
@@ -730,11 +794,17 @@ class Model:
             return False
         return True
 
-    def _charge(self, usage, stage: str = "other") -> None:
+    def _charge(self, usage, stage: str = "other", model_id: str | None = None) -> None:
         """Price one response. Unknown fields default to zero rather than
         raising — a usage field that moves must never take a run down, and the
-        spend line in the report is where an under-count would show up."""
-        p = PRICES.get(MODEL) or PRICES["claude-opus-5"]
+        spend line in the report is where an under-count would show up.
+
+        Priced at the rate of the model that ACTUALLY RAN, not the default one.
+        Once stages can differ, `MODEL` stops being the answer to "what did this
+        call cost" — and pricing a Sonnet call at Opus rates (or the reverse)
+        makes the ledger wrong in a way nothing else would surface.
+        """
+        p = prices_for(model_id or MODEL)
         get = lambda name: getattr(usage, name, 0) or 0
         usd = (get("input_tokens") * p["input"]
                + get("cache_creation_input_tokens") * p["cache_write"]
@@ -764,15 +834,16 @@ class Model:
         if not self._afford(stage):
             return None
         self.calls += 1
+        used = model_for(stage)
         for attempt in range(3):
             try:
                 r = self._client.messages.create(
-                    model=MODEL,
+                    model=used,
                     max_tokens=max_tokens,
                     output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": schema}},
                     messages=[{"role": "user", "content": prompt}],
                 )
-                self._charge(r.usage, stage)
+                self._charge(r.usage, stage, used)
                 if r.stop_reason == "refusal":
                     return None
                 text = next((b.text for b in r.content if b.type == "text"), None)
@@ -809,9 +880,10 @@ class Model:
         }
         if domains:
             tool["allowed_domains"] = domains
+        used = model_for(stage)
         try:
             with self._client.messages.stream(
-                model=MODEL,
+                model=used,
                 max_tokens=max_tokens,
                 output_config={"effort": effort},
                 tools=[tool],
@@ -821,7 +893,7 @@ class Model:
             # Streaming still carries a full usage block on the final message —
             # including server_tool_use.web_search_requests, which is the only
             # place the per-search charge is visible.
-            self._charge(msg.usage, stage)
+            self._charge(msg.usage, stage, used)
             if msg.stop_reason == "refusal":
                 return None
             return "\n".join(b.text for b in msg.content if b.type == "text").strip() or None
@@ -2582,11 +2654,17 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
         # costs the same, and a 16k-token search carrying 18 web results plainly
         # does not. Measured per stage rather than inferred.
         if model.by_stage:
-            L += ["| stage | calls | searches | CAD | CAD per call |",
-                  "|---|---|---|---|---|"]
+            # The model column is not decoration: once stages can run on
+            # different models, a per-call cost is uninterpretable without
+            # knowing which rate card produced it — and comparing this week's
+            # figure to last week's across a model change is the mistake the
+            # column exists to stop.
+            L += ["| stage | model | calls | searches | CAD | CAD per call |",
+                  "|---|---|---|---|---|---|"]
             for stage, usd in model.by_stage.most_common():
                 n = model.calls_by_stage[stage]
-                L += [f"| {stage} | {n} | {model.searches_by_stage[stage]} | "
+                L += [f"| {stage} | {model_for(stage)} | {n} | "
+                      f"{model.searches_by_stage[stage]} | "
                       f"{usd * USD_TO_CAD:.3f} | {(usd * USD_TO_CAD / n if n else 0):.4f} |"]
             L += [""]
         if model.stopped_at:

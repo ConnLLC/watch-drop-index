@@ -1537,5 +1537,79 @@ try:
 finally:
     R.DATA = old
 
+section("Per-stage model choice, and the rate card that goes with it")
+# The whole point of the split: the stage that only PROPOSES addresses may run
+# cheap, and the stage that can MOVE A TIER may not.
+check("search-and-verify runs on the cheaper model",
+      R.model_for("search-and-verify"), "claude-sonnet-5")
+check("availability keeps the default model — nothing re-checks its judgement",
+      R.model_for("availability"), R.MODEL)
+check("an unlisted stage falls back to the default", R.model_for("photos"), R.MODEL)
+
+# A price that expires is a spend guard that lies. Sonnet 5's introductory rate
+# ends 2026-08-31; from September it is 50% higher, and a guard still charging
+# the old rate would sail past its own ceiling without a word.
+check("intro pricing applies before it lapses",
+      R.prices_for("claude-sonnet-5", "2026-08-31")["output"], 10.0)
+check("the standard rate applies the day after it lapses",
+      R.prices_for("claude-sonnet-5", "2026-09-01")["output"], 15.0)
+check("and the input side rises with it",
+      R.prices_for("claude-sonnet-5", "2026-09-01")["input"], 3.0)
+check("a model with no schedule is unaffected",
+      R.prices_for("claude-opus-5", "2027-01-01")["output"], 25.0)
+# Direction of failure matters more than the value: an unknown model must
+# over-report, never under-report, or the ceiling stops holding.
+check("an unknown model is priced at the dearest card we know, not at zero",
+      R.prices_for("claude-does-not-exist")["output"],
+      max(p["output"] for p in R.PRICES.values()))
+
+# Pricing a Sonnet call at Opus rates (or the reverse) is invisible everywhere
+# except the ledger, so it is pinned here.
+class _Usage:
+    input_tokens = 1_000_000
+    output_tokens = 1_000_000
+    cache_creation_input_tokens = 0
+    cache_read_input_tokens = 0
+    server_tool_use = None
+
+m = R.Model(enabled=False)
+m._charge(_Usage(), "search-and-verify", "claude-sonnet-5")
+sonnet_usd = m.usd
+m2 = R.Model(enabled=False)
+m2._charge(_Usage(), "availability", "claude-opus-5")
+check("each call is priced by the model that actually ran",
+      round(sonnet_usd, 2) != round(m2.usd, 2), True)
+check("the cheaper stage really is cheaper", sonnet_usd < m2.usd, True)
+m3 = R.Model(enabled=False)
+m3._charge(_Usage(), "x")                       # no model named
+m4 = R.Model(enabled=False)
+m4._charge(_Usage(), "x", R.MODEL)              # the default, named explicitly
+check("a call with no model named falls back to the default rate card",
+      round(m3.usd, 6), round(m4.usd, 6))
+
+# An override that arrives BLANK is the shape a repository variable takes when
+# nobody has set it. Reading it literally would send the API a model named "",
+# failing every call in that stage while the run went on looking healthy.
+old_stage_models = R.STAGE_MODELS
+try:
+    R.STAGE_MODELS = {"search-and-verify": ""}
+    check("a blank override means no opinion, not a model named nothing",
+          R.model_for("search-and-verify"), R.MODEL)
+finally:
+    R.STAGE_MODELS = old_stage_models
+
+# THE LEVER MUST BE CONNECTED TO SOMETHING. An override is keyed by stage name,
+# and a stage renamed in one place and not the other leaves a switch that flips
+# with no effect — the most expensive kind of silence, because the report would
+# still print the model we believe we are paying for.
+_src = (Path(__file__).resolve().parent.parent / "scripts" / "refresh.py").read_text()
+for _stage in R.STAGE_MODELS:
+    check(f"the {_stage!r} override names a stage that is actually called",
+          f'stage="{_stage}"' in _src, True)
+# And every model we route work to must be in the rate card, or the ceiling is
+# counting it at the fallback rate rather than its own.
+for _stage, _mid in R.STAGE_MODELS.items():
+    check(f"the model for {_stage!r} is priced", _mid in R.PRICES, True)
+
 print(f"\n{'ALL PASS' if not FAIL else 'FAILURES'} — {PASS} passed, {FAIL} failed\n")
 sys.exit(1 if FAIL else 0)

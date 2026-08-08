@@ -88,6 +88,14 @@ jobs:
           # Unset falls back to the defaults in refresh.py (5 CAD, 1.40 CAD/USD).
           WEEKLY_BUDGET_CAD: ${{ vars.WEEKLY_BUDGET_CAD }}
           USD_TO_CAD: ${{ vars.USD_TO_CAD }}
+          # Same reasoning, one level down: the default model for every stage,
+          # and the one override — search-and-verify, which runs on the cheaper
+          # model because this file's own gate judges what it proposes. Both are
+          # variables so the lever can be pulled (or put back) without a deploy.
+          # Unset arrives here as an empty string and refresh.py reads it as "no
+          # opinion", falling back to its own defaults.
+          WDI_MODEL: ${{ vars.WDI_MODEL }}
+          WDI_SEARCH_MODEL: ${{ vars.WDI_SEARCH_MODEL }}
         run: |
           set +e
           python3 scripts/refresh.py \

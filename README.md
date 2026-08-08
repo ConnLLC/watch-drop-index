@@ -363,6 +363,28 @@ a 403.
 The Anthropic console cap is monthly and in USD, which makes it a coarse backstop only.
 This guard is the real control and the only thing that understands "weekly" or "CAD".
 
+**Rates that expire are in the table with their expiry date.** Sonnet 5's introductory
+pricing lapses on 2026-08-31 and rises 50% the next day; `PRICES` carries the schedule and
+the run date does the switching. A hard-coded introductory rate would leave the ceiling
+under-counting by half the moment it lapsed — and a budget guard that under-counts does
+not fail loudly, it quietly lets the run spend past the limit it exists to hold. An
+unrecognised model is priced at the dearest card we know rather than at zero, for the same
+reason: over-reporting is a nuisance, under-reporting is the failure.
+
+### Which model runs which stage
+
+| Stage | Model | Why |
+|---|---|---|
+| `search-and-verify` | `claude-sonnet-5` | The model only **proposes** candidate addresses. `refresh.py` does the judging: it fetches every proposal, refuses editorial hosts by name, and refuses the entry's own source URL outright. A noisier candidate list is a cost the gate already absorbs — it was that gate, not the model, that caught a Hypebeast article offered as a buy link. |
+| everything else | `claude-opus-5` | Availability is the case that decides it: that stage can **move a tier** on the strength of what the model says it read, and no downstream code re-checks the judgement. It is exactly the wrong place to trade accuracy for price. |
+
+Both are repository *variables*, so the lever can be pulled or put back without a deploy:
+`WDI_SEARCH_MODEL` overrides the search stage, `WDI_MODEL` the default for every other
+stage. Unset arrives from Actions as an empty string, which is read as *no opinion* and
+falls back to the defaults above. The per-stage cost table in every run report names the
+model each stage ran on — without it a per-call figure is uninterpretable, and comparing
+this week's to last week's across a model change is precisely the mistake it prevents.
+
 ### The rules that matter more than coverage
 
 These are enforced in code and covered by `test/refresh_test.py`, which gates the job:
