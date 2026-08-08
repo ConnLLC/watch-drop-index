@@ -98,6 +98,11 @@ input[type=search]:focus{border-color:#17130d}
 .wdi-badge:hover{border-color:#17130d}
 .wdi-sort:hover{color:#17130d}
 .wdi-ghost:hover{background:#17130d;color:#f4f1ea}
+/* v1.4 §1.2 and §2.1: the reference carries these as style-hover on the two
+   elements, which is its way of writing a :hover rule. Both states hover to the
+   same values, so there is deliberately no marked/unmarked variant. */
+[data-fav]:hover{border-color:#8a5a2b;color:#8a5a2b}
+#lbClose:hover{color:#f4f1ea;border-bottom-color:#8a5a2b}
 /* PROVISIONAL — pending design's ruling, flagged twice on the RELAY thread. The
    comp specifies no focus state, and the rows are div[role=button], so a
    keyboard user would otherwise have no way to see where they are. Uses only
@@ -145,6 +150,14 @@ input[type=search]:focus{border-color:#17130d}
   [data-mq="cols"] > *:nth-child(5){grid-column:3;grid-row:1;align-self:center}
   [data-mq="cols"] > *:nth-child(6){display:none !important}
   [data-mq="detail"]{display:block !important;padding:8px 2px 22px 16px !important}
+  /* v1.4 §3. The 16px above is the indent a detail earns by sitting INSIDE a
+     row; a /w/ page has no row, so it read as a misalignment. The exemption now
+     lives in design's own block next to the rule it exempts, rather than as a
+     counter-rule in w/page.css — one intent, one place. */
+  [data-mq="detail"][data-standalone]{padding-left:2px !important}
+  [data-fav]{margin-left:0 !important;width:100% !important;justify-content:center !important}
+  #lightbox{padding:60px 14px 30px !important}
+  #lightboxImg{max-height:calc(100vh - 210px) !important}
   [data-mq="detail"] > div:first-child{margin-bottom:18px}
   /* "two" and "row2" were removed with the sections below the register on
      2026-08-05. Both hooks existed only for that markup, so keeping the rules
@@ -1074,7 +1087,22 @@ JS = r"""
 
     /* Six children, and the phone layout addresses them by position — dot,
        brand+model, Released, Edition, USD, chevron. */
-    var h = '<div data-id="' + esc(d.id) + '" style="border-bottom:1px solid ' + (open ? "#c9c0ad;background:#faf8f2" : "#d5cdbc") + '">' +
+    /* THE MARGIN RULE (design v1.4 §1.1). A marked entry carries a 2px bronze
+       rule down the ledger margin — an editor's pencil line, not a seventh
+       glyph in a row that already holds six.
+
+       THE TRANSPARENT BORDER ON EVERY OTHER ROW IS THE POINT, not tidiness:
+       it reserves the two pixels so marking one costs zero layout shift. A
+       conditional margin would do the same arithmetic and drift the moment
+       either half is edited alone.
+
+       It goes on the WRAPPER. The inner row paints #ece7da on hover, so a rule
+       drawn there would be covered by the reader's own pointer.
+
+       PERSONAL, NEVER PUBLIC: this says "you marked it" and never how many
+       others did. No count appears anywhere in the list — see favHTML. */
+    var marked = !!favMine[d.id];
+    var h = '<div data-id="' + esc(d.id) + '" style="border-left:2px solid ' + (marked ? "#8a5a2b" : "transparent") + ';margin-left:-2px;border-bottom:1px solid ' + (open ? "#c9c0ad;background:#faf8f2" : "#d5cdbc") + '">' +
       '<div class="wdi-row" data-mq="cols" role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '" aria-controls="p-' + esc(d.id) + '"' +
       ' style="display:grid;grid-template-columns:16px minmax(0,1fr) 92px 70px 112px 16px;gap:14px;align-items:center;min-height:43px;padding:0 4px 0 2px;cursor:pointer">' +
       '<span style="width:7px;height:7px;border-radius:50%;justify-self:center;background:' + dot + '" title="' + esc(d.tier) + '"></span>' +
@@ -1191,22 +1219,45 @@ JS = r"""
       '</div></div></div>';
   }
 
-  /* The favourite control. Palette values only, no invented treatment — the
-     count is omitted entirely at zero rather than rendered as "0". */
+  /* The mark control, ported value-for-value from design v1.4 §1.2. It sits at
+     the far right of the CTA row on margin-left:auto so that Buy stays the
+     dominant thing in the frame — the one-outbound-click rule, unchanged.
+
+     44px is a hit target, not a look. Do not tighten it to match the CTA.
+
+     THE STAR IS THE REFERENCE'S PATH, VERBATIM. Not an icon font, not an emoji:
+     ☆/★ render at different weights and widths on every platform, which is why
+     the reference draws it.
+
+     ZERO IS NEVER RENDERED, and design restated it as a MARKUP rule so it
+     cannot be lost in a restyle: at 0 the hairline and the number are ABSENT
+     FROM THE DOM, not hidden. Nothing anywhere would make a zero visible if one
+     were emitted, so a zero appearing is a data bug that shows itself. */
   function favHTML(d) {
     var mine = !!favMine[d.id];
-    var n = favCounts[d.id] || 0;
+    var n = (favCounts[d.id] || 0);
+    /* en-US grouping is design's, and it is the one number format that must
+       match: 8 · 247 · 3,041. Never abbreviated, never capped, at any size. */
+    var shown = n.toLocaleString("en-US");
     return '<button type="button" data-fav="' + esc(d.id) + '"' +
       (mine ? ' class="wdi-fav-on"' : '') +
       ' aria-pressed="' + (mine ? "true" : "false") + '"' +
-      ' aria-label="' + (mine ? "Remove from your favourites" : "Add to your favourites") + '"' +
-      ' style="display:inline-flex;align-items:center;gap:7px;border:1px solid ' + (mine ? "#8a5a2b" : "#d5cdbc") + ';' +
-      'background:transparent;color:' + (mine ? "#8a5a2b" : "#8a8071") + ';padding:8px 13px;' +
-      "font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;" +
-      'font-weight:600;cursor:pointer;border-radius:0">' +
-      '<span aria-hidden="true" style="font-size:12px;line-height:1">' + (mine ? "★" : "☆") + '</span>' +
-      '<span>Favourite</span>' +
-      (n > 0 ? '<span id="favN" style="font-variant-numeric:tabular-nums;letter-spacing:0;color:#8a8071">' + n + '</span>' : '') +
+      /* The visible word IS the label now, so an aria-label would override it
+         with different wording — the title carries the explanation instead,
+         which is what the reference does. */
+      ' title="' + (mine ? "Remove from your list — kept on this device only" : "Keep this entry on your list — this device only") + '"' +
+      ' style="margin-left:auto;display:inline-flex;align-items:center;gap:10px;min-height:44px;box-sizing:border-box;padding:0 15px;' +
+      'border:1px solid ' + (mine ? "#8a5a2b" : "#d5cdbc") + ';background:transparent;border-radius:0;' +
+      "font-family:'Archivo',sans-serif;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;" +
+      'font-weight:600;color:' + (mine ? "#8a5a2b" : "#8a8071") + ';cursor:pointer">' +
+      '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" style="flex:none;' + (mine ? "fill:#8a5a2b;stroke:#8a5a2b" : "fill:none;stroke:#a09786") + '">' +
+      '<path d="M8 1.5l1.98 4.01 4.42.64-3.2 3.12.76 4.4L8 11.6l-3.96 2.07.76-4.4-3.2-3.12 4.42-.64z" stroke-width="1.3" stroke-linejoin="round"></path></svg>' +
+      '<span>' + (mine ? "Marked" : "Mark") + '</span>' +
+      (n > 0
+        ? '<span id="favN" style="display:inline-flex;align-items:center;gap:10px">' +
+          '<span style="width:1px;height:11px;background:#d5cdbc"></span>' +
+          '<span style="font-variant-numeric:tabular-nums;letter-spacing:.06em">' + esc(shown) + '</span></span>'
+        : '') +
       '</button>';
   }
 
@@ -1495,13 +1546,32 @@ JS = r"""
     if (!box || !big) return;
     var w = parseInt(img.getAttribute("data-w"), 10);
     big.src = img.getAttribute("src");
+    /* The alt keeps the FULL name, unabridged — that is accessibility, and it
+       is deliberately NOT what the caption shows. See below. */
     big.alt = img.getAttribute("alt") || "";
     /* No native width recorded means we cannot promise it will not blur, so it
-       is capped at the viewport and no further. */
-    big.style.maxWidth = w ? "min(94vw, " + w + "px)" : "94vw";
+       is capped at the frame and no further. min() is what enforces the rule:
+       a 480px file renders at 480px on a 4K display, centred in ink. */
+    big.style.maxWidth = w ? "min(100%, " + w + "px)" : "100%";
+
+    /* THE CAPTION IS THE LEDGER NAME, NOT THE DATA NAME (v1.4 §2.2). On a phone
+       the row is scrolled away behind the backdrop, so the reader needs telling
+       what they are looking at — but it must be the SAME name the register just
+       showed them. Printing the full untrimmed name here would quietly undo
+       every editorial short title at the exact moment they are looking hardest.
+       Falls back to the row's own text if the entry cannot be resolved, which
+       keeps the viewer honest rather than blank. */
+    var wrap = img.closest("[data-id]");
+    var d = wrap && DATA.filter(function (x) { return x.id === wrap.getAttribute("data-id"); })[0];
+    var name = d ? (shownBrand(d) + " · " + shownModel(d)) : (img.getAttribute("alt") || "");
     var fig = img.closest("figure");
-    var credit = fig && fig.querySelector("figcaption");
-    cap.textContent = (img.getAttribute("alt") || "") + (credit ? " — " + credit.textContent.trim() : "");
+    var creditNode = fig && fig.querySelector("figcaption");
+    var credit = creditNode ? creditNode.textContent.replace(/^Photograph · /, "").trim() : "source";
+    cap.innerHTML =
+      '<span style="display:block;font-family:\'Archivo\',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#8a8071">' + esc(name) + '</span>' +
+      '<span style="display:block;margin-top:6px;font-size:11.5px;letter-spacing:.04em;color:#c9c0ad">Photograph · ' + esc(credit) + '</span>';
+    /* The dialog announces the same name the caption prints. */
+    box.setAttribute("aria-label", name || "Photograph");
     box.style.display = "flex";
     /* The page behind must not scroll away under the dialog. */
     document.documentElement.style.overflow = "hidden";
@@ -1763,7 +1833,12 @@ JS = r"""
 TIER_HELP = {
     "Buy online now": "Add to cart on a brand webshop or an authorised online retailer.",
     "Drop upcoming": "Announced with a date. Nothing to buy yet.",
-    "Buy at retailer": "Available for purchase now at physical retail — not online. We list what we know about where.",
+    # v1.4 §4.2. The old gloss claimed the watch was "available for purchase now
+    # at physical retail", which nobody checked and nothing in the pipeline can
+    # check — stage 10 reads product pages, not shop shelves. This says only
+    # what is true, and it is ONE string rather than a branch on buyKind,
+    # deliberately: a branch is a place for a wrong sentence to hide.
+    "Buy at retailer": "No online purchase page was found. Retail availability has not been checked.",
     "Waitlist or ballot": "Entry by lottery, ballot or waitlist.",
     "AD or boutique": "Allocation only. Never sold online.",
     "In person only": "Sold at an event or a single physical location.",
@@ -2032,7 +2107,12 @@ HTML = f"""<!DOCTYPE html>
   <div data-mq="utilwrap" style="max-width:1140px;margin:0 auto;padding:0 30px">
     <div data-mq="util" style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 10px;border-bottom:1px solid #ddd6c8;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8a8071;font-weight:600">
       <span>{html.escape(dom)}</span>
-      <span>Refreshed weekly<span data-mq="utc"> · Mondays 09:00 UTC</span></span>
+      <!-- v1.4 §4.1. "Refreshed weekly" stopped being true on 2026-08-05, when
+           the schedules split: the free stages (link sweeps, photographs,
+           calendar expiry) run every morning and the paid ones run Mondays. The
+           clause that disappears below 720px is the second half, exactly as the
+           UTC clause used to be, so the phone keeps the claim it can support. -->
+      <span>Checked daily 09:00 UTC<span data-mq="utc"> · sources refreshed Mondays</span></span>
     </div>
   </div>
 
@@ -2159,13 +2239,23 @@ HTML = f"""<!DOCTYPE html>
          untouched — the expiry is deterministic and free, so it keeps the data
          correct against the day this section returns.
          What remains below is the three things a reader actually needs. -->
-    <footer style="margin-top:64px;border-top:2px solid #17130d;padding:26px 0 80px;font-size:13.5px;color:#8a8071">
+    <footer style="margin-top:56px;border-top:2px solid #17130d;padding:28px 0 84px;font-size:13.5px;color:#8a8071">
+
+      <!-- v1.4 §5 gave these two paragraphs a treatment: Newsreader 16.5px in
+           body ink, 660px measure, 18px apart. They stop being small print and
+           become the last thing the register says in its own voice. -->
+      <div style="max-width:660px;display:grid;gap:18px">
 
       <!-- What "checked" means. This stays because the green stock-check mark and
            the confidence rating are the register's entire claim over an
            aggregator, and an unexplained mark is an unearned one. Two sentences,
            not the five bullets it replaces. -->
-      <p style="margin:0;max-width:720px;line-height:1.55">A green check means that entry's purchase page was read on the date shown — not inferred from how the brand distributes. Confidence is stated rather than implied: <b style="color:#17130d;font-weight:600">high</b> is a brand source or several credible outlets agreeing, <b style="color:#17130d;font-weight:600">medium</b> is one credible source, <b style="color:#17130d;font-weight:600">low</b> is a single aggregator or an unresolved conflict.</p>
+      <!-- The copy here is DELIBERATELY the longer one, and the difference from
+           v1.4 is flagged to Design rather than resolved: the reference's
+           version ends "high, medium or low" and drops what those three words
+           mean, which is the only place on the page they are defined. Kept
+           until Design rules; the treatment around it is theirs, unchanged. -->
+      <p style="margin:0;font-family:'Newsreader',serif;font-size:16.5px;line-height:1.55;color:#3a342b;text-wrap:pretty"><span style="color:#1e5c38;font-weight:700">✓</span> A green check means that entry's purchase page was read on the date shown — not inferred from how the brand distributes. Confidence is stated rather than implied: <b style="color:#17130d;font-weight:600">high</b> is a brand source or several credible outlets agreeing, <b style="color:#17130d;font-weight:600">medium</b> is one credible source, <b style="color:#17130d;font-weight:600">low</b> is a single aggregator or an unresolved conflict.</p>
 
       <!-- TAKEDOWN — a requirement, not furniture. We publish press photographs
            we do not own under an editorial-use rationale, and that position holds
@@ -2193,7 +2283,9 @@ HTML = f"""<!DOCTYPE html>
            Honouring a request is TWO steps, not one — see suppress_image() in
            scripts/refresh.py. Nulling `image` alone lasts exactly until the next
            photograph pass re-resolves it from the same article. -->
-      <p id="takedown" style="margin:16px 0 0;max-width:720px;line-height:1.55">Photographs are drawn from the publication that reported each release and are credited individually. If you hold rights to an image here and want it removed, write to <a href="mailto:wdi-takedown@conn.llc" style="color:#8a5a2b;text-decoration:underline;text-underline-offset:3px">wdi-takedown@conn.llc</a> and it will be taken down.</p>
+      <p id="takedown" style="margin:0;font-family:'Newsreader',serif;font-size:16.5px;line-height:1.55;color:#3a342b;text-wrap:pretty">Photographs are drawn from the publication that reported each release and are credited individually. If you hold rights to an image here and want it removed, write to <a href="mailto:wdi-takedown@conn.llc" style="color:#8a5a2b;text-decoration:underline;text-underline-offset:3px">wdi-takedown@conn.llc</a> and it will be taken down.</p>
+
+      </div>
 
       <!-- The colophon keeps #c-rev, #c-imgs and #c-total DELIBERATELY. Chat's
            cut list said "last updated and a repo link, nothing else", but those
@@ -2202,7 +2294,7 @@ HTML = f"""<!DOCTYPE html>
            quoting build-time numbers. Dropping them to satisfy a copy preference
            would trade a live safety property for two fewer words. Flagged to Chat
            rather than done silently. #c-updated is new and hydrated alongside. -->
-      <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · updated <span id="c-updated">{html.escape(str(meta.get('updated', '')))}</span> · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{sum(1 for i in _kept if i.get('image'))}</span> of <span id="c-total">{len(_kept)}</span> photographs resolved · <a href="https://github.com/ConnLLC/watch-drop-index" style="color:#8a8071;text-decoration:underline;text-underline-offset:3px">source</a></p>
+      <p style="margin:36px 0 0;padding-top:14px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:center;color:#8a8071">Watch Drop Index · {html.escape(dom)} · updated <span id="c-updated">{html.escape(str(meta.get('updated', '')))}</span> · revision <span id="c-rev">{meta['revision']}</span> · <span id="c-imgs">{sum(1 for i in _kept if i.get('image'))}</span> of <span id="c-total">{len(_kept)}</span> photographs resolved · <a href="https://github.com/ConnLLC/watch-drop-index" style="color:#8a8071;text-decoration:underline;text-underline-offset:3px">source</a></p>
       <p style="margin-top:10px;font-size:10px;letter-spacing:.1em;text-align:center;color:#a09786">WATCH DROP INDEX™ is a trademark of Conn LLC, Toronto, Ontario, Canada. All rights reserved.</p>
     </footer>
 
@@ -2214,12 +2306,23 @@ HTML = f"""<!DOCTYPE html>
        treatment; the markup is stable and the CSS is theirs to replace.
        It stays on the page, so it does not touch the one-outbound-click rule. -->
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photograph" tabindex="-1"
-       style="display:none;position:fixed;inset:0;z-index:60;background:rgba(23,19,13,.94);
-              align-items:center;justify-content:center;flex-direction:column;gap:16px;
-              padding:28px;box-sizing:border-box;cursor:zoom-out">
+       style="display:none;position:fixed;inset:0;z-index:70;background:rgba(23,19,13,.96);
+              align-items:center;justify-content:center;flex-direction:column;
+              padding:66px 44px 46px;box-sizing:border-box;cursor:zoom-out">
+    <!-- v1.4 §2.1. Tap-anywhere and Esc both still close it; this is an
+         ADDITION, because neither is discoverable on a phone. It is the word
+         "Close" and not a bare × in a circle — the register speaks in small-caps
+         labels everywhere else, and an invented icon would be the first place it
+         did not. The × is its own span so the .2em tracking does not push it a
+         quarter-em off the word. -->
+    <button id="lbClose" type="button" aria-label="Close"
+            style="position:absolute;top:12px;right:14px;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 14px;background:none;border:none;border-bottom:1px solid transparent;font-family:'Archivo',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#c9c0ad;cursor:pointer">Close<span style="font-size:16px;line-height:1;letter-spacing:0">×</span></button>
+    <!-- The hairline is not decoration: a great many press images are shot on
+         white and would otherwise dissolve into an undefined edge against the
+         ink. max-width is written by openZoom from the file's own width. -->
     <img id="lightboxImg" alt="" referrerpolicy="no-referrer"
-         style="display:block;max-width:94vw;max-height:82vh;width:auto;height:auto;border:1px solid #3a342b">
-    <div id="lightboxCap" style="font-size:11px;letter-spacing:.04em;color:#c9c0ad;text-align:center;max-width:70ch"></div>
+         style="display:block;height:auto;max-height:calc(100vh - 196px);border:1px solid rgba(244,241,234,.14)">
+    <div id="lightboxCap" style="margin-top:15px;text-align:center;max-width:620px"></div>
   </div>
 
   <div id="badgeHost"></div>

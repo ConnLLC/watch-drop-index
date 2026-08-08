@@ -190,8 +190,34 @@ check("an unverified entry says so rather than implying a check",
 check("the stylesheet is shared, not inlined 246 times",
       (ROOT / P.PAGES_DIR / "page.css").exists() and
       all("<style>" not in s for s in pages_out.values()), True)
+
+# Design v1.4 §3. The register's mobile block indents [data-mq="detail"] by 16px
+# because there it sits inside a row; a standalone page has no row, so the indent
+# read as a misalignment. The exemption is now ONE rule in design's own block,
+# keyed off this attribute — so what has to hold is that the pages carry the
+# attribute and that this stylesheet no longer argues with the register's.
+PAGE_CSS = (ROOT / P.PAGES_DIR / "page.css").read_text(encoding="utf-8")
+check("every page marks its detail as standing alone",
+      [r for r, s in pages_out.items() if 'data-mq="detail" data-standalone' not in s], [])
+check("the register's block carries the exemption the pages rely on",
+      '[data-mq="detail"][data-standalone]{padding-left:2px !important}' in PAGE_CSS, True)
+check("and page.css no longer counter-rules design's indent",
+      '[data-mq="detail"]{padding-left:0 !important' in PAGE_CSS, False)
+check("the shared stylesheet is the register's, appended to by nothing",
+      PAGE_CSS.strip().endswith("}") and P.PAGE_CSS_TAIL, "")
+# Pinned as ONE address, read out of index.html rather than typed here, because
+# the failure this catches already happened: the pages kept publishing
+# takedown@watchdropindex.com for three days after the register moved to
+# conn.llc, and a hardcoded literal in this file is what let them. That domain
+# forwards rather than hosting a mailbox, and forwarding breaks its own hard SPF
+# fail, so the drifted address most likely filed complaints as spam.
+INDEX_HTML = (ROOT / "index.html").read_text(encoding="utf-8")
+TAKEDOWN = re.search(r"mailto:([^\"]+)", INDEX_HTML).group(1)
+check("the register publishes a takedown address at all", bool(TAKEDOWN), True)
 check("the takedown address is on every page",
-      [r for r, s in pages_out.items() if "takedown@watchdropindex.com" not in s], [])
+      [r for r, s in pages_out.items() if TAKEDOWN not in s], [])
+check("and it is the SAME address the register publishes — never a second one",
+      [r for r, s in pages_out.items() if "takedown@watchdropindex.com" in s], [])
 
 # ---------------------------------------------------------------------------
 section("Slugs and URL stability")

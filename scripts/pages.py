@@ -197,17 +197,27 @@ VAL = 'style="font-size:14px;color:#17130d;overflow-wrap:anywhere"'
 # with no build step and that property is deliberate — but at this multiple the
 # arithmetic reverses.
 #
-# The two rules appended below are NOT new treatment. The mobile block indents
-# [data-mq="detail"] by 16px because in the register it sits inside a row; on a
-# standalone page there is no row and the indent reads as a misalignment.
-# Neutralised here rather than by touching design's block. FLAGGED TO DESIGN.
-PAGE_CSS_TAIL = """
-@media (max-width:720px){
-  [data-mq="detail"]{padding-left:0 !important;padding-right:0 !important}
-}
-"""
+# NOTHING IS APPENDED ANY MORE, and the empty tail is the point. This file used
+# to add a counter-rule cancelling the mobile block's 16px indent on
+# [data-mq="detail"], because in the register that detail sits inside a row and
+# here it does not. Design ruled in v1.4 §3 that a rule meaning "indent only
+# inside a row" should say so where it lives, so the exemption is now
+# [data-mq="detail"][data-standalone] in the register's own block and these
+# pages carry the attribute. One intent, one stylesheet — the counter-rule was
+# the same idea written twice, in two files, each able to drift from the other.
+PAGE_CSS_TAIL = ""
 
 
+# THE TAKEDOWN ADDRESS, found drifting on 2026-08-08: these 246 pages were still
+# publishing takedown@watchdropindex.com days after the register itself moved to
+# wdi-takedown@conn.llc, and that is not a cosmetic difference. watchdropindex.com
+# has no mailbox — only registrar forwarding — and forwarding breaks SPF against
+# its own hard -all, so a rights holder's notice most likely lands in a spam
+# folder. conn.llc runs Cloudflare Email Routing, which rewrites the envelope
+# sender and re-establishes SPF. A takedown route that silently fails is worse
+# than none, because it looks like due process. The two surfaces are now pinned
+# to ONE address by test/pages_test.py, which reads it out of index.html rather
+# than repeating the literal: publishing two addresses means one of them is wrong.
 def page_html(w, meta, css, lockup, tier_help):
     url = f"{CANON}/{path_for(w)}"
     name = f"{w['brand']} {w['model']}"
@@ -315,7 +325,7 @@ def page_html(w, meta, css, lockup, tier_help):
       <h1 style="font-family:'Newsreader',serif;font-size:34px;font-weight:600;line-height:1.15;color:#17130d;margin:30px 0 6px;letter-spacing:-.01em">{esc(name)}</h1>
       <p style="margin:0 0 26px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8a8071;font-weight:600">{esc(w.get("cat") or "")} · {esc(w.get("date") or "")}</p>
 
-      <div data-mq="detail" style="display:grid;grid-template-columns:330px minmax(0,1fr);gap:32px;align-items:start">
+      <div data-mq="detail" data-standalone style="display:grid;grid-template-columns:330px minmax(0,1fr);gap:32px;align-items:start">
         <div style="min-width:0">{fig}</div>
         <div style="min-width:0">
           <p style="font-family:'Newsreader',serif;font-size:18px;line-height:1.5;color:#17130d;margin:0 0 16px">{esc(w.get("desc") or "")}</p>
@@ -339,7 +349,7 @@ def page_html(w, meta, css, lockup, tier_help):
 
     <footer style="margin:34px 0 0;padding:16px 0 40px;border-top:1px solid #e9e4d8;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a8071;text-align:center;font-weight:600">
       Watch Drop Index · updated {esc(meta.get("updated", ""))} · revision {esc(meta.get("revision", ""))}
-      <div style="margin-top:9px;letter-spacing:.1em;font-size:10px;color:#a09786;text-transform:none">WATCH DROP INDEX™ is a trademark of Conn LLC. Photograph credited to its source; <a href="mailto:takedown@watchdropindex.com" style="color:#a09786">takedown@watchdropindex.com</a>.</div>
+      <div style="margin-top:9px;letter-spacing:.1em;font-size:10px;color:#a09786;text-transform:none">WATCH DROP INDEX™ is a trademark of Conn LLC. Photograph credited to its source; <a href="mailto:wdi-takedown@conn.llc" style="color:#a09786">wdi-takedown@conn.llc</a>.</div>
     </footer>
 
   </div>

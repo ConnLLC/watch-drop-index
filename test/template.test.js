@@ -756,9 +756,11 @@ const keep = (list) => list
   check("a click opens it", zbox.style.display, "flex");
   check("showing the same photograph", zbig.src, zoomable.image);
   // The whole reason dimensions are stored: these are press og:image files, and
-  // upscaling a small one is worse than the thumbnail it came from.
+  // upscaling a small one is worse than the thumbnail it came from. The cap is
+  // against the FRAME rather than the viewport as of v1.4 §2.3 — the backdrop's
+  // own padding is what holds it off the edges now.
   check("capped at native size, never upscaled",
-        zbig.style.maxWidth, `min(94vw, ${zoomable.imageSize[0]}px)`);
+        zbig.style.maxWidth, `min(100%, ${zoomable.imageSize[0]}px)`);
   check("the credit travels with it",
         /Photograph ·/.test(w.document.querySelector("#lightboxCap").textContent), true);
   check("the row underneath does not collapse", zrow.getAttribute("aria-expanded"), expandedBefore);
@@ -785,7 +787,82 @@ const keep = (list) => list
     v.document.querySelector(`[data-id="${t.id}"] img[data-zoom]`)
      .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
     return v.document.querySelector("#lightboxImg").style.maxWidth;
-  })(), "94vw");
+  })(), "100%");
+
+  // --- v1.4 §6, acceptance 6, 7, 8 and 9 ----------------------------------
+  // The close control. Tap-anywhere and Esc were both real and both invisible,
+  // which is not a treatment question — a reader on a phone has no pointer to
+  // hover and no key to press.
+  {
+    const lb = w.document.querySelector("#lbClose");
+    check("the viewer carries a visible close control", !!lb, true);
+    check("...that reads the word Close, then the ×", lb.textContent.trim(), "Close×");
+    check("...at a 44px hit target in both directions",
+          [lb.style.minWidth, lb.style.minHeight], ["44px", "44px"]);
+    check("...and is announced to a screen reader", lb.getAttribute("aria-label"), "Close");
+    lb.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+    check("clicking it closes the viewer", w.document.querySelector("#lightbox").style.display, "none");
+  }
+
+  // The caption names the watch the way the REGISTER named it. Putting the full
+  // data name here would quietly undo every editorial short title at the moment
+  // the reader is looking hardest — so this is pinned against an entry that has
+  // one, not against an arbitrary row.
+  // The short titles come from the baked-in map rather than from data.json, so
+  // the entry to test on is found by RENDERING and looking for a row whose model
+  // cell is not the data's model — the same thing the reader sees.
+  check("the caption is the ledger name, not the untrimmed data name", await (async () => {
+    const v = await load(BASE, "");
+    const shortened = BASE.watches.filter((x) => x.image).find((x) => {
+      const cell = v.document.querySelector(`[data-id="${x.id}"] [data-mq="cols"] > *:nth-child(2) > span:last-child`);
+      return cell && cell.textContent.trim().replace(/°$/, "") !== x.model;
+    });
+    if (!shortened) return "no entry carries an editorial short title";
+    const t = await load(BASE, "#" + shortened.id);
+    const rowName = t.document
+      .querySelector(`[data-id="${shortened.id}"] [data-mq="cols"] > *:nth-child(2) > span:last-child`)
+      .textContent.trim().replace(/°$/, "");
+    t.document.querySelector(`[data-id="${shortened.id}"] img[data-zoom]`)
+     .dispatchEvent(new t.MouseEvent("click", { bubbles: true }));
+    const lines = [...t.document.querySelectorAll("#lightboxCap > span")].map((n) => n.textContent);
+    return [
+      lines.length === 2,
+      lines[0].includes(rowName),               // the name the register showed
+      lines[0].includes(shortened.model),       // must be FALSE — the long name
+      /^Photograph · /.test(lines[1]),
+      // and the alt keeps the full name, which is the separate accessibility job
+      t.document.querySelector("#lightboxImg").alt.includes(shortened.model),
+    ].join(",");
+  })(), "true,true,false,true,true");
+
+  // A 480px file on a 1920px display renders at 480px, centred in ink. This is
+  // the case the rule exists for, so it is asserted at that size and not only in
+  // the abstract.
+  check("a small photograph is not blown up to fill the frame", await (async () => {
+    const patched = JSON.parse(JSON.stringify(BASE));
+    const t = patched.watches.find((x) => x.image && x.imageSize);
+    t.imageSize = [480, 480];
+    const v = await load(patched, "#" + t.id);
+    v.document.querySelector(`[data-id="${t.id}"] img[data-zoom]`)
+     .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    return v.document.querySelector("#lightboxImg").style.maxWidth;
+  })(), "min(100%, 480px)");
+
+  // There is no empty viewer state, because there is nothing to open. The plate
+  // must not advertise a zoom it cannot perform.
+  check("an entry with no photograph offers no zoom at all", await (async () => {
+    const none = BASE.watches.find((x) => !x.image);
+    if (!none) return "every entry has a photograph";
+    const v = await load(BASE, "#" + none.id);
+    const box = v.document.querySelector("#lightbox");
+    const before = box.style.display;
+    v.document.querySelector(`[data-id="${none.id}"] figure`)
+     .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    return [
+      v.document.querySelector(`[data-id="${none.id}"] [data-zoom]`) === null,
+      before === "none" && box.style.display === "none",
+    ].join(",");
+  })(), "true,true");
 
   // Hotlink protection: outlets serve a bare request and refuse a referred one,
   // so the page must not send a Referer for a press photograph. Confirmed live
@@ -855,6 +932,126 @@ const keep = (list) => list
           v.document.querySelector("[data-id]").getAttribute("data-id"), B);
     check("sorting by favourites reveals no counts in the list",
           v.document.querySelectorAll("[data-id] #favN").length, 0);
+  }
+
+  console.log("\n=== 13. THE MARK, AS DESIGN RULED IT (v1.4 §6) ===");
+  // Acceptance 1-5. jsdom does no layout, so offsetLeft is 0 for everything and
+  // measuring it would prove nothing — these assert the STYLE CONTRACT that
+  // makes the geometry identical instead, which is the thing that can actually
+  // regress in an edit. The pixel side-by-side is Lowell's to settle; §7.
+  {
+    const A = BASE.watches[0].id, B = BASE.watches[1].id;
+    const wrap = (v, id) => v.document.querySelector(`[data-id="${id}"]`);
+
+    let v = await load(BASE, "", {});
+    // Mark A directly through the control so this exercises the real path.
+    v.document.querySelector(`[data-id="${A}"] .wdi-row`)
+     .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    v.document.querySelector(`[data-fav="${A}"]`)
+     .dispatchEvent(new v.MouseEvent("click", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 20));
+
+    const marked = wrap(v, A), plain = wrap(v, B);
+    // jsdom serialises colours as rgb(), so the palette value is converted here
+    // rather than written twice — a hex literal in this file would pass while
+    // the page shipped a different bronze.
+    const rgb = (hex) => "rgb(" + [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16)).join(", ") + ")";
+    check("a marked entry carries the bronze rule in the margin",
+          marked.style.borderLeft, `2px solid ${rgb("#8a5a2b")}`);
+    check("EVERY other row reserves the same two pixels, transparently",
+          plain.style.borderLeft, "2px solid transparent");
+    check("...so marking one costs zero layout shift",
+          [marked.style.borderLeftWidth === plain.style.borderLeftWidth,
+           marked.style.marginLeft === plain.style.marginLeft &&
+           marked.style.marginLeft === "-2px"].join(","), "true,true");
+    check("the rule is on the wrapper, so the row's own hover cannot cover it",
+          [wrap(v, A).matches("[data-id]"),
+           v.document.querySelector(`[data-id="${A}"] .wdi-row`).style.borderLeft], "true,");
+    check("no count leaks into the collapsed list, ever",
+          v.document.querySelectorAll("[data-id] .wdi-row #favN").length, 0);
+
+    // Acceptance 3: ABSENCE, not invisibility. A hidden zero is a zero that
+    // comes back the first time somebody restyles the control.
+    v = await load(BASE, "#" + B, {});
+    const zero = v.document.querySelector(`[data-fav="${B}"]`);
+    check("an unmarked entry's control is exactly star and word",
+          [...zero.children].map((n) => n.tagName.toLowerCase()).join(","), "svg,span");
+    check("...with no hairline and no number ANYWHERE in the DOM",
+          zero.innerHTML.includes("#d5cdbc") || !!zero.querySelector("#favN"), false);
+    check("the word is Mark before it is marked", zero.textContent.trim(), "Mark");
+    check("the star is the reference's own path, not a glyph or an emoji",
+          /^M8 1\.5l1\.98 4\.01/.test(zero.querySelector("path").getAttribute("d")), true);
+    check("the control is a 44px hit target", zero.style.minHeight, "44px");
+    check("...pushed to the far right so Buy stays dominant", zero.style.marginLeft, "auto");
+
+    // Acceptance 4: en-US grouping at every magnitude. 3,041 is the case that
+    // tempts an abbreviation, so it is the case that is pinned.
+    const shown = async (n) => {
+      const t = await load(BASE, "#" + A, { [A]: n });
+      return txt(t, `[data-fav="${A}"] #favN`);
+    };
+    check("a small count reads plainly", await shown(8), "8");
+    check("a three-figure count reads plainly", await shown(247), "247");
+    check("a four-figure count is grouped, never abbreviated", await shown(3041), "3,041");
+
+    v = await load(BASE, "#" + A, { [A]: 3041 });
+    const busy = v.document.querySelector(`[data-fav="${A}"] #favN`);
+    check("the count arrives behind its hairline",
+          busy.firstElementChild.style.background, rgb("#d5cdbc"));
+    check("the marked word is Marked, not a second glyph", await (async () => {
+      const t = await load(BASE, "#" + A, {});
+      t.document.querySelector(`[data-fav="${A}"]`)
+       .dispatchEvent(new t.MouseEvent("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+      const b = t.document.querySelector(`[data-fav="${A}"]`);
+      return b.querySelector("span").textContent;
+    })(), "Marked");
+
+    // Acceptance 5, second half, and §3: three mobile rules that only exist in
+    // the stylesheet, so they are checked there.
+    const media = HTML.split("@media (max-width:720px){")[1].split("\n}")[0];
+    check("below 720px the control goes full width, centred",
+          /\[data-fav\]\{margin-left:0 !important;width:100% !important;justify-content:center !important\}/.test(media), true);
+    check("the viewer tightens its padding on a phone",
+          /#lightbox\{padding:60px 14px 30px !important\}/.test(media), true);
+    check("...and gives the image back the height the caption takes",
+          /#lightboxImg\{max-height:calc\(100vh - 210px\) !important\}/.test(media), true);
+    check("a standalone detail is exempted from the row indent IN design's block",
+          /\[data-mq="detail"\]\[data-standalone\]\{padding-left:2px !important\}/.test(media), true);
+  }
+
+  console.log("\n=== 14. THE COPY DESIGN CLOSED (v1.4 §4) ===");
+  // Two strings that were quietly false. Pinned as EXACT text because that is
+  // what was ruled — a paraphrase here would be the same over-claim returning.
+  {
+    const v = await load(BASE, "");
+    const util = [...v.document.querySelectorAll('[data-mq="util"] > span')].pop();
+    check("the utility bar states the split cadence, not 'refreshed weekly'",
+          util.textContent.trim(), "Checked daily 09:00 UTC · sources refreshed Mondays");
+    check("...and the phone drops the half it cannot fit, not the half it claims",
+          util.querySelector('[data-mq="utc"]').textContent.trim(), "· sources refreshed Mondays");
+
+    const retail = BASE.watches.find((x) => x.tier === "Buy at retailer");
+    if (retail) {
+      const t = await load(BASE, "#" + retail.id);
+      check("'Buy at retailer' no longer asserts stock nobody checked",
+            t.document.querySelector(`[data-id="${retail.id}"] table td`).textContent
+             .includes("No online purchase page was found. Retail availability has not been checked."), true);
+    } else {
+      check("'Buy at retailer' gloss is the ruled string",
+            HTML.includes("No online purchase page was found. Retail availability has not been checked."), true);
+    }
+
+    // §4.3, ratified rather than changed. Section 1 already pins the figure to
+    // the filtered set; what this adds is the part that was actually in dispute
+    // — that the two numbers DIFFER, and the masthead prints the smaller one.
+    // Three brands exist only through out-of-scope entries, so printing 94 would
+    // be the register lying about its own contents in its largest type.
+    const inRegister = new Set(KEPT.map((x) => x.brand)).size;
+    const inData = new Set(BASE.watches.map((x) => x.brand)).size;
+    check("the two brand counts are genuinely different", inRegister < inData, true);
+    check("...and the masthead prints the one the reader can see",
+          v.document.querySelector("#t-brands").textContent, String(inRegister));
   }
 
   console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES"} — ${pass} passed, ${fail} failed\n`);
