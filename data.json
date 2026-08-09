@@ -2,14 +2,14 @@
   "meta": {
     "title": "Watch Drop Index",
     "tagline": "Every limited-run watch of 2026 — what it costs, whether you can still get one, and where to buy it.",
-    "updated": "2026-08-08",
+    "updated": "2026-08-09",
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 18,
+    "revision": 19,
     "domain": "watchdropindex.com",
     "imagesResolved": 220,
-    "lastImageSweep": "2026-08-08",
+    "lastImageSweep": "2026-08-09",
     "spend": {
       "weekStart": "2026-08-03",
       "cad": 6.7894
@@ -55,6 +55,15 @@
         "brand": 33,
         "none": 0,
         "unreadable": 83
+      },
+      {
+        "date": "2026-08-09",
+        "runner": "github-actions",
+        "product": 80,
+        "listing": 47,
+        "brand": 31,
+        "none": 0,
+        "unreadable": 94
       }
     ]
   },
@@ -93,7 +102,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -133,7 +142,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -175,7 +184,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -216,11 +225,11 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -262,11 +271,11 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "dead",
         "note": "HTTP 404"
       }
@@ -309,11 +318,11 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "dead",
         "note": "HTTP 404"
       }
@@ -352,7 +361,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "buySearch": {
@@ -395,7 +404,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -433,11 +442,11 @@
       },
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -477,7 +486,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -517,7 +526,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -554,8 +563,18 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
+      },
+      "imageCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "fetch failed: ConnectTimeout"
+      },
+      "sourceCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "fetch failed: ConnectTimeout"
       }
     },
     {
@@ -592,7 +611,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -669,7 +688,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "buySearch": {
@@ -712,7 +731,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -750,7 +769,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -868,7 +887,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -906,7 +925,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -944,7 +963,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -980,7 +999,7 @@
       "image": "https://www.ablogtowatch.com/wp-content/uploads/2026/06/US-250-Anthracite-SSNAV-D-16-scaled.jpeg",
       "imageCredit": "aBlogtoWatch",
       "imageCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       },
@@ -990,11 +1009,11 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -1033,7 +1052,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -1070,7 +1089,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1107,7 +1126,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -1144,7 +1163,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -1185,7 +1204,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -1226,7 +1245,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -1301,7 +1320,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -1339,7 +1358,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1377,7 +1396,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1414,7 +1433,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1452,7 +1471,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1490,7 +1509,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1528,7 +1547,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1566,7 +1585,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1604,7 +1623,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1642,7 +1661,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1680,7 +1699,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1719,7 +1738,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1757,7 +1776,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1795,7 +1814,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -1870,7 +1889,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -1920,7 +1939,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2034,7 +2053,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2081,7 +2100,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2122,7 +2141,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2163,7 +2182,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2200,7 +2219,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2240,7 +2259,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -2278,7 +2297,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2315,7 +2334,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -2355,7 +2374,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2395,7 +2414,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2445,7 +2464,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2552,7 +2571,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2589,7 +2608,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2627,7 +2646,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2664,7 +2683,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2699,7 +2718,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2739,7 +2758,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2776,7 +2795,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2813,7 +2832,7 @@
         1200
       ],
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -2849,7 +2868,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2886,7 +2905,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2926,7 +2945,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -2961,7 +2980,7 @@
       },
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -2998,7 +3017,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3033,7 +3052,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -3166,9 +3185,9 @@
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
-        "result": "dead",
-        "note": "soft-404: redirected to https://junghans-shop.com"
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "fetch failed: ConnectTimeout"
       }
     },
     {
@@ -3206,9 +3225,9 @@
         "note": "does not name this watch (homepage or category page)"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
-        "result": "dead",
-        "note": "soft-404: redirected to https://junghans-shop.com"
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "fetch failed: ConnectTimeout"
       }
     },
     {
@@ -3247,7 +3266,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3285,7 +3304,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3453,7 +3472,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -3488,7 +3507,12 @@
       "imageSize": [
         1920,
         803
-      ]
+      ],
+      "imageCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "HTTP 503"
+      }
     },
     {
       "brand": "TAG Heuer",
@@ -3557,7 +3581,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -3598,7 +3622,7 @@
         "note": "fetch failed: ReadTimeout"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "fetch failed: ReadTimeout"
       }
@@ -3636,7 +3660,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3673,7 +3697,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3711,7 +3735,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3746,7 +3770,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -3781,7 +3805,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -4067,7 +4091,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -4102,7 +4126,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -4229,7 +4253,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -4264,7 +4288,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -4429,7 +4453,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -4464,7 +4488,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -4594,7 +4618,7 @@
         1200
       ],
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4632,7 +4656,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4669,7 +4693,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4706,7 +4730,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4743,7 +4767,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4787,7 +4811,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       },
       "deadImages": [
@@ -4797,6 +4821,11 @@
         "date": "2026-08-05",
         "result": "blocked",
         "note": "HTTP 202"
+      },
+      "sourceCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "fetch failed: ConnectTimeout"
       }
     },
     {
@@ -4831,7 +4860,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4869,7 +4898,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4907,7 +4936,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -4946,7 +4975,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -4983,7 +5012,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -5020,7 +5049,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -5124,7 +5153,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5162,7 +5191,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5200,7 +5229,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5235,7 +5264,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5271,11 +5300,11 @@
       },
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -5311,7 +5340,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5348,7 +5377,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5383,7 +5412,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5453,7 +5482,7 @@
       "imageCredit": "Hypebeast",
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5585,7 +5614,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -5785,7 +5814,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5822,7 +5851,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -5857,7 +5886,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5888,7 +5917,7 @@
       "imageCredit": "Grönefeld",
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5925,7 +5954,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5960,7 +5989,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -5999,7 +6028,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -6036,7 +6065,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -6073,7 +6102,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -6142,7 +6171,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -6329,7 +6358,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6364,7 +6393,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -6399,7 +6428,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6436,7 +6465,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6473,7 +6502,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6508,7 +6537,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6576,7 +6605,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -6611,7 +6640,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -6646,7 +6675,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6681,7 +6710,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6718,7 +6747,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6755,7 +6784,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6792,7 +6821,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -6954,7 +6983,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -6991,7 +7020,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -7028,7 +7057,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -7065,7 +7094,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -7102,7 +7131,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7139,7 +7168,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7176,7 +7205,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7213,7 +7242,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7280,7 +7309,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -7382,7 +7411,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -7418,11 +7447,11 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -7461,7 +7490,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -7498,7 +7527,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7533,7 +7562,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7568,7 +7597,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7605,7 +7634,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -7983,7 +8012,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8020,8 +8049,13 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
+      },
+      "imageCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "HTTP 415"
       }
     },
     {
@@ -8055,8 +8089,13 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "imageCheck": {
+        "date": "2026-08-09",
+        "result": "unclear",
+        "note": "HTTP 415"
       }
     },
     {
@@ -8125,7 +8164,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -8162,7 +8201,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8228,7 +8267,7 @@
         1200
       ],
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -8265,7 +8304,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -8302,7 +8341,7 @@
         "result": "none"
       },
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -8340,7 +8379,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8377,7 +8416,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -8414,7 +8453,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -8454,7 +8493,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8521,7 +8560,7 @@
       "imageCredit": "Grönefeld",
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -8558,7 +8597,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8596,7 +8635,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8634,7 +8673,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8672,7 +8711,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8709,7 +8748,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -8746,7 +8785,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -8783,7 +8822,7 @@
       ],
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -8821,7 +8860,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -8858,7 +8897,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -8895,7 +8934,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -8930,7 +8969,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -9037,7 +9076,7 @@
       ],
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch and offers a way to buy it"
       }
     },
@@ -9071,7 +9110,7 @@
         675
       ],
       "sourceCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "result": "unclear",
         "note": "HTTP 403"
       }
@@ -9143,7 +9182,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -9213,7 +9252,7 @@
       ],
       "buyKind": "listing",
       "buyCheck": {
-        "date": "2026-08-08",
+        "date": "2026-08-09",
         "note": "names the watch but offers no purchase"
       }
     }
