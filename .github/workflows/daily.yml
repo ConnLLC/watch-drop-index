@@ -32,7 +32,24 @@ name: daily sweep
 
 on:
   schedule:
-    - cron: '0 9 * * *'     # 09:00 UTC daily. Drifts an hour with BST; harmless.
+    - cron: '0 8 * * *'     # 08:00 UTC daily. Drifts an hour with BST; harmless.
+                            #
+                            # AN HOUR AHEAD OF THE WEEKLY REFRESH, AND THAT GAP IS
+                            # NOT COSMETIC. Both jobs rewrite the same ~425 lines
+                            # of data.json. When they ran in the same minute, the
+                            # refresh checked main out at 09:00, worked for ~28
+                            # minutes, and found this sweep's commit landed
+                            # underneath it at 09:40 — `git pull --rebase` then
+                            # replayed a whole-file diff onto a whole-file diff and
+                            # conflicted. Three Mondays in a row (10, 17, 24 Aug
+                            # 2026) a full run of PAID stock checks was done and
+                            # then thrown away on the commit.
+                            #
+                            # Starting an hour earlier means the refresh's checkout
+                            # already contains this sweep, so there is nothing to
+                            # rebase onto. This job's 40-minute timeout is what
+                            # makes that an ordering guarantee rather than a habit:
+                            # 08:00 + 40 < 09:00 even in the worst case.
   workflow_dispatch:
     inputs:
       stages:
@@ -85,6 +102,7 @@ jobs:
           python3 scripts/refresh.py \
             --stages "${{ inputs.stages || '7,3,6,8,9' }}" \
             --no-api \
+            --demote-unearned \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
           echo "code=$?" >> "$GITHUB_OUTPUT"
 

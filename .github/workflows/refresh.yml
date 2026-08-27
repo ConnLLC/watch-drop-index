@@ -100,6 +100,7 @@ jobs:
           set +e
           python3 scripts/refresh.py \
             --stages "${{ inputs.stages || '2,10,4,7,3,6,8,9' }}" \
+            --demote-unearned \
             ${{ inputs.search_limit && format('--search-limit {0}', inputs.search_limit) || '' }} \
             --photo-batch "${{ inputs.photo_batch || '0' }}" \
             ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
