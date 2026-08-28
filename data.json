@@ -6,13 +6,13 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 31,
+    "revision": 32,
     "domain": "watchdropindex.com",
     "imagesResolved": 220,
     "lastImageSweep": "2026-08-28",
     "spend": {
       "weekStart": "2026-08-24",
-      "cad": 0.0
+      "cad": 4.8414
     },
     "ceilingOverride": {
       "weekStart": "2026-08-03",
@@ -172,6 +172,15 @@
         "brand": 36,
         "none": 0,
         "unreadable": 82
+      },
+      {
+        "date": "2026-08-28",
+        "runner": "github-actions",
+        "product": 96,
+        "listing": 46,
+        "brand": 32,
+        "none": 0,
+        "unreadable": 78
       }
     ]
   },
@@ -280,7 +289,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"Casio G-Shock MR-G MRG-B2000 Series Titanium \"Kurogane-iro Phoenix\" Limited Edition MRG-B2000KT-3A Regular price $8,299.00 USD\""
       },
       "image": null,
@@ -321,7 +330,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"Casio G-Shock MASTER OF G - Land Mudmaster Solar 2026 Limited Edition MAGMA GOLD GWG-B1000MG-1A9 Regular price $909.00 USD $879.00 USD Sale\""
       },
       "image": null,
@@ -367,7 +376,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"In Stock ... $4,995.00 ... Add to bag\""
       },
       "image": null,
@@ -446,7 +455,7 @@
       "price": "$1,995",
       "priceNum": 1995,
       "date": "2026",
-      "status": "Available",
+      "status": "Sold out",
       "buy": "https://www.christopherward.com/on/demandware.store/Sites-cwgross-Site/en_GB/Page-Show?cid=c60-clipper-gmt",
       "buyLabel": "Christopher Ward — limited editions",
       "source": "https://luxe.outlookindia.com/watches-jewellery/watches/top-collaborative-timepieces-of-2026-the-most-exciting-watch-partnerships",
@@ -456,11 +465,14 @@
         "Collab"
       ],
       "id": "ce042e7ce5",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Gone",
+      "rank": 6,
       "addedOn": "2026-08-03",
-      "soldOutOn": null,
-      "verified": null,
+      "soldOutOn": "2026-08-28",
+      "verified": {
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"The C60 Clipper GMT is now sold out. Join the waitlist below and be the first to know if any pieces become available.\""
+      },
       "image": "https://images-luxe.outlookindia.com/2026/06/13145529/Collab-Cover.jpg",
       "imageCredit": "Outlook Luxe",
       "imageSize": [
@@ -514,6 +526,11 @@
       "buyCheck": {
         "date": "2026-08-28",
         "note": "names the watch but offers no purchase"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "HTTP 404"
       }
     },
     {
@@ -528,7 +545,7 @@
       "priceNum": 39500,
       "date": "10 Apr 2026",
       "status": "Pre-order",
-      "buy": "https://www.czapek.com/",
+      "buy": "https://www.czapek.com/shop/antarctique-titanium-dark-sector-cosmic-blue-8546",
       "buyLabel": "Czapek.com — pre-order",
       "source": "https://www.ablogtowatch.com/new-releases-czapek-introduces-three-new-antarctique-watches-in-cosmic-blue/",
       "conf": "high",
@@ -536,8 +553,8 @@
         "Buy online"
       ],
       "id": "3742f1912d",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -548,10 +565,15 @@
         "result": "blocked",
         "note": "HTTP 403"
       },
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.czapek.com/"
       }
     },
     {
@@ -630,6 +652,11 @@
       "buyKind": "brand",
       "buyCheck": {
         "date": "2026-08-28",
+        "note": "does not name this watch (homepage or category page)"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "none",
         "note": "does not name this watch (homepage or category page)"
       }
     },
@@ -802,7 +829,7 @@
       "priceNum": 3100,
       "date": "Feb 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/kingseiko/lineup",
+      "buy": "https://www.exquisitetimepieces.com/king-seiko-sje121-145th-anniversary-limited-edition.html",
       "buyLabel": "Seiko US — King Seiko lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -811,8 +838,8 @@
         "Anniversary"
       ],
       "id": "c5d8a2932b",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -822,10 +849,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/kingseiko/lineup"
       }
     },
     {
@@ -863,6 +895,11 @@
       "buyKind": "listing",
       "buyCheck": {
         "date": "2026-08-28",
+        "note": "names the watch but offers no purchase"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "none",
         "note": "names the watch but offers no purchase"
       }
     },
@@ -1034,7 +1071,7 @@
       "priceNum": 4900,
       "date": "23 Mar 2026",
       "status": "Available",
-      "buy": "https://www.louiserard.com/",
+      "buy": "https://www.louiserard.com/products/louis-erard-x-alain-silberstein-smile-day-blue",
       "buyLabel": "louiserard.com — direct sale",
       "source": "https://monochrome-watches.com/louis-erard-x-alain-silberstein-smile-day-blue-and-tourbillon-regulateur-blue-review-price/",
       "conf": "high",
@@ -1043,8 +1080,8 @@
         "Buy online"
       ],
       "id": "a1b78c5069",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1054,10 +1091,15 @@
         2100,
         1397
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.louiserard.com/"
       }
     },
     {
@@ -1086,7 +1128,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"$1,776.00 USD ... Add to cart\""
       },
       "image": "https://www.ablogtowatch.com/wp-content/uploads/2026/06/US-250-Anthracite-SSNAV-D-16-scaled.jpeg",
@@ -1151,7 +1193,7 @@
       "priceNum": 4900,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.montblanc.com/en-us/discover/watches/watches-collection.html",
+      "buy": "https://www.montblanc.com/en-be/montblanc-iced-sea-automatic-date-0-oxygen-limited-edition---300-pieces-MB135762.html",
       "buyLabel": "Montblanc US — watches",
       "source": "https://monochrome-watches.com/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review-price/",
       "conf": "medium",
@@ -1159,8 +1201,8 @@
         "Buy online"
       ],
       "id": "6439084b5e",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1170,10 +1212,15 @@
         2100,
         1400
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.montblanc.com/en-us/discover/watches/watches-collection.html"
       }
     },
     {
@@ -1211,6 +1258,11 @@
       "buyCheck": {
         "date": "2026-08-28",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "HTTP 404"
       }
     },
     {
@@ -1225,7 +1277,7 @@
       "priceNum": 10000,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.montblanc.com/en-us/discover/watches/watches-collection.html",
+      "buy": "https://www.montblanc.com/en-th/montblanc-star-legacy-nicolas-rieussec-chronograph-43-mm-limited-edition---821-pieces-MB136359.html",
       "buyLabel": "Montblanc US — watches (online sales)",
       "source": "https://monochrome-watches.com/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review-price/",
       "conf": "medium",
@@ -1233,8 +1285,8 @@
         "Buy online"
       ],
       "id": "f214e1ccd1",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1244,10 +1296,15 @@
         2100,
         1400
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.montblanc.com/en-us/discover/watches/watches-collection.html"
       }
     },
     {
@@ -1317,7 +1374,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"Add to cart\""
       },
       "image": "https://timeandtidewatches.com/wp-content/uploads/2026/06/ORIS-LOU-GEHRIG-LIMITED-EDITION-2.jpg",
@@ -1961,8 +2018,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
-        "note": "Purchase page reads: \"Availability : Temporarily Sold Out\""
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"Availability:   In Stock - Ships Immediately\""
       },
       "image": null,
       "imageCredit": null,
@@ -2002,7 +2059,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"Add To Cart\n\n$425.00\""
       },
       "image": null,
@@ -2213,7 +2270,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"$2,375.00\n\nAdd to cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/02/Tissot-T-Race-MotoGP-Automatic-Chronograph-2026-Limited-Edition-1.jpg",
@@ -2254,8 +2311,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
-        "note": "Purchase page reads: \"Regular price\n$23,400.00\n\nBuy Now\""
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"Regular price $23,400.00 Buy Now\""
       },
       "image": "https://quillandpad.com/wp-content/uploads/2026/06/wear-3.jpg",
       "imageCredit": "Quill & Pad",
@@ -2331,7 +2388,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"Modello Uno U1S-PD6-RB Limited Edition - ProDiver EDITION OF 300 $ 1.820,00\""
       },
       "image": "https://www.unimaticwatches.com/wp-content/uploads/2026/02/1-1-1024x576.jpg",
@@ -2446,8 +2503,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
-        "note": "Purchase page reads: \"ADD TO CART\""
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"Sale price $2,490.00 ... ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
       "imageCredit": "Yema",
@@ -2486,8 +2543,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
-        "note": "Purchase page reads: \"Sale price $2,725.00 ... ADD TO CART\""
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
       "imageCredit": "Yema",
@@ -2643,8 +2700,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
-        "note": "Purchase page reads: \"A small batch of watches will be available to order through this page starting 6 August 2026, at 10:00 AM GMT. Register your interest below, and we’ll be in touch.\""
+        "date": "2026-08-28",
+        "note": "Purchase page reads: \"A small batch of watches will be available to order through this page starting 6 August 2026, at 10:00 AM GMT. Register your interest below, and we'll be in touch.\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/07/MING-3706-Royal-Selangor-hammered-pewter-dial-1.jpg",
       "imageCredit": "Monochrome",
@@ -2894,7 +2951,7 @@
       "priceNum": 970,
       "date": "Feb 2026 (JP) · Mar 2026 (US)",
       "status": "Available",
-      "buy": "https://gshock.casio.com/us/",
+      "buy": "https://shopcasio.jebsen.com/en/gwg-b1000tlc-1a.html**",
       "buyLabel": "G-Shock US",
       "source": "https://www.g-central.com/new-g-shock-watches-announced-for-february-2026/",
       "conf": "high",
@@ -2918,6 +2975,16 @@
         "date": "2026-08-28",
         "result": "unclear",
         "note": "HTTP 403"
+      },
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-28",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://gshock.casio.com/us/"
       }
     },
     {
@@ -3044,7 +3111,7 @@
       "priceNum": 1600,
       "date": "Mar 2026",
       "status": "Available",
-      "buy": "https://www.citizenwatch.com/us/en/",
+      "buy": "https://www.citizenwatch.com/us/en/product/NB6086-54E.html",
       "buyLabel": "Citizen US + authorized dealers",
       "source": "https://www.citizenwatch-global.com/news/2026/20260220_1/index.html",
       "conf": "high",
@@ -3061,10 +3128,15 @@
         "date": "2026-08-04",
         "result": "none"
       },
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.citizenwatch.com/us/en/"
       }
     },
     {
@@ -3116,7 +3188,7 @@
       "priceNum": 3100,
       "date": "Jun 2026",
       "status": "Available",
-      "buy": "https://www.citizenwatch.com/us/en/",
+      "buy": "https://www.citizenwatch.com/us/en/product/AQ4094-58L",
       "buyLabel": "Citizen US + authorized dealers",
       "source": "https://deployant.com/new-the-citizen-aq4094-58l-limited-edition/",
       "conf": "high",
@@ -3133,10 +3205,15 @@
         1098,
         1373
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-28",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.citizenwatch.com/us/en/"
       }
     },
     {
@@ -3169,7 +3246,12 @@
       "imageSize": [
         2000,
         1334
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "HTTP 403"
+      }
     },
     {
       "brand": "Hublot",
@@ -3183,7 +3265,7 @@
       "priceNum": 30000,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.hublot.com/en-us/watches",
+      "buy": "https://www.watchswiss.com/brands/hublot/big-bang-reloaded-usain-bolt-ceramic-carbon-44mm-421-cq-1140-nr-usb26/",
       "buyLabel": "Hublot US — watches",
       "source": "https://www.luxurybazaar.com/grey-market/hublot-2026-releases/",
       "conf": "medium",
@@ -3201,7 +3283,17 @@
       "imageSize": [
         2000,
         1334
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-28",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.hublot.com/en-us/watches"
+      }
     },
     {
       "brand": "Hublot",
@@ -3215,7 +3307,7 @@
       "priceNum": 33700,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.hublot.com/en-us/watches",
+      "buy": "https://www.watchswiss.com/brands/hublot/spirit-of-big-bang-impact-all-black-42mm-647-cx-0140-rx-imp26/",
       "buyLabel": "Hublot US — watches",
       "source": "https://www.luxurybazaar.com/grey-market/hublot-2026-releases/",
       "conf": "medium",
@@ -3231,7 +3323,17 @@
       "imageSize": [
         2000,
         1334
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-28",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.hublot.com/en-us/watches"
+      }
     },
     {
       "brand": "Junghans",
@@ -3311,6 +3413,11 @@
         "date": "2026-08-28",
         "result": "dead",
         "note": "soft-404: redirected to https://junghans-shop.com"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "HTTP 403"
       }
     },
     {
@@ -3338,7 +3445,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-05",
+        "date": "2026-08-28",
         "note": "Purchase page reads: \"F77 SST LAPIS LAZULI MK2 - 38MM from $1,360.00\""
       },
       "image": null,
@@ -3422,7 +3529,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "fetch failed: ReadTimeout"
+      }
     },
     {
       "brand": "Omega",
@@ -3436,7 +3548,7 @@
       "priceNum": 10500,
       "date": "Jan 2026",
       "status": "Available",
-      "buy": "https://www.omegawatches.com/en-us/watches/seamaster/diver-300m",
+      "buy": "https://www.cortinawatch.com/en/omega/seamaster/522-92-44-20-04-001/",
       "buyLabel": "Omega US — Diver 300M collection",
       "source": "https://monochrome-watches.com/white-ceramic-omega-seamaster-diver-300m-milano-cortina-2026-price-review/",
       "conf": "high",
@@ -3455,7 +3567,17 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buyKind": "product",
+      "buyCheck": {
+        "date": "2026-08-28",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "product",
+        "was": "https://www.omegawatches.com/en-us/watches/seamaster/diver-300m"
+      }
     },
     {
       "brand": "Omega",
@@ -3488,7 +3610,12 @@
       "imageSize": [
         2100,
         1397
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "fetch failed: ReadTimeout"
+      }
     },
     {
       "brand": "Omega",
@@ -3520,7 +3647,12 @@
       "imageSize": [
         1366,
         768
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-08-28",
+        "result": "unverified",
+        "note": "fetch failed: ReadTimeout"
+      }
     },
     {
       "brand": "Orient Star",
