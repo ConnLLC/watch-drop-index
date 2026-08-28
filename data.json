@@ -6,7 +6,7 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 32,
+    "revision": 33,
     "domain": "watchdropindex.com",
     "imagesResolved": 220,
     "lastImageSweep": "2026-08-28",
@@ -172,6 +172,15 @@
         "brand": 36,
         "none": 0,
         "unreadable": 82
+      },
+      {
+        "date": "2026-08-28",
+        "runner": "github-actions",
+        "product": 96,
+        "listing": 46,
+        "brand": 32,
+        "none": 0,
+        "unreadable": 78
       },
       {
         "date": "2026-08-28",
