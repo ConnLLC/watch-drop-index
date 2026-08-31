@@ -6,13 +6,13 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 36,
+    "revision": 37,
     "domain": "watchdropindex.com",
     "imagesResolved": 220,
     "lastImageSweep": "2026-08-31",
     "spend": {
       "weekStart": "2026-08-31",
-      "cad": 0.0
+      "cad": 4.6881
     },
     "ceilingOverride": {
       "weekStart": "2026-08-03",
@@ -217,6 +217,15 @@
         "brand": 32,
         "none": 0,
         "unreadable": 78
+      },
+      {
+        "date": "2026-08-31",
+        "runner": "github-actions",
+        "product": 107,
+        "listing": 36,
+        "brand": 31,
+        "none": 0,
+        "unreadable": 78
       }
     ]
   },
@@ -232,7 +241,7 @@
       "price": "€825 (~$965)",
       "priceNum": 965,
       "date": "May 2026",
-      "status": "Available",
+      "status": "Sold out",
       "buy": "https://baltic-watches.com/en/products/rally-timer-tour-auto-2026-limited-edition",
       "buyLabel": "Baltic — product page",
       "source": "https://www.gearpatrol.com/watches/baltic-rally-timer-tour-auto-2026-limited-edition/",
@@ -242,11 +251,14 @@
         "Motorsport"
       ],
       "id": "d2549554a0",
-      "tier": "Buy online now",
-      "rank": 0,
+      "tier": "Gone",
+      "rank": 6,
       "addedOn": "2026-08-03",
-      "soldOutOn": null,
-      "verified": null,
+      "soldOutOn": "2026-08-31",
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"This limited edition was sold in 300 pieces in May 2026\""
+      },
       "image": "https://www.gearpatrol.com/wp-content/uploads/sites/2/2026/05/Baltic-Rally-Timer-Tour-Auto-2026-Limited-Edition-lead.webp",
       "imageCredit": "Gear Patrol",
       "imageSize": [
@@ -325,7 +337,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Casio G-Shock MR-G MRG-B2000 Series Titanium \"Kurogane-iro Phoenix\" Limited Edition MRG-B2000KT-3A Regular price $8,299.00 USD\""
       },
       "image": null,
@@ -366,7 +378,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Casio G-Shock MASTER OF G - Land Mudmaster Solar 2026 Limited Edition MAGMA GOLD GWG-B1000MG-1A9 Regular price $909.00 USD $879.00 USD Sale\""
       },
       "image": null,
@@ -412,7 +424,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"In Stock ... $4,995.00 ... Add to bag\""
       },
       "image": null,
@@ -598,7 +610,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Book my watch\""
+      },
       "image": null,
       "imageCredit": null,
       "imageProbe": {
@@ -643,7 +658,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Buy Now\""
+      },
       "image": "https://watchesbysjx.com/wp-content/uploads/2026/07/Doxa-Sub-Army-200T-Hodinkee.jpg",
       "imageCredit": "SJX",
       "imageSize": [
@@ -1135,7 +1153,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Add to cart\""
+      },
       "image": "https://monochrome-watches.com/app/uploads/2026/03/Louis-Erard-x-Alain-Silberstein-Smile-Day-Blue-and-Tourbillon-Regulateur-Blue-review-10.jpg",
       "imageCredit": "Monochrome",
       "imageSize": [
@@ -1179,8 +1200,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
-        "note": "Purchase page reads: \"$1,776.00 USD ... Add to cart\""
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Now Shipping ... Add to cart\""
       },
       "image": "https://www.ablogtowatch.com/wp-content/uploads/2026/06/US-250-Anthracite-SSNAV-D-16-scaled.jpeg",
       "imageCredit": "aBlogtoWatch",
@@ -1219,7 +1240,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Coming Soon ... MING x J.N. Shapiro 37.06 Lightning\""
+      },
       "image": "https://monochrome-watches.com/app/uploads/2026/06/Ming-x-J.N.-Shapiro-37.06-Lightning-Guilloche-Dial-2.jpg",
       "imageCredit": "Monochrome",
       "imageSize": [
@@ -1256,7 +1280,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"€ 4,500.00 ... Add to Cart\""
+      },
       "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review.jpg",
       "imageCredit": "Monochrome",
       "imageSize": [
@@ -1340,7 +1367,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"฿ 328,800.00 ... Add to Cart\""
+      },
       "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review.jpg",
       "imageCredit": "Monochrome",
       "imageSize": [
@@ -1425,7 +1455,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Add to cart\""
       },
       "image": "https://timeandtidewatches.com/wp-content/uploads/2026/06/ORIS-LOU-GEHRIG-LIMITED-EDITION-2.jpg",
@@ -1513,6 +1543,11 @@
       "buyCheck": {
         "date": "2026-08-31",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "unverified",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -1551,6 +1586,11 @@
       "buyCheck": {
         "date": "2026-08-31",
         "note": "names the watch but offers no purchase"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "none",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -1565,7 +1605,7 @@
       "priceNum": 450,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/5sports/lineup",
+      "buy": "https://www.ippojapanwatch.com/products/seiko-5-sports-sbsa321-srpm07-automatic-pink-panther-collaboration-limited-edition-model-2026-1-9-release",
       "buyLabel": "Seiko US — 5 Sports lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1574,8 +1614,8 @@
         "Collab"
       ],
       "id": "039c98b92c",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1585,10 +1625,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/5sports/lineup"
       }
     },
     {
@@ -1626,6 +1671,11 @@
       "buyCheck": {
         "date": "2026-08-31",
         "note": "names the watch but offers no purchase"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "none",
+        "note": "does not name this watch (homepage or category page)"
       }
     },
     {
@@ -1640,7 +1690,7 @@
       "priceNum": 3300,
       "date": "Feb 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/astron/lineup",
+      "buy": "https://www.exquisitetimepieces.com/seiko-astron-ssh186-145th-anniversary-limited-edition.html",
       "buyLabel": "Seiko US — Astron lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1649,8 +1699,8 @@
         "Anniversary"
       ],
       "id": "c64eaa14c5",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1660,10 +1710,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/astron/lineup"
       }
     },
     {
@@ -1678,7 +1733,7 @@
       "priceNum": 1000,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/presage/lineup",
+      "buy": "https://teddybaldassarre.com/products/hcc004-presage-classic-145th-anniversary-limited-edition-36mm-silver-on-leather-strap",
       "buyLabel": "Seiko US — Presage lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1687,8 +1742,8 @@
         "Anniversary"
       ],
       "id": "72caa08841",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1698,10 +1753,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/presage/lineup"
       }
     },
     {
@@ -1716,7 +1776,7 @@
       "priceNum": 1700,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/presage/lineup",
+      "buy": "https://skeies.com/products/seiko-presage-classic-series-hcc007-arita-porcelain-145th-anniversary-limited-edition",
       "buyLabel": "Seiko US — Presage lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1725,8 +1785,8 @@
         "Anniversary"
       ],
       "id": "27c2369217",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1736,10 +1796,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/presage/lineup"
       }
     },
     {
@@ -1754,7 +1819,7 @@
       "priceNum": 1900,
       "date": "Feb 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/presage/lineup",
+      "buy": "https://www.exquisitetimepieces.com/seiko-presage-spb538-145th-anniversary-limited-edition.html",
       "buyLabel": "Seiko US — Presage lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1763,8 +1828,8 @@
         "Anniversary"
       ],
       "id": "b7f4682af2",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1774,10 +1839,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/presage/lineup"
       }
     },
     {
@@ -1792,7 +1862,7 @@
       "priceNum": 595,
       "date": "Jun 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/prospex/lineup",
+      "buy": "https://www.seikoboutique.ie/products/hbb001k1",
       "buyLabel": "Seiko US — Prospex lineup",
       "source": "https://www.seikowatches.com/us-en/news/2026/pr/20260106_145years",
       "conf": "high",
@@ -1801,8 +1871,8 @@
         "Anniversary"
       ],
       "id": "d6701e4615",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1812,10 +1882,15 @@
         1200,
         675
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/prospex/lineup"
       }
     },
     {
@@ -1830,7 +1905,7 @@
       "priceNum": 1400,
       "date": "Jun 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/prospex/lineup",
+      "buy": "https://www.gnomonwatches.com/products/prospex-1965-heritage-diver-145th-anniversary-ltd-ed-4000pcs-ref-hbc005j",
       "buyLabel": "Seiko US — Prospex lineup",
       "source": "https://www.seikowatches.com/us-en/news/2026/pr/20260106_145years",
       "conf": "high",
@@ -1839,8 +1914,8 @@
         "Anniversary"
       ],
       "id": "13ace13046",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1850,10 +1925,15 @@
         1200,
         675
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/prospex/lineup"
       }
     },
     {
@@ -1893,15 +1973,15 @@
         "date": "2026-08-31",
         "note": "names the watch but offers no purchase"
       },
-      "imageCheck": {
-        "date": "2026-08-31",
-        "result": "unclear",
-        "note": "HTTP 522"
-      },
       "sourceCheck": {
         "date": "2026-08-31",
         "result": "unclear",
         "note": "HTTP 522"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "unverified",
+        "note": "HTTP 400"
       }
     },
     {
@@ -1916,7 +1996,7 @@
       "priceNum": 750,
       "date": "2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/prospex/lineup",
+      "buy": "https://us.firstclasswatches.com/seiko-prospex-mechanical-padi-60th-anniversary-limited-edition-king-turtle-1-of-8000-watch-hbb002k1-p-216687/",
       "buyLabel": "Seiko US — Prospex lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1926,8 +2006,8 @@
         "Collab"
       ],
       "id": "c598e26767",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1937,10 +2017,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/prospex/lineup"
       }
     },
     {
@@ -1955,7 +2040,7 @@
       "priceNum": 2500,
       "date": "Feb 2026",
       "status": "Available",
-      "buy": "https://www.seikowatches.com/us-en/products/prospex/lineup",
+      "buy": "https://www.exquisitetimepieces.com/seiko-prospex-srq059-speedtimer-145th-anniversary-limited-edition.html",
       "buyLabel": "Seiko US — Prospex lineup",
       "source": "https://www.plus9time.com/blog/2026/7/1/all-2026-h1-seiko-announcements",
       "conf": "high",
@@ -1964,8 +2049,8 @@
         "Anniversary"
       ],
       "id": "13983c5f13",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1975,10 +2060,15 @@
         1000,
         1000
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://www.seikowatches.com/us-en/products/prospex/lineup"
       }
     },
     {
@@ -1993,7 +2083,7 @@
       "priceNum": 495,
       "date": "10 Jul 2026",
       "status": "Available",
-      "buy": "https://rowingblazers.com/",
+      "buy": "https://teddybaldassarre.com/products/srpm19-5-sports-rowing-blazers-x-wind-vintage-limited-edition-42mm-blue-on-bracelet-w-additional-fabric-strap",
       "buyLabel": "Rowing Blazers + Seiko US",
       "source": "https://wornandwound.com/seiko-rowing-blazers-and-eric-wind-reunite-for-their-fourth-limited-edition-collaboration/",
       "conf": "high",
@@ -2002,8 +2092,8 @@
         "Collab"
       ],
       "id": "15c82758d3",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -2013,10 +2103,15 @@
         1998,
         1333
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://rowingblazers.com/"
       }
     },
     {
@@ -2079,7 +2174,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Availability:   In Stock - Ships Immediately\""
       },
       "image": null,
@@ -2120,8 +2215,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
-        "note": "Purchase page reads: \"Add To Cart\n\n$425.00\""
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Add To Cart $425.00\""
       },
       "image": null,
       "imageCredit": null,
@@ -2180,6 +2275,11 @@
       "buyCheck": {
         "date": "2026-08-20",
         "note": "names the watch but offers no purchase"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "unverified",
+        "note": "HTTP 404"
       }
     },
     {
@@ -2331,7 +2431,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"$2,375.00\n\nAdd to cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/02/Tissot-T-Race-MotoGP-Automatic-Chronograph-2026-Limited-Edition-1.jpg",
@@ -2372,8 +2472,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
-        "note": "Purchase page reads: \"Regular price $23,400.00 Buy Now\""
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Regular price\n$23,400.00\n\nBuy Now\""
       },
       "image": "https://quillandpad.com/wp-content/uploads/2026/06/wear-3.jpg",
       "imageCredit": "Quill & Pad",
@@ -2449,7 +2549,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Modello Uno U1S-PD6-RB Limited Edition - ProDiver EDITION OF 300 $ 1.820,00\""
       },
       "image": "https://www.unimaticwatches.com/wp-content/uploads/2026/02/1-1-1024x576.jpg",
@@ -2564,7 +2664,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"Sale price $2,490.00 ... ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
@@ -2604,7 +2704,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
@@ -2771,8 +2871,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
-        "note": "Purchase page reads: \"A small batch of watches will be available to order through this page starting 6 August 2026, at 10:00 AM GMT. Register your interest below, and we'll be in touch.\""
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"A small batch of watches will be available to order through this page starting 6 August 2026, at 10:00 AM GMT.\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/07/MING-3706-Royal-Selangor-hammered-pewter-dial-1.jpg",
       "imageCredit": "Monochrome",
@@ -3186,13 +3286,18 @@
       "buyLabel": "Citizen US + authorized dealers",
       "source": "https://www.citizenwatch-global.com/news/2026/20260220_1/index.html",
       "conf": "high",
-      "tags": [],
+      "tags": [
+        "Buy online"
+      ],
       "id": "320502d0de",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"$1,295.00 – Add to Cart\""
+      },
       "image": null,
       "imageCredit": null,
       "imageProbe": {
@@ -3269,7 +3374,10 @@
       "rank": 2,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-08-31",
+        "note": "Purchase page reads: \"Out of Stock This item is currently unavailable.\""
+      },
       "image": "https://i0.wp.com/deployant.com/wp-content/uploads/2026/07/AQ4094-58L_PDP_Alt_Imagery_02_2026.jpeg?fit=1098%2C1373&ssl=1",
       "imageCredit": "Deployant",
       "imageSize": [
@@ -3516,7 +3624,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-28",
+        "date": "2026-08-31",
         "note": "Purchase page reads: \"F77 SST LAPIS LAZULI MK2 - 38MM from $1,360.00\""
       },
       "image": null,
@@ -3737,7 +3845,7 @@
       "priceNum": null,
       "date": "5 Mar 2026",
       "status": "Available",
-      "buy": "https://orient-watch.com/",
+      "buy": "https://www.orientwatch.co.uk/or/en_GB/brands/orient-star/orient-star-contemporary-date---75th-anniversary-limited-edition/p/RE-AU0114E",
       "buyLabel": "Orient — authorized dealers",
       "source": "https://orient-watch.com/en/news/detail/20260128184424.html",
       "conf": "high",
@@ -3756,10 +3864,15 @@
         480,
         271
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-08-31",
-        "note": "names the watch but offers no purchase"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-08-31",
+        "result": "product",
+        "was": "https://orient-watch.com/"
       }
     },
     {
@@ -6238,11 +6351,6 @@
         "date": "2026-08-31",
         "note": "names the watch but offers no purchase"
       },
-      "imageCheck": {
-        "date": "2026-08-31",
-        "result": "unclear",
-        "note": "HTTP 522"
-      },
       "sourceCheck": {
         "date": "2026-08-31",
         "result": "unclear",
@@ -6938,11 +7046,6 @@
       "buyCheck": {
         "date": "2026-08-31",
         "note": "does not name this watch (homepage or category page)"
-      },
-      "imageCheck": {
-        "date": "2026-08-31",
-        "result": "unclear",
-        "note": "HTTP 522"
       },
       "sourceCheck": {
         "date": "2026-08-31",
@@ -7986,11 +8089,6 @@
         1600,
         1065
       ],
-      "imageCheck": {
-        "date": "2026-08-31",
-        "result": "unclear",
-        "note": "HTTP 522"
-      },
       "sourceCheck": {
         "date": "2026-08-31",
         "result": "unclear",
@@ -8026,11 +8124,6 @@
         1600,
         1067
       ],
-      "imageCheck": {
-        "date": "2026-08-31",
-        "result": "unclear",
-        "note": "HTTP 522"
-      },
       "sourceCheck": {
         "date": "2026-08-31",
         "result": "unclear",
