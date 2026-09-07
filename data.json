@@ -6,13 +6,13 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 44,
+    "revision": 45,
     "domain": "watchdropindex.com",
     "imagesResolved": 223,
     "lastImageSweep": "2026-09-07",
     "spend": {
       "weekStart": "2026-09-07",
-      "cad": 0.0
+      "cad": 6.714
     },
     "ceilingOverride": {
       "weekStart": "2026-08-03",
@@ -20,15 +20,6 @@
       "note": "Lowell, 2026-08-05: one-off raise to unblock the buy-link search-and-verify pass. Lapses on its own Monday 2026-08-10 — the standing ceiling in WEEKLY_BUDGET_CAD is unchanged at 5."
     },
     "readability": [
-      {
-        "date": "2026-08-09",
-        "runner": "github-actions",
-        "product": 80,
-        "listing": 47,
-        "brand": 31,
-        "none": 0,
-        "unreadable": 94
-      },
       {
         "date": "2026-08-10",
         "runner": "github-actions",
@@ -253,6 +244,15 @@
         "brand": 33,
         "none": 0,
         "unreadable": 81
+      },
+      {
+        "date": "2026-09-07",
+        "runner": "github-actions",
+        "product": 107,
+        "listing": 37,
+        "brand": 30,
+        "none": 0,
+        "unreadable": 78
       }
     ]
   },
@@ -364,8 +364,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
-        "note": "Purchase page reads: \"Casio G-Shock MR-G MRG-B2000 Series Titanium \"Kurogane-iro Phoenix\" Limited Edition MRG-B2000KT-3A Regular price $8,299.00 USD\""
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"Casio G-Shock MR-G MRG-B2000 Series Titanium \"Kurogane-iro Phoenix\" Limited Edition MRG-B2000KT-3A Regular price $8,299.00 USD $8,099.00 USD Sale\""
       },
       "image": null,
       "imageCredit": null,
@@ -405,7 +405,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Casio G-Shock MASTER OF G - Land Mudmaster Solar 2026 Limited Edition MAGMA GOLD GWG-B1000MG-1A9 Regular price $909.00 USD $879.00 USD Sale\""
       },
       "image": null,
@@ -451,7 +451,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"In Stock ... $4,995.00 ... Add to bag\""
       },
       "image": null,
@@ -638,7 +638,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Book my watch\""
       },
       "image": "https://www.ablogtowatch.com/wp-content/uploads/2026/04/Czapek-Antarctique-WW26-3.jpg",
@@ -818,6 +818,11 @@
       "buyCheck": {
         "date": "2026-09-07",
         "note": "does not name this watch (homepage or category page)"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "none",
+        "note": "no candidate URL was offered"
       }
     },
     {
@@ -854,9 +859,9 @@
         986
       ],
       "buySearch": {
-        "date": "2026-08-05",
-        "result": "unverified",
-        "note": "HTTP 403"
+        "date": "2026-09-07",
+        "result": "none",
+        "note": "no candidate URL was offered"
       }
     },
     {
@@ -927,7 +932,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"This watch is in stock and ready to ship!\""
+      },
       "image": "https://static1.squarespace.com/static/58610afd29687f7c771f55ec/5861133329687f7c771f793d/6a405eacc4ad0b7e6b7f8eda/1782854912092/Seiko+2026+H1+Square.jpg?format=1500w",
       "imageCredit": "Plus9Time",
       "imageSize": [
@@ -1081,7 +1089,7 @@
       "priceNum": 4900,
       "date": "20 Apr 2026",
       "status": "Available",
-      "buy": "https://www.louiserard.com/",
+      "buy": "https://www.louiserard.com/products/le-regulateur-esprit-flinque-blue",
       "buyLabel": "louiserard.com — check stock",
       "source": "https://monochrome-watches.com/2026-new-louis-erard-regulator-esprit-flinque-review-price/",
       "conf": "high",
@@ -1089,8 +1097,8 @@
         "Buy online"
       ],
       "id": "445ac43084",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1100,10 +1108,15 @@
         2100,
         1400
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-09-07",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "product",
+        "was": "https://www.louiserard.com/"
       }
     },
     {
@@ -1118,7 +1131,7 @@
       "priceNum": 19600,
       "date": "23 Mar 2026",
       "status": "Available",
-      "buy": "https://www.louiserard.com/",
+      "buy": "https://www.louiserard.com/products/le-regulateur-tourbillon-louis-erard-x-alain-silberstein-blue",
       "buyLabel": "louiserard.com — direct sale",
       "source": "https://monochrome-watches.com/louis-erard-x-alain-silberstein-smile-day-blue-and-tourbillon-regulateur-blue-review-price/",
       "conf": "high",
@@ -1127,8 +1140,8 @@
         "Buy online"
       ],
       "id": "9abc92213a",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -1138,10 +1151,15 @@
         2100,
         1397
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-09-07",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "product",
+        "was": "https://www.louiserard.com/"
       }
     },
     {
@@ -1170,7 +1188,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Add to cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/03/Louis-Erard-x-Alain-Silberstein-Smile-Day-Blue-and-Tourbillon-Regulateur-Blue-review-10.jpg",
@@ -1216,8 +1234,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
-        "note": "Purchase page reads: \"Now Shipping ... Add to cart\""
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"$1,776.00 USD ... Add to cart\""
       },
       "image": "https://www.ablogtowatch.com/wp-content/uploads/2026/06/US-250-Anthracite-SSNAV-D-16-scaled.jpeg",
       "imageCredit": "aBlogtoWatch",
@@ -1297,7 +1315,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"€ 4,500.00 ... Add to Cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review.jpg",
@@ -1384,7 +1402,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"฿ 328,800.00 ... Add to Cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review.jpg",
@@ -1471,7 +1489,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Add to cart\""
       },
       "image": "https://timeandtidewatches.com/wp-content/uploads/2026/06/ORIS-LOU-GEHRIG-LIMITED-EDITION-2.jpg",
@@ -1891,7 +1909,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"€695.00\""
+      },
       "image": "https://www.seikowatches.com/us-en/-/media/Images/GlobalEn/Seiko/Home/products/presage/145th/SPB538J1/main_visual_ogp.jpg",
       "imageCredit": "Seiko",
       "imageSize": [
@@ -1934,7 +1955,10 @@
       "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
-      "verified": null,
+      "verified": {
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"In Stock ... Add to Bag\""
+      },
       "image": "https://www.seikowatches.com/us-en/-/media/Images/GlobalEn/Seiko/Home/products/presage/145th/SPB538J1/main_visual_ogp.jpg",
       "imageCredit": "Seiko",
       "imageSize": [
@@ -2185,8 +2209,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
-        "note": "Purchase page reads: \"Availability:   In Stock - Ships Immediately\""
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"Availability : Temporarily Sold Out\""
       },
       "image": null,
       "imageCredit": null,
@@ -2226,7 +2250,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Add To Cart $425.00\""
       },
       "image": null,
@@ -2305,7 +2329,7 @@
       "priceNum": 825,
       "date": "26 Feb 2026",
       "status": "Available",
-      "buy": "https://pizza.timeandtidewatches.com/the-classic-cheese/",
+      "buy": "https://shop.timeandtidewatches.com/products/studio-underd0g-x-time-tide-classic-cheese",
       "buyLabel": "Time+Tide — product page",
       "source": "https://timeandtidewatches.com/studio-underd0g-x-timetide-burnt-pepper0ni-classic-cheese/",
       "conf": "high",
@@ -2314,8 +2338,8 @@
         "Collab"
       ],
       "id": "02ba3cbd77",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -2325,10 +2349,15 @@
         1750,
         986
       ],
-      "buyKind": "listing",
+      "buyKind": "product",
       "buyCheck": {
-        "date": "2026-08-20",
-        "note": "names the watch but offers no purchase"
+        "date": "2026-09-07",
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "product",
+        "was": "https://pizza.timeandtidewatches.com/the-classic-cheese/"
       }
     },
     {
@@ -2442,7 +2471,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"$2,375.00\n\nAdd to cart\""
       },
       "image": "https://monochrome-watches.com/app/uploads/2026/02/Tissot-T-Race-MotoGP-Automatic-Chronograph-2026-Limited-Edition-1.jpg",
@@ -2483,8 +2512,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
-        "note": "Purchase page reads: \"Regular price\n$23,400.00\n\nBuy Now\""
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"This watch is in stock and ready to ship!\""
       },
       "image": "https://quillandpad.com/wp-content/uploads/2026/06/wear-3.jpg",
       "imageCredit": "Quill & Pad",
@@ -2547,7 +2576,7 @@
       "priceNum": 1820,
       "date": "28 Feb 2026",
       "status": "Available",
-      "buy": "https://www.unimaticwatches.com/lines/limited-editions/",
+      "buy": "https://www.unimaticwatches.com/u1s-pd6-rb/",
       "buyLabel": "Unimatic — limited editions, live stock",
       "source": "https://www.unimaticwatches.com/new-prodiver-600/",
       "conf": "medium",
@@ -2555,8 +2584,8 @@
         "Buy online"
       ],
       "id": "2b4f2807d3",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
@@ -2569,15 +2598,20 @@
         1024,
         576
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-09-07",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
       },
       "imageCheck": {
         "date": "2026-09-07",
         "result": "unclear",
         "note": "HTTP 400"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "product",
+        "was": "https://www.unimaticwatches.com/lines/limited-editions/"
       }
     },
     {
@@ -2630,7 +2664,7 @@
       "priceNum": 1195,
       "date": "Jul 2026",
       "status": "Available",
-      "buy": "https://shop.timeandtidewatches.com/collections/limited-edition",
+      "buy": "https://shop.timeandtidewatches.com/products/ben-x-wren-diver-one-obsidian",
       "buyLabel": "Time+Tide shop — limited editions",
       "source": "https://shop.timeandtidewatches.com/collections/limited-edition",
       "conf": "medium",
@@ -2638,8 +2672,8 @@
         "Buy online"
       ],
       "id": "843fa81555",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": null,
@@ -2649,10 +2683,15 @@
         2800,
         650
       ],
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-09-07",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "product",
+        "was": "https://shop.timeandtidewatches.com/collections/limited-edition"
       }
     },
     {
@@ -2680,8 +2719,8 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
-        "note": "Purchase page reads: \"Sale price $2,490.00 ... ADD TO CART\""
+        "date": "2026-09-07",
+        "note": "Purchase page reads: \"ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
       "imageCredit": "Yema",
@@ -2720,7 +2759,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"ADD TO CART\""
       },
       "image": "https://yema.com/cdn/shop/files/YEMA_social_sharing_featured_img_1200w.jpg?v=1597391282",
@@ -3301,7 +3340,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"$1,295.00 – Add to Cart\""
       },
       "image": null,
@@ -3381,7 +3420,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"Out of Stock This item is currently unavailable.\""
       },
       "image": "https://i0.wp.com/deployant.com/wp-content/uploads/2026/07/AQ4094-58L_PDP_Alt_Imagery_02_2026.jpeg?fit=1098%2C1373&ssl=1",
@@ -3551,7 +3590,7 @@
       },
       "buyKind": "product",
       "buyCheck": {
-        "date": "2026-09-06",
+        "date": "2026-09-07",
         "note": "names the watch and offers a way to buy it"
       },
       "sourceCheck": {
@@ -3591,7 +3630,7 @@
       },
       "buyKind": "brand",
       "buyCheck": {
-        "date": "2026-09-01",
+        "date": "2026-09-07",
         "note": "does not name this watch (homepage or category page)"
       },
       "buySearch": {
@@ -3630,7 +3669,7 @@
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
-        "date": "2026-08-31",
+        "date": "2026-09-07",
         "note": "Purchase page reads: \"F77 SST LAPIS LAZULI MK2 - 38MM from $1,360.00\""
       },
       "image": null,
@@ -3917,6 +3956,11 @@
         "date": "2026-09-07",
         "result": "unclear",
         "note": "HTTP 503"
+      },
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "unverified",
+        "note": "HTTP 403"
       }
     },
     {
@@ -3950,7 +3994,12 @@
       "imageSize": [
         1200,
         800
-      ]
+      ],
+      "buySearch": {
+        "date": "2026-09-07",
+        "result": "unverified",
+        "note": "HTTP 404"
+      }
     },
     {
       "brand": "MB&F",
