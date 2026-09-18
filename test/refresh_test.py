@@ -85,6 +85,7 @@ class StubModel:
         self.by_stage = collections.Counter()
         self.calls_by_stage = collections.Counter()
         self.searches_by_stage = collections.Counter()
+        self.worst_by_stage = {}
 
         self.carried_cad = 0.0
 
@@ -96,7 +97,7 @@ class StubModel:
     def week_cad(self) -> float:
         return self.carried_cad + self.cad
 
-    def exhausted(self) -> bool:
+    def exhausted(self, stage=None, calls=1) -> bool:
         return self._exhausted
 
     def structured(self, prompt, schema, max_tokens=8000, stage="judgement"):
@@ -288,7 +289,7 @@ def run_main(watches, model_factory, argv) -> tuple[int, dict]:
 section("Guardrail: blast radius")
 many = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(40)]
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
-code, after = run_main(many, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
+code, after = run_main(many, lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel(default=verdict("no", "sold_out", "Sold out", "high")),
                        ["--stages", "2"])
 check("exits 20 when >15% would flip to Gone", code, 20)
 check("data.json is NOT written", after["meta"]["revision"], 1)
@@ -297,7 +298,7 @@ check("no entry was persisted as Gone", [w for w in after["watches"] if w["statu
 section("Guardrail: silence is a failure")
 R.fetch = lambda url: (None, "HTTP 403")
 code, after = run_main([entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)],
-                       lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
+                       lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel(default=verdict("no", "sold_out")), ["--stages", "2"])
 check("exits 21 when no page was readable", code, 21)
 check("data.json is NOT written", after["meta"]["revision"], 1)
 
@@ -305,7 +306,7 @@ section("Guardrail: entries are never deleted, ids never rewritten")
 R.fetch = lambda url: ("<html>" + "x" * 600 + "</html>", "ok")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
 ids_before = [w["id"] for w in watches]
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2"])
 check("exit 0", code, 0)
 check("no entries lost", len(after["watches"]), 20)
@@ -326,14 +327,14 @@ class OneGone(StubModel):
                 else verdict("yes", "add_to_cart", "In stock", "high"))
 
 
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: OneGone(), ["--stages", "2"])
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: OneGone(), ["--stages", "2"])
 check("exit 0", code, 0)
 check("exactly one entry went Gone", sum(1 for w in after["watches"] if w["status"] == "Sold out"), 1)
 check("the rest kept their tier", sum(1 for w in after["watches"] if w["tier"] == "Buy online now"), 39)
 
 section("--dry-run writes nothing")
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
-code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
+code, after = run_main(watches, lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel(default=verdict("yes", "add_to_cart", "In stock")),
                        ["--stages", "2", "--dry-run"])
 check("exit 0", code, 0)
 check("data.json untouched on disk", after["meta"]["revision"], 1)
@@ -539,6 +540,47 @@ check("a second dispatch in the same week cannot spend a second full ceiling",
       carried._afford("availability"), False)
 check("but a genuinely fresh week can", meter(budget=5.0).exhausted(), False)
 
+# --- and the reserve has to be the cost of THIS kind of call ------------------
+# 2026-09-07: 80 cheap calls taught the guard that a call costs ~0.3 CAD, then
+# the press search — one call, 18 lookups — took the week from under 5.00 to
+# 6.71. A reserve learned from stock checks says nothing about a press search.
+late = meter(budget=5.0)
+late.carried_cad = 4.40
+late._charge(Usage(input_tokens=20_000, output_tokens=1_000), "availability")
+check("after cheap calls, another cheap call still fits", late.exhausted("availability"), False)
+check("...but the press search is refused on what a press search costs",
+      late.exhausted("new releases"), True)
+check("...by the assumption, until somebody has measured one",
+      late.reserve("new releases"), R.STAGE_RESERVE_CAD["new releases"])
+check("a stage nobody has priced falls back to the dearest call seen",
+      round(late.reserve("some future stage"), 4), round(late._worst_call_cad, 4))
+
+unit = meter(budget=5.0)
+unit.carried_cad = 2.50       # room for one 2.00 call, not for the pair
+check("room for the search alone is not room for search + extraction",
+      (unit.exhausted("new releases"), unit.exhausted("new releases", calls=2)), (False, True))
+
+# The measurement outlives the run, and the week: it is calibration, not spend.
+meta_r = {}
+paid = meter(budget=5.0)
+paid._charge(Usage(input_tokens=200_000, output_tokens=10_000), "new releases")
+R.record_spend(meta_r, paid)
+check("the ledger keeps what a call of each stage cost",
+      meta_r["spend"]["worstByStage"], {"new releases": round(paid.worst_by_stage["new releases"], 4)})
+meta_r["spend"]["weekStart"] = "2026-01-05"       # a long-gone week
+check("...the spend rolls over on Monday", R.spend_carried(meta_r)[0], 0.0)
+check("...the calibration does not", R.stage_reserves(meta_r), meta_r["spend"]["worstByStage"])
+free = meter(budget=5.0)
+R.record_spend(meta_r, free)
+check("a free run does not forget it", "new releases" in meta_r["spend"]["worstByStage"], True)
+learned = R.Model(enabled=False, budget_cad=5.0, stage_reserve=R.stage_reserves(meta_r))
+check("the next run starts from the measured figure, not the assumption",
+      learned.reserve("new releases"), meta_r["spend"]["worstByStage"]["new releases"])
+check("a corrupt figure falls back to the high assumption, never to free",
+      R.Model(enabled=False, stage_reserve=R.stage_reserves(
+          {"spend": {"worstByStage": {"new releases": "lots"}}})).reserve("new releases"),
+      R.STAGE_RESERVE_CAD["new releases"])
+
 # Written on EVERY run, free ones included — that is what rolls the week over on
 # a Monday rather than waiting for the next paid run to notice.
 m2 = meter(budget=5.0)
@@ -592,7 +634,7 @@ check("...without pretending it read the page", summary["read"], 0)
 watches = [entry(id=f"{i:010d}", model=f"M{i}") for i in range(20)]
 code, after = run_main(
     watches,
-    lambda enabled=True, budget_cad=0.0, carried_cad=0.0: StubModel(
+    lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel(
         default=verdict("yes", "add_to_cart", "In stock"), exhausted=True),
     ["--stages", "2"])
 check("a fully-skipped run is green, not red", code, 0)
@@ -1278,7 +1320,7 @@ class SearchModel:
         self.answers, self.stop_after = answers, stop_after
         self.asked, self.stopped_at, self.enabled = [], None, True
 
-    def exhausted(self):
+    def exhausted(self, stage=None, calls=1):
         return self.stop_after is not None and len(self.asked) >= self.stop_after
 
     def search(self, prompt, domains, **kw):

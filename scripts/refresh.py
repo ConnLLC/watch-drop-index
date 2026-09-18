@@ -176,6 +176,17 @@ def prices_for(model_id: str, on: str | None = None) -> dict:
 # nothing at all — it never calls the model.
 WEB_SEARCH_USD = 10.0 / 1000
 
+# What ONE call of a stage is assumed to cost before this register has measured
+# one. The calls are not alike — a stock check is cents, the press search is 18
+# lookups at high effort — and the guard used to size its reserve from whatever
+# it had seen so far in the run. On 2026-09-07 that was ~0.3 CAD of stock checks,
+# so it waved through a press search that took the week from under 5.00 to 6.71.
+# Deliberately high: a run that skips the press search is a nuisance, one that
+# breaches the ceiling is the failure. Replaced by the measured figure, which
+# record_spend() keeps in the ledger, the first time the stage actually runs.
+STAGE_RESERVE_CAD = {"new releases": 2.00, "search-and-verify": 0.50}
+RESERVE_FLOOR_CAD = 0.05
+
 # Guardrails.
 GONE_BLAST_RADIUS = 0.15   # refuse to commit if this share of entries flips to Gone
 PHOTO_RETRY_DAYS = 28      # how long before re-probing a source that errored
@@ -731,8 +742,12 @@ class Model:
     commit rather than something to roll back."""
 
     def __init__(self, enabled: bool = True, budget_cad: float = WEEKLY_BUDGET_CAD,
-                 carried_cad: float = 0.0):
+                 carried_cad: float = 0.0, stage_reserve: dict | None = None):
         self.enabled = enabled
+        # Per-stage cost of one call: measured on earlier runs where the ledger
+        # has it, assumed from STAGE_RESERVE_CAD where it does not. See reserve().
+        self._stage_reserve = {**STAGE_RESERVE_CAD, **(stage_reserve or {})}
+        self.worst_by_stage: dict[str, float] = {}   # THIS run's measurements
         # Already spent this week, before this run started. See week_cad().
         self.carried_cad = carried_cad
         self.calls = 0
@@ -771,18 +786,30 @@ class Model:
     def remaining_cad(self) -> float:
         return max(0.0, self.budget_cad - self.week_cad)
 
-    def exhausted(self) -> bool:
-        """Would the next call breach the ceiling? The reserve is the most
-        expensive call seen so far, so the guard calibrates itself against this
-        workload rather than an estimate someone guessed a year ago — and the
-        ceiling is respected rather than merely noticed after the fact.
+    def reserve(self, stage: str | None = None) -> float:
+        """What one more call is assumed to cost.
+
+        For a named stage: the dearest call of THAT stage — seen this run, else
+        measured on an earlier one, else assumed. Falling back to the dearest
+        call of any kind only when the stage is a stranger. The old reserve was
+        that fallback for everything, which is only right while every call costs
+        about the same, and they stopped doing that the day stage 4 joined."""
+        known = max(self.worst_by_stage.get(stage, 0.0), self._stage_reserve.get(stage, 0.0))
+        return max(known or self._worst_call_cad, RESERVE_FLOOR_CAD)
+
+    def exhausted(self, stage: str | None = None, calls: int = 1) -> bool:
+        """Would the next call breach the ceiling? The reserve calibrates itself
+        against this workload rather than an estimate someone guessed a year
+        ago — and the ceiling is respected rather than merely noticed after the
+        fact. `calls` is for work that only pays off as a unit: a search whose
+        extraction is then refused has spent the money and bought nothing.
         Read-only: callers use it to stop fetching pages they cannot judge."""
         if self.budget_cad <= 0:
             return False                      # no ceiling configured
-        return self.week_cad + max(self._worst_call_cad, 0.05) > self.budget_cad
+        return self.week_cad + self.reserve(stage) * max(1, calls) > self.budget_cad
 
-    def _afford(self, stage: str) -> bool:
-        if self.exhausted():
+    def _afford(self, stage: str, calls: int = 1) -> bool:
+        if self.exhausted(stage, calls):
             self.skipped += 1
             if self.stopped_at is None:
                 self.stopped_at = stage
@@ -825,6 +852,7 @@ class Model:
         self.calls_by_stage[stage] += 1
         self.searches_by_stage[stage] += searches
         self._worst_call_cad = max(self._worst_call_cad, usd * USD_TO_CAD)
+        self.worst_by_stage[stage] = max(self.worst_by_stage.get(stage, 0.0), usd * USD_TO_CAD)
 
     # ---- calls ------------------------------------------------------------
     def structured(self, prompt: str, schema: dict, max_tokens: int = 8000,
@@ -857,7 +885,7 @@ class Model:
 
     def search(self, prompt: str, domains: list[str] | None, max_tokens: int = 16000,
                stage: str = "search", max_uses: int = 18,
-               effort: str = "high") -> str | None:
+               effort: str = "high", reserve_calls: int = 1) -> str | None:
         """`domains` restricts the search; None means the whole web, which is
         only ever appropriate where something downstream VERIFIES the result —
         stage 4 takes the model's word for what it read, so it stays fenced to
@@ -870,7 +898,7 @@ class Model:
         default to stage 4's original values so its cost is unchanged."""
         if not self.enabled:
             return None
-        if not self._afford(stage):
+        if not self._afford(stage, reserve_calls):
             return None
         self.calls += 1
         tool: dict[str, Any] = {
@@ -980,7 +1008,7 @@ def check_availability(entry: dict, model: Model) -> dict:
            "read": False, "budget": False}
     # Check the ceiling BEFORE fetching: there is no point pulling someone
     # else's page for a judgement we cannot afford to make.
-    if model.exhausted():
+    if model.exhausted("availability"):
         res["budget"] = True
         res["note"] = "skipped — weekly budget reached"
         return res
@@ -1252,8 +1280,31 @@ def effective_budget(meta: dict, default_cad: float) -> tuple[float, bool]:
     return raised, True
 
 
+def stage_reserves(meta: dict) -> dict:
+    """What one call of each stage was last MEASURED to cost.
+
+    Read whatever the week: unlike the spend, this is calibration, and a press
+    search does not get cheaper on a Monday. Anything that will not parse is
+    dropped, which falls back to STAGE_RESERVE_CAD — the high assumption, never
+    a free one."""
+    out = {}
+    for stage, cad in ((meta.get("spend") or {}).get("worstByStage") or {}).items():
+        try:
+            if float(cad) > 0:
+                out[str(stage)] = float(cad)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
 def record_spend(meta: dict, model: "Model") -> None:
+    # A stage that ran this time reports what it cost THIS time — so a price
+    # cut or a smaller prompt is learned as readily as a rise. One that did not
+    # run keeps the last figure anybody measured.
+    worst = {**stage_reserves(meta), **{k: round(v, 4) for k, v in model.worst_by_stage.items() if v > 0}}
     meta["spend"] = {"weekStart": week_anchor(), "cad": round(model.week_cad, 4)}
+    if worst:
+        meta["spend"]["worstByStage"] = worst
 
 
 READABILITY_HISTORY = 26   # half a year of weekly runs; a daily sweep rolls faster
@@ -1844,7 +1895,7 @@ def stage_search_verify(watches: list[dict], model: Model,
     limiter = HostLimiter(PHOTO_HOST_DELAY)
 
     for i, w in enumerate(targets, 1):
-        if model.exhausted():
+        if model.exhausted("search-and-verify"):
             # Everything from here on is untouched and unrecorded. See the
             # header: a residue written now would be a lie with a 90-day clock.
             summary["skipped_budget"] = targets[i - 1:]
@@ -2452,7 +2503,11 @@ def stage_new_releases(watches: list[dict], model: Model, since: str) -> dict:
     log(f"\n[4] NEW RELEASES — searching the press since {since}")
     summary = {"added": [], "rejected": [], "notes": None}
 
-    notes = model.search(SEARCH_PROMPT.format(since=since), PRESS_DOMAINS, stage="new releases")
+    # Room for BOTH calls or neither: the search is worthless without the
+    # extraction, and on 2026-09-07 the ceiling let the first through and refused
+    # the second — the dearest call of the week, and nothing to show for it.
+    notes = model.search(SEARCH_PROMPT.format(since=since), PRESS_DOMAINS, stage="new releases",
+                         reserve_calls=2)
     if not notes:
         log("    no research returned")
         return summary
@@ -3088,7 +3143,8 @@ def main() -> int:
     # "weekly" is a promise the code does not keep — see Model.week_cad().
     carried, week_start = spend_carried(meta)
     budget, overridden = effective_budget(meta, args.budget)
-    model = Model(enabled=not args.no_api, budget_cad=budget, carried_cad=carried)
+    model = Model(enabled=not args.no_api, budget_cad=budget, carried_cad=carried,
+                  stage_reserve=stage_reserves(meta))
     if overridden:
         log(f"    ceiling RAISED to {budget:.2f} CAD for the week of {week_start} "
             f"(standing ceiling {args.budget:.2f}) — lapses on its own next Monday")
