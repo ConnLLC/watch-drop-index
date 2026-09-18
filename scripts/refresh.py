@@ -1601,7 +1601,8 @@ def classify_buy(entry: dict) -> tuple[str | None, str]:
 def stage_buy_links(watches: list[dict], only_rank: int | None = None) -> dict:
     targets = [w for w in watches if only_rank is None or w["rank"] <= only_rank]
     log(f"\n[8] BUY LINKS — classifying {len(targets)} links by evidence")
-    summary = {"kinds": collections.Counter(), "unreadable": [], "demote": [], "changed": []}
+    summary = {"kinds": collections.Counter(), "unreadable": [], "demote": [],
+               "restore": [], "changed": []}
     limiter = HostLimiter(PHOTO_HOST_DELAY)
 
     def probe(w: dict) -> tuple[dict, str | None, str]:
@@ -1627,6 +1628,14 @@ def stage_buy_links(watches: list[dict], only_rank: int | None = None) -> dict:
             # reader can actually buy it.
             if w["rank"] == 0 and kind != "product":
                 summary["demote"].append((w, kind))
+            # ...and the other direction. A demotion is only as old as its
+            # evidence: when the link earns the claim back, the stored tier has to
+            # follow, or the register carries a rank rank_for() would not produce —
+            # which is exactly what the gating test refuses, so one stale row stops
+            # every run after it (12–18 Sep 2026: one Farer entry, seven red days).
+            elif kind == "product" and w["rank"] != rank_for(
+                    w["status"], w.get("buyLabel", ""), w.get("tags", []), kind):
+                summary["restore"].append((w, w.get("tier")))
             if i % 25 == 0:
                 log(f"    ...{i}/{len(targets)}")
 
@@ -1652,6 +1661,24 @@ def apply_buy_demotions(summary: dict) -> int:
     # queue would have the run report claiming demotions that never happened.
     moved = 0
     for w, _kind in summary["demote"]:
+        before = w.get("rank")
+        apply_tier(w)
+        if w.get("rank") != before:
+            moved += 1
+    return moved
+
+
+def apply_buy_restorations(summary: dict) -> int:
+    """The demotion's other half: a link that has earned the claim back gets its
+    tier re-derived, the same way stage 10 does when it finds a product page.
+
+    Not a promotion — rank_for() still decides, and evidence alone has never been
+    able to lift an entry whose label and tags do not claim a sale. This only
+    stops the stored rank from outliving the evidence that lowered it. Counted
+    from what moved, for the same reason as above: a human-owned tier files a
+    proposal instead."""
+    moved = 0
+    for w, _was in summary.get("restore", []):
         before = w.get("rank")
         apply_tier(w)
         if w.get("rank") != before:
@@ -2768,6 +2795,10 @@ def write_report(meta: dict, avail: dict, photos: dict, news: dict, verdict: str
                   ""]
             L += [f"- **{w['brand']} {w['model']}** — `{kind}` · {w['buy']}"
                   for w, kind in buy["demote"][:40]] + [""]
+        if buy.get("restore"):
+            L += ["### Buy links that earned the claim back", ""]
+            L += [f"- **{w['brand']} {w['model']}** — was {was} · {w['buy']}"
+                  for w, was in buy["restore"]] + [""]
         if buy["changed"]:
             L += ["### Buy links that changed shape since last week", ""]
             L += [f"- **{w['brand']} {w['model']}** — {was} → {now}" for w, was, now in buy["changed"]] + [""]
@@ -3128,6 +3159,9 @@ def main() -> int:
             if n:
                 log(f"    demoted {n} entries out of 'Buy online now' — the claim was "
                     "not backed by a page a reader can buy from")
+            n = apply_buy_restorations(buy)
+            if n:
+                log(f"    restored {n} entries whose buy link earned the claim back")
     # Free and deterministic, so it runs whatever the budget did — the calendar
     # rotting is the one failure a reader can see without checking anything.
     if 6 in stages:

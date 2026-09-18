@@ -946,6 +946,35 @@ check("...and rank stays consistent with tier", R.TIERS[w1["rank"]], w1["tier"])
 check("the earned one is untouched", (w2["tier"], w2["rank"]), ("Buy online now", 0))
 check("a non-rank-0 entry is classified but never demoted", w3["tier"], "AD or boutique")
 
+# The other direction, and the one that jammed the sweep for a week in September:
+# a demoted entry whose link earns the claim back. Stage 8 wrote buyKind=product
+# and left rank 2 standing, the register stopped matching its own derivation, and
+# the first check in this file turned every later run red.
+product_page = f"<html><body>Testbrand Fixture One {body}<button name=\"add\">Add to Cart</button></body></html>"
+w4 = entry(id="0000000004", rank=2, tier="Retailer enquiry", buyKind="brand")    # earns it back
+w5 = entry(id="0000000005", rank=2, tier="Retailer enquiry", buyKind="brand",    # a human owns the tier
+           manual=["tier"])
+w6 = entry(id="0000000006", rank=2, tier="Retailer enquiry", buyKind="brand",    # never claimed a sale
+           buyLabel="Read the review", tags=[])
+orig = R.fetch
+R.fetch = lambda url: (product_page, "ok")
+R.PROPOSALS.clear()
+try:
+    s = R.stage_buy_links([w4, w5, w6])
+finally:
+    R.fetch = orig
+check("a link that earns the claim back is queued for restoring",
+      [w["id"] for w, _ in s["restore"]], [w4["id"], w5["id"]])
+check("...but nothing moves until it is applied", w4["tier"], "Retailer enquiry")
+check("...and one is restored, not two", R.apply_buy_restorations(s), 1)
+check("the earned claim comes back", (w4["tier"], w4["rank"]), ("Buy online now", 0))
+check("...and the row is one rank_for() would produce",
+      R.rank_for(w4["status"], w4["buyLabel"], w4["tags"], w4["buyKind"]), w4["rank"])
+check("a human-owned tier is proposed, never moved", (w5["tier"], w5["rank"]), ("Retailer enquiry", 2))
+check("...and the proposal is filed", [p["id"] for p in R.PROPOSALS], [w5["id"]])
+check("product evidence still cannot promote a row that never claimed a sale",
+      (w6["tier"], w6["rank"]), ("Retailer enquiry", 2))
+
 # The rule lives INSIDE the derivation, not on top of it. Two rules that
 # disagree would mean the weaker one wins every Monday: an availability check
 # re-derives the tier and silently restores the claim we just took away.

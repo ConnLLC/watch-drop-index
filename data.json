@@ -715,8 +715,8 @@
         "Buy online"
       ],
       "id": "1681dcc223",
-      "tier": "Retailer enquiry",
-      "rank": 2,
+      "tier": "Buy online now",
+      "rank": 0,
       "addedOn": "2026-08-03",
       "soldOutOn": null,
       "verified": {
