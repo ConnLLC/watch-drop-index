@@ -576,6 +576,52 @@ check("a free run does not forget it", "new releases" in meta_r["spend"]["worstB
 learned = R.Model(enabled=False, budget_cad=5.0, stage_reserve=R.stage_reserves(meta_r))
 check("the next run starts from the measured figure, not the assumption",
       learned.reserve("new releases"), meta_r["spend"]["worstByStage"]["new releases"])
+# --- and the record of the money has to survive the run that spent it ---------
+# 10 and 17 Aug 2026: paid stages ran, the commit conflicted, exit 1. meta.spend
+# went in the bin with the rest of data.json and the next run opened at zero.
+led = Path(tempfile.mkdtemp()) / "spend-ledger.json"
+check("no ledger yet is a first run, not an error", R.ledger_read(led), None)
+dying = meter(budget=5.0)
+dying.on_charge = lambda: R.ledger_write(led, dying, {"new releases": 1.9})
+dying._charge(Usage(input_tokens=20_000, output_tokens=1_000), "availability")
+dying._charge(Usage(input_tokens=20_000, output_tokens=1_000), "availability")
+# ...and here the run dies. record_spend() is never reached; data.json is never written.
+survived = R.ledger_read(led)
+check("every charge is on disk before the next one is made",
+      (survived["weekStart"], survived["cad"]), (R.week_anchor(), round(dying.week_cad, 4)))
+check("...with what each stage cost, measured and inherited",
+      sorted(survived["worstByStage"]), ["availability", "new releases"])
+check("the next run opens the week where the dead one left it, not at zero",
+      R.spend_carried({}, survived)[0], round(dying.week_cad, 4))
+check("whichever record says MORE was spent wins",
+      (R.spend_carried({"spend": {"weekStart": R.week_anchor(), "cad": 4.0}}, survived)[0],
+       R.spend_carried({"spend": {"weekStart": R.week_anchor(), "cad": 0.1}}, survived)[0]),
+      (4.0, round(dying.week_cad, 4)))
+check("last week's ledger carries nothing into this one",
+      R.spend_carried({}, {**survived, "weekStart": "2026-01-05"})[0], 0.0)
+led.write_text("{ not json")
+check("an unreadable ledger reads as fully spent, never as empty",
+      R.spend_carried({}, R.ledger_read(led))[0], float("inf"))
+R.ledger_write(Path("/nonexistent-dir/x.json"), dying)
+check("a ledger that cannot be written does not take the paid run down with it", True, True)
+
+# --- and "cannot spend" is checked, not remembered ----------------------------
+free_factory = lambda enabled=True, budget_cad=0.0, carried_cad=0.0, stage_reserve=None: StubModel()
+had_key = os.environ.pop("ANTHROPIC_API_KEY", None)
+try:
+    check("--assert-free with --no-api and no key runs normally",
+          run_main([entry()], free_factory, ["--stages", "6", "--no-api", "--assert-free"])[0], 0)
+    check("...without --no-api it refuses, loudly",
+          run_main([entry()], free_factory, ["--stages", "6", "--assert-free"])[0], 22)
+    os.environ["ANTHROPIC_API_KEY"] = "sk-not-a-real-key"
+    code, after = run_main([entry()], free_factory, ["--stages", "6", "--no-api", "--assert-free"])
+    check("...and with a key in the environment it refuses even with --no-api", code, 22)
+    check("...having touched nothing", after["meta"]["updated"], "2026-08-03")
+finally:
+    os.environ.pop("ANTHROPIC_API_KEY", None)
+    if had_key:
+        os.environ["ANTHROPIC_API_KEY"] = had_key
+
 check("a corrupt figure falls back to the high assumption, never to free",
       R.Model(enabled=False, stage_reserve=R.stage_reserves(
           {"spend": {"worstByStage": {"new releases": "lots"}}})).reserve("new releases"),

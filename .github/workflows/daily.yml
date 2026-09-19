@@ -93,7 +93,9 @@ jobs:
       - name: Run the free stages
         id: sweep
         # NO ANTHROPIC_API_KEY. Its absence is the second half of the guarantee
-        # that this workflow cannot spend; --no-api is the first.
+        # that this workflow cannot spend; --no-api is the first. --assert-free
+        # makes refresh.py CHECK both and exit 22 — a red run, and so an alert —
+        # if either half ever goes missing from this file.
         #
         # Stage order: rot check BEFORE photographs, so an image cleared this run
         # is re-resolved in the same run rather than tomorrow.
@@ -102,6 +104,7 @@ jobs:
           python3 scripts/refresh.py \
             --stages "${{ inputs.stages || '7,3,6,8,9' }}" \
             --no-api \
+            --assert-free \
             --demote-unearned \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
           echo "code=$?" >> "$GITHUB_OUTPUT"

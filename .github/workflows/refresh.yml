@@ -78,6 +78,16 @@ jobs:
         # data.json at all.
         run: python3 test/refresh_test.py
 
+      - name: Fetch the crash ledger
+        # The spend record that survives a dead run — see ledger_read() in
+        # refresh.py. It lives alone on its own branch so that publishing it can
+        # never meet the data.json conflict that erased August's spending. No
+        # branch yet is a first run; the file simply is not there.
+        run: |
+          if git fetch --quiet origin ledger 2>/dev/null; then
+            git show FETCH_HEAD:spend-ledger.json > "$RUNNER_TEMP/spend-ledger.json" || rm -f "$RUNNER_TEMP/spend-ledger.json"
+          fi
+
       - name: Run the refresh
         id: refresh
         env:
@@ -101,11 +111,33 @@ jobs:
           python3 scripts/refresh.py \
             --stages "${{ inputs.stages || '2,10,4,7,3,6,8,9' }}" \
             --demote-unearned \
+            --ledger "$RUNNER_TEMP/spend-ledger.json" \
             ${{ inputs.search_limit && format('--search-limit {0}', inputs.search_limit) || '' }} \
             --photo-batch "${{ inputs.photo_batch || '0' }}" \
             ${{ inputs.budget_cad && format('--budget {0}', inputs.budget_cad) || '' }} \
             ${{ inputs.dry_run == true && '--dry-run' || '' }}
           echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the crash ledger
+        # always(): this is the step that has to run when nothing else does — a
+        # failed validation, a conflicted commit, a timeout. It runs BEFORE the
+        # commit step on purpose, so the money is on the record before the run
+        # reaches the place where August's runs died. A dry run still spends, so
+        # a dry run still publishes.
+        if: always()
+        run: |
+          f="$RUNNER_TEMP/spend-ledger.json"
+          [ -f "$f" ] || { echo "no charges this run; nothing to publish"; exit 0; }
+          git config user.name  "watch-drop-index bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Plumbing rather than a checkout: the working tree holds this run's
+          # data.json and must not be disturbed. One blob, one tree, one commit.
+          blob=$(git hash-object -w "$f")
+          tree=$(printf '100644 blob %s\tspend-ledger.json\n' "$blob" | git mktree)
+          if git fetch --quiet origin ledger 2>/dev/null; then parent=$(git rev-parse FETCH_HEAD); else parent=""; fi
+          commit=$(git commit-tree "$tree" ${parent:+-p "$parent"} -m "spend $(date -u +%Y-%m-%dT%H:%MZ) — run ${{ github.run_id }}")
+          git push --quiet origin "$commit:refs/heads/ledger"
+          cat "$f"
 
       - name: Validate the result before it can reach the site
         if: steps.refresh.outputs.code == '0'

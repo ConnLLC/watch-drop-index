@@ -748,6 +748,7 @@ class Model:
         # has it, assumed from STAGE_RESERVE_CAD where it does not. See reserve().
         self._stage_reserve = {**STAGE_RESERVE_CAD, **(stage_reserve or {})}
         self.worst_by_stage: dict[str, float] = {}   # THIS run's measurements
+        self.on_charge = None       # main() hangs the crash ledger here
         # Already spent this week, before this run started. See week_cad().
         self.carried_cad = carried_cad
         self.calls = 0
@@ -853,6 +854,8 @@ class Model:
         self.searches_by_stage[stage] += searches
         self._worst_call_cad = max(self._worst_call_cad, usd * USD_TO_CAD)
         self.worst_by_stage[stage] = max(self.worst_by_stage.get(stage, 0.0), usd * USD_TO_CAD)
+        if self.on_charge:
+            self.on_charge()
 
     # ---- calls ------------------------------------------------------------
     def structured(self, prompt: str, schema: dict, max_tokens: int = 8000,
@@ -1234,7 +1237,7 @@ def week_anchor(day: str | None = None) -> str:
     return (d - dt.timedelta(days=d.weekday())).isoformat()
 
 
-def spend_carried(meta: dict) -> tuple[float, str]:
+def spend_carried(meta: dict, ledger: dict | None = None) -> tuple[float, str]:
     """What has already been spent this week, and which week that is.
 
     Returns 0 when the recorded week is not the current one — that IS the
@@ -1242,10 +1245,14 @@ def spend_carried(meta: dict) -> tuple[float, str]:
     nothing, rather than waiting for the next paid run to notice."""
     rec = meta.get("spend") or {}
     week = week_anchor()
+    # Two records, and the one claiming MORE was spent wins. They only disagree
+    # when a run paid and then died before its data.json landed — and then the
+    # crash ledger is the one telling the truth. See ledger_read().
+    crashed = ledger["cad"] if ledger and ledger.get("weekStart") == week else 0.0
     if rec.get("weekStart") != week:
-        return 0.0, week
+        return crashed, week
     try:
-        return max(0.0, float(rec.get("cad") or 0.0)), week
+        return max(0.0, float(rec.get("cad") or 0.0), crashed), week
     except (TypeError, ValueError):
         # A corrupt ledger must not hand out a free budget. Treating it as
         # "nothing spent" would be the failure this whole function exists to
@@ -1278,6 +1285,49 @@ def effective_budget(meta: dict, default_cad: float) -> tuple[float, bool]:
     if raised <= 0:
         return default_cad, False
     return raised, True
+
+
+def ledger_read(path: Path | None) -> dict | None:
+    """The crash-proof copy of the spend record, or None if there is not one yet.
+
+    meta.spend lives in data.json, and data.json only reaches the repository if
+    the run gets all the way to a clean push. On 10 and 17 Aug 2026 it did not:
+    the paid stages ran, the commit conflicted, and the record of the money went
+    in the bin with everything else — so the next run opened the week at zero.
+    This file is written after every charge and published by a step that runs
+    whether or not the job succeeded (refresh.yml), on a branch nothing else
+    writes to.
+
+    Missing is a first run. UNREADABLE is not: like a corrupt meta.spend it comes
+    back as fully spent, because a ledger that fails open is not a ledger."""
+    if not path or not Path(path).exists():
+        return None
+    try:
+        rec = json.loads(Path(path).read_text())
+        return {"weekStart": str(rec["weekStart"]), "cad": max(0.0, float(rec["cad"])),
+                "worstByStage": rec.get("worstByStage") or {}}
+    except (OSError, ValueError, TypeError, KeyError):
+        log("    ! crash ledger is unreadable — treating the week as fully spent")
+        return {"weekStart": week_anchor(), "cad": float("inf"), "worstByStage": {}}
+
+
+def ledger_write(path: Path | None, model: "Model", prior: dict | None = None) -> None:
+    """Called after EVERY charge, so the file is never more than one call behind
+    the invoice. Written whole to a sibling and renamed over the top: a run
+    killed mid-write leaves the previous figure, not half of a new one. Never
+    raises — a full disk must not be the reason a paid run dies uncommitted."""
+    if not path:
+        return
+    try:
+        rec = {"weekStart": week_anchor(), "cad": round(model.week_cad, 4),
+               "worstByStage": {**(prior or {}),
+                                **{k: round(v, 4) for k, v in model.worst_by_stage.items() if v > 0}},
+               "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
+        tmp = Path(str(path) + ".tmp")
+        tmp.write_text(json.dumps(rec, indent=2) + "\n")
+        os.replace(tmp, path)
+    except OSError as e:
+        log(f"    ! could not write the crash ledger: {e}")
 
 
 def stage_reserves(meta: dict) -> dict:
@@ -3109,6 +3159,13 @@ def main() -> int:
                     help="drop 'Buy online now' entries that have no product page to buy from")
     ap.add_argument("--budget", type=float, default=WEEKLY_BUDGET_CAD,
                     help="weekly ceiling in CAD for model spend (0 = no ceiling)")
+    ap.add_argument("--assert-free", action="store_true",
+                    help="refuse to run unless this invocation CANNOT spend: --no-api set "
+                         "and no ANTHROPIC_API_KEY in the environment. The daily sweep "
+                         "passes it, so its promise is checked rather than remembered")
+    ap.add_argument("--ledger", type=Path, default=None,
+                    help="crash-proof spend record: read at start, rewritten after every "
+                         "charge. refresh.yml publishes it even when the run fails")
     ap.add_argument("--corrections", type=Path, default=None,
                     help="apply Lowell's admin export (Copy corrections JSON) into data.json")
     ap.add_argument("--takedown", metavar="URL", default=None,
@@ -3141,10 +3198,30 @@ def main() -> int:
 
     # The weekly ledger. Without this the ceiling is per-invocation and the word
     # "weekly" is a promise the code does not keep — see Model.week_cad().
-    carried, week_start = spend_carried(meta)
+    # The daily sweep's guarantee has two halves — the flag and the missing key —
+    # and both live in a workflow file that gets edited. Either half going
+    # missing should be a red run that morning, not a line on next month's bill.
+    if args.assert_free:
+        able = [why for why, bad in (("--no-api is not set", not args.no_api),
+                                     ("ANTHROPIC_API_KEY is in the environment",
+                                      bool(os.environ.get("ANTHROPIC_API_KEY")))) if bad]
+        if able:
+            log("\nREFUSING TO RUN: --assert-free, and this invocation could spend — "
+                + " and ".join(able) + ".")
+            return 22
+
+    crash = ledger_read(args.ledger)
+    carried, week_start = spend_carried(meta, crash)
     budget, overridden = effective_budget(meta, args.budget)
+    reserves = {**stage_reserves({"spend": crash or {}}), **stage_reserves(meta)}
     model = Model(enabled=not args.no_api, budget_cad=budget, carried_cad=carried,
-                  stage_reserve=stage_reserves(meta))
+                  stage_reserve=reserves)
+    model.on_charge = lambda: ledger_write(args.ledger, model, reserves)
+    if (crash and crash["weekStart"] == week_start and crash["cad"] != float("inf")
+            and crash["cad"] > spend_carried(meta)[0] + 0.005):
+        log(f"    ! the crash ledger says {crash['cad']:.2f} CAD was spent this week and "
+            "data.json does not — an earlier run paid and died before committing. "
+            "Carrying the larger figure.")
     if overridden:
         log(f"    ceiling RAISED to {budget:.2f} CAD for the week of {week_start} "
             f"(standing ceiling {args.budget:.2f}) — lapses on its own next Monday")
