@@ -6,7 +6,7 @@
     "coverageStart": "2026-01-01",
     "count": 252,
     "brands": 94,
-    "revision": 51,
+    "revision": 52,
     "domain": "watchdropindex.com",
     "imagesResolved": 223,
     "lastImageSweep": "2026-09-19",
@@ -20,15 +20,6 @@
       "note": "Lowell, 2026-08-05: one-off raise to unblock the buy-link search-and-verify pass. Lapses on its own Monday 2026-08-10 — the standing ceiling in WEEKLY_BUDGET_CAD is unchanged at 5."
     },
     "readability": [
-      {
-        "date": "2026-08-16",
-        "runner": "github-actions",
-        "product": 86,
-        "listing": 49,
-        "brand": 34,
-        "none": 0,
-        "unreadable": 83
-      },
       {
         "date": "2026-08-17",
         "runner": "github-actions",
@@ -251,6 +242,15 @@
         "product": 105,
         "listing": 37,
         "brand": 29,
+        "none": 0,
+        "unreadable": 81
+      },
+      {
+        "date": "2026-09-19",
+        "runner": "github-actions",
+        "product": 106,
+        "listing": 37,
+        "brand": 28,
         "none": 0,
         "unreadable": 81
       }
@@ -3600,8 +3600,8 @@
       },
       "sourceCheck": {
         "date": "2026-09-19",
-        "result": "unclear",
-        "note": "HTTP 403"
+        "result": "dead",
+        "note": "soft-404: redirected to https://junghans-shop.com"
       }
     },
     {
@@ -3645,8 +3645,8 @@
       },
       "sourceCheck": {
         "date": "2026-09-19",
-        "result": "unclear",
-        "note": "HTTP 403"
+        "result": "dead",
+        "note": "soft-404: redirected to https://junghans-shop.com"
       }
     },
     {
@@ -4117,10 +4117,10 @@
         "date": "2026-08-04",
         "result": "none"
       },
-      "buyKind": "brand",
+      "buyKind": "product",
       "buyCheck": {
         "date": "2026-09-19",
-        "note": "does not name this watch (homepage or category page)"
+        "note": "names the watch and offers a way to buy it"
       }
     },
     {
@@ -5280,11 +5280,6 @@
         "date": "2026-09-02",
         "result": "blocked",
         "note": "HTTP 202"
-      },
-      "sourceCheck": {
-        "date": "2026-09-19",
-        "result": "unclear",
-        "note": "HTTP 403"
       }
     },
     {
